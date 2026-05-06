@@ -1,0 +1,21 @@
+{
+  "name": "Synvet - Plataforma Veterinária",
+  "short_name": "Synvet",
+  "description": "O sistema operacional da sua clínica veterinária.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

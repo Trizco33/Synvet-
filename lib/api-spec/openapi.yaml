@@ -3,34 +3,849 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Synvet — Plataforma SaaS Veterinária
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard metrics & activity
+  - name: tutors
+    description: Tutores (donos dos pets)
+  - name: pets
+    description: Pacientes (pets)
+  - name: consultations
+    description: Consultas
+  - name: anamneses
+    description: Anamneses
+  - name: exams
+    description: Exames
+  - name: vaccines
+    description: Vacinas
+  - name: clinic
+    description: Clínica e configurações
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [clinic]
+      summary: Usuário autenticado e clínica vinculada
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeResponse" }
+
+  /clinic:
+    get:
+      operationId: getClinic
+      tags: [clinic]
+      summary: Dados da clínica do usuário
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Clinic" }
+    patch:
+      operationId: updateClinic
+      tags: [clinic]
+      summary: Atualizar dados da clínica
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateClinicBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Clinic" }
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Métricas principais do dashboard
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+
+  /dashboard/today-schedule:
+    get:
+      operationId: getTodaySchedule
+      tags: [dashboard]
+      summary: Agenda do dia (consultas)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/ScheduledConsultation" }
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Atividades recentes (consultas, exames, novos pets)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActivityItem" }
+
+  /tutors:
+    get:
+      operationId: listTutors
+      tags: [tutors]
+      summary: Listar tutores
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Tutor" }
+    post:
+      operationId: createTutor
+      tags: [tutors]
+      summary: Criar tutor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateTutorBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tutor" }
+
+  /tutors/{tutorId}:
+    parameters:
+      - in: path
+        name: tutorId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getTutor
+      tags: [tutors]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TutorWithPets" }
+    patch:
+      operationId: updateTutor
+      tags: [tutors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateTutorBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tutor" }
+    delete:
+      operationId: deleteTutor
+      tags: [tutors]
+      responses:
+        "204":
+          description: No Content
+
+  /pets:
+    get:
+      operationId: listPets
+      tags: [pets]
+      summary: Listar pacientes
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: tutorId
+          schema: { type: string }
+        - in: query
+          name: species
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PetWithTutor" }
+    post:
+      operationId: createPet
+      tags: [pets]
+      summary: Criar paciente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePetBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pet" }
+
+  /pets/{petId}:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getPet
+      tags: [pets]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PetDetail" }
+    patch:
+      operationId: updatePet
+      tags: [pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePetBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pet" }
+    delete:
+      operationId: deletePet
+      tags: [pets]
+      responses:
+        "204":
+          description: No Content
+
+  /pets/{petId}/consultations:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listPetConsultations
+      tags: [consultations]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Consultation" }
+
+  /pets/{petId}/exams:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listPetExams
+      tags: [exams]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Exam" }
+
+  /pets/{petId}/vaccines:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listPetVaccines
+      tags: [vaccines]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Vaccine" }
+    post:
+      operationId: createVaccine
+      tags: [vaccines]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateVaccineBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Vaccine" }
+
+  /pets/{petId}/medical-records:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listMedicalRecords
+      tags: [pets]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MedicalRecord" }
+    post:
+      operationId: createMedicalRecord
+      tags: [pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateMedicalRecordBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MedicalRecord" }
+
+  /consultations:
+    get:
+      operationId: listConsultations
+      tags: [consultations]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ConsultationWithPet" }
+    post:
+      operationId: createConsultation
+      tags: [consultations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateConsultationBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Consultation" }
+
+  /consultations/{consultationId}:
+    parameters:
+      - in: path
+        name: consultationId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getConsultation
+      tags: [consultations]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsultationDetail" }
+    patch:
+      operationId: updateConsultation
+      tags: [consultations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateConsultationBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Consultation" }
+    delete:
+      operationId: deleteConsultation
+      tags: [consultations]
+      responses:
+        "204":
+          description: No Content
+
+  /consultations/{consultationId}/anamnesis:
+    parameters:
+      - in: path
+        name: consultationId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getAnamnesis
+      tags: [anamneses]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Anamnesis" }
+    put:
+      operationId: upsertAnamnesis
+      tags: [anamneses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertAnamnesisBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Anamnesis" }
+
+  /exams:
+    get:
+      operationId: listExams
+      tags: [exams]
+      parameters:
+        - in: query
+          name: petId
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExamWithPet" }
+    post:
+      operationId: createExam
+      tags: [exams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateExamBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Exam" }
+
+  /exams/{examId}:
+    parameters:
+      - in: path
+        name: examId
+        required: true
+        schema: { type: string }
+    delete:
+      operationId: deleteExam
+      tags: [exams]
+      responses:
+        "204":
+          description: No Content
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    MeResponse:
+      type: object
+      properties:
+        userId: { type: string }
+        email: { type: string }
+        name: { type: string, nullable: true }
+        clinicId: { type: string }
+        role: { type: string, enum: [vet, admin] }
+      required: [userId, email, clinicId, role]
+
+    Clinic:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        cnpj: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, createdAt]
+
+    UpdateClinicBody:
+      type: object
+      properties:
+        name: { type: string }
+        cnpj: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalPatients: { type: integer }
+        consultationsToday: { type: integer }
+        pendingExams: { type: integer }
+        newPatientsThisMonth: { type: integer }
+      required: [totalPatients, consultationsToday, pendingExams, newPatientsThisMonth]
+
+    ScheduledConsultation:
+      type: object
+      properties:
+        id: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        status: { type: string }
+        petId: { type: string }
+        petName: { type: string }
+        petSpecies: { type: string }
+        tutorName: { type: string }
+        reason: { type: string, nullable: true }
+      required: [id, scheduledAt, status, petId, petName, petSpecies, tutorName]
+
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [consultation, exam, pet_created, vaccine] }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        petId: { type: string, nullable: true }
+        petName: { type: string, nullable: true }
+        timestamp: { type: string, format: date-time }
+      required: [id, type, title, timestamp]
+
+    Tutor:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, createdAt]
+
+    TutorWithPets:
+      allOf:
+        - $ref: "#/components/schemas/Tutor"
+        - type: object
+          properties:
+            pets:
+              type: array
+              items: { $ref: "#/components/schemas/Pet" }
+          required: [pets]
+
+    CreateTutorBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+      required: [name]
+
+    UpdateTutorBody:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+
+    Pet:
+      type: object
+      properties:
+        id: { type: string }
+        tutorId: { type: string }
+        name: { type: string }
+        species: { type: string }
+        breed: { type: string, nullable: true }
+        sex: { type: string, enum: [male, female, unknown] }
+        birthDate: { type: string, format: date, nullable: true }
+        weightKg: { type: number, nullable: true }
+        neutered: { type: boolean }
+        allergies: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        photoUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, tutorId, name, species, sex, neutered, createdAt]
+
+    PetWithTutor:
+      allOf:
+        - $ref: "#/components/schemas/Pet"
+        - type: object
+          properties:
+            tutorName: { type: string }
+          required: [tutorName]
+
+    PetDetail:
+      allOf:
+        - $ref: "#/components/schemas/Pet"
+        - type: object
+          properties:
+            tutor: { $ref: "#/components/schemas/Tutor" }
+            stats:
+              type: object
+              properties:
+                consultationsCount: { type: integer }
+                examsCount: { type: integer }
+                vaccinesCount: { type: integer }
+                lastVisit: { type: string, format: date-time, nullable: true }
+              required: [consultationsCount, examsCount, vaccinesCount]
+          required: [tutor, stats]
+
+    CreatePetBody:
+      type: object
+      properties:
+        tutorId: { type: string }
+        name: { type: string, minLength: 1 }
+        species: { type: string }
+        breed: { type: string, nullable: true }
+        sex: { type: string, enum: [male, female, unknown] }
+        birthDate: { type: string, format: date, nullable: true }
+        weightKg: { type: number, nullable: true }
+        neutered: { type: boolean }
+        allergies: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        photoUrl: { type: string, nullable: true }
+      required: [tutorId, name, species, sex, neutered]
+
+    UpdatePetBody:
+      type: object
+      properties:
+        tutorId: { type: string }
+        name: { type: string }
+        species: { type: string }
+        breed: { type: string, nullable: true }
+        sex: { type: string, enum: [male, female, unknown] }
+        birthDate: { type: string, format: date, nullable: true }
+        weightKg: { type: number, nullable: true }
+        neutered: { type: boolean }
+        allergies: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        photoUrl: { type: string, nullable: true }
+
+    Consultation:
+      type: object
+      properties:
+        id: { type: string }
+        petId: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        status: { type: string, enum: [scheduled, in_progress, completed, cancelled] }
+        reason: { type: string, nullable: true }
+        symptoms: { type: string, nullable: true }
+        observations: { type: string, nullable: true }
+        evolution: { type: string, nullable: true }
+        medications: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, petId, scheduledAt, status, createdAt]
+
+    ConsultationWithPet:
+      allOf:
+        - $ref: "#/components/schemas/Consultation"
+        - type: object
+          properties:
+            petName: { type: string }
+            petSpecies: { type: string }
+            tutorName: { type: string }
+          required: [petName, petSpecies, tutorName]
+
+    ConsultationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Consultation"
+        - type: object
+          properties:
+            pet: { $ref: "#/components/schemas/Pet" }
+            tutor: { $ref: "#/components/schemas/Tutor" }
+            anamnesis: { $ref: "#/components/schemas/Anamnesis", nullable: true }
+          required: [pet, tutor]
+
+    CreateConsultationBody:
+      type: object
+      properties:
+        petId: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        status: { type: string, enum: [scheduled, in_progress, completed, cancelled] }
+        reason: { type: string, nullable: true }
+        symptoms: { type: string, nullable: true }
+        observations: { type: string, nullable: true }
+        evolution: { type: string, nullable: true }
+        medications: { type: string, nullable: true }
+      required: [petId, scheduledAt, status]
+
+    UpdateConsultationBody:
+      type: object
+      properties:
+        scheduledAt: { type: string, format: date-time }
+        status: { type: string, enum: [scheduled, in_progress, completed, cancelled] }
+        reason: { type: string, nullable: true }
+        symptoms: { type: string, nullable: true }
+        observations: { type: string, nullable: true }
+        evolution: { type: string, nullable: true }
+        medications: { type: string, nullable: true }
+
+    Anamnesis:
+      type: object
+      properties:
+        id: { type: string }
+        consultationId: { type: string }
+        neurological: { type: string, nullable: true }
+        digestive: { type: string, nullable: true }
+        respiratory: { type: string, nullable: true }
+        dermatological: { type: string, nullable: true }
+        general: { type: string, nullable: true }
+        updatedAt: { type: string, format: date-time }
+      required: [id, consultationId, updatedAt]
+
+    UpsertAnamnesisBody:
+      type: object
+      properties:
+        neurological: { type: string, nullable: true }
+        digestive: { type: string, nullable: true }
+        respiratory: { type: string, nullable: true }
+        dermatological: { type: string, nullable: true }
+        general: { type: string, nullable: true }
+
+    Exam:
+      type: object
+      properties:
+        id: { type: string }
+        petId: { type: string }
+        title: { type: string }
+        category: { type: string }
+        status: { type: string, enum: [pending, completed] }
+        fileUrl: { type: string, nullable: true }
+        fileType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        performedAt: { type: string, format: date }
+        createdAt: { type: string, format: date-time }
+      required: [id, petId, title, category, status, performedAt, createdAt]
+
+    ExamWithPet:
+      allOf:
+        - $ref: "#/components/schemas/Exam"
+        - type: object
+          properties:
+            petName: { type: string }
+            tutorName: { type: string }
+          required: [petName, tutorName]
+
+    CreateExamBody:
+      type: object
+      properties:
+        petId: { type: string }
+        title: { type: string, minLength: 1 }
+        category: { type: string }
+        status: { type: string, enum: [pending, completed] }
+        fileUrl: { type: string, nullable: true }
+        fileType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        performedAt: { type: string, format: date }
+      required: [petId, title, category, status, performedAt]
+
+    Vaccine:
+      type: object
+      properties:
+        id: { type: string }
+        petId: { type: string }
+        name: { type: string }
+        appliedAt: { type: string, format: date }
+        nextDueAt: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, petId, name, appliedAt, createdAt]
+
+    CreateVaccineBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        appliedAt: { type: string, format: date }
+        nextDueAt: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+      required: [name, appliedAt]
+
+    MedicalRecord:
+      type: object
+      properties:
+        id: { type: string }
+        petId: { type: string }
+        title: { type: string }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, petId, title, content, createdAt]
+
+    CreateMedicalRecordBody:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        content: { type: string, minLength: 1 }
+      required: [title, content]

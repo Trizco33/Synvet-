@@ -1,0 +1,22 @@
+import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
+import { clinicsTable } from "./clinics";
+
+export const tutorsTable = pgTable(
+  "tutors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinicsTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    whatsapp: text("whatsapp"),
+    address: text("address"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("tutors_clinic_idx").on(t.clinicId)],
+);
+
+export type Tutor = typeof tutorsTable.$inferSelect;
+export type InsertTutor = typeof tutorsTable.$inferInsert;

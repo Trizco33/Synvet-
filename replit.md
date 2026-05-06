@@ -41,6 +41,8 @@ Plataforma multi-clínica para veterinários: pacientes, tutores, agenda de cons
 - **Modo demo automático (apenas dev)** — se Supabase não estiver configurado ou não houver token, o backend cria/usa uma clínica `demo` semeada. Em `NODE_ENV=production` esse fallback é bloqueado e retorna `401`; para reativar (ex.: demos públicas) defina `ALLOW_DEMO_AUTH=true`.
 - **Datas**: colunas `date` do Drizzle exigem string `YYYY-MM-DD`. Helper `lib/dates.ts` converte `Date` (vindo do zod) para esse formato em INSERT/UPDATE.
 - **Tema fixo dark** (`<html class="dark">`) — paleta `#0B1020 / #111827 / #5B8CFF / #7A5CFF / #F8FAFC / #94A3B8` direto nas variáveis `.dark` do `index.css`.
+- **PWA**: `public/sw.js` é registrado pelo `main.tsx` apenas em produção (`import.meta.env.PROD`); shell mínimo em cache, requests para `/api` nunca cacheados.
+- **Upload de laudo**: campo `fileUrl` (URL pública) no exame em vez de upload direto ao Supabase Storage — mais simples e funciona em modo demo.
 
 ## Product
 

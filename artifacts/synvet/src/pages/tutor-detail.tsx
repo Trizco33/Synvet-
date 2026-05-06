@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { 
@@ -88,8 +88,7 @@ export default function TutorDetail() {
     },
   });
 
-  // Update form values when data loads
-  useState(() => {
+  useEffect(() => {
     if (tutor) {
       editForm.reset({
         name: tutor.name || "",
@@ -99,7 +98,7 @@ export default function TutorDetail() {
         address: tutor.address || "",
       });
     }
-  });
+  }, [tutor, editForm]);
 
   const petForm = useForm<z.infer<typeof createPetSchema>>({
     resolver: zodResolver(createPetSchema),

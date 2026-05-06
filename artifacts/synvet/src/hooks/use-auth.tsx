@@ -25,6 +25,7 @@ type AuthContextValue = {
     clinicName: string,
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -68,6 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         await supabase.auth.signOut();
+      },
+      async resetPassword(email) {
+        if (!supabaseConfigured) {
+          return { error: "Supabase não configurado — recuperação indisponível em modo demo." };
+        }
+        const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}login`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        return { error: error?.message ?? null };
       },
     }),
     [session, loading],

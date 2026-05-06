@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect } from "react";
 import { Building, MapPin, Phone, FileText } from "lucide-react";
 
 const clinicSchema = z.object({
@@ -33,7 +33,7 @@ export default function Configuracoes() {
     },
   });
 
-  useState(() => {
+  useEffect(() => {
     if (clinic) {
       form.reset({
         name: clinic.name || "",
@@ -42,7 +42,7 @@ export default function Configuracoes() {
         address: clinic.address || "",
       });
     }
-  });
+  }, [clinic, form]);
 
   const onSubmit = (values: z.infer<typeof clinicSchema>) => {
     updateClinic.mutate(

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { 
@@ -120,7 +120,7 @@ export default function PetDetail() {
     },
   });
 
-  useState(() => {
+  useEffect(() => {
     if (petDetail) {
       editForm.reset({
         name: petDetail.name || "",
@@ -134,7 +134,7 @@ export default function PetDetail() {
         notes: petDetail.notes || "",
       });
     }
-  });
+  }, [petDetail, editForm]);
 
   const vaccineForm = useForm<z.infer<typeof createVaccineSchema>>({
     resolver: zodResolver(createVaccineSchema),

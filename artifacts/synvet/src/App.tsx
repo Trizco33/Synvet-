@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, type ComponentType } from "react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import Login from "@/pages/login";
@@ -21,9 +21,13 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 // Protected Route Wrapper
-function ProtectedRoute({ component: Component, ...rest }: any) {
+type ProtectedRouteProps = {
+  component: ComponentType;
+};
+
+function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   const { user, loading, configured } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!loading && configured && !user) {
@@ -36,12 +40,12 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   }
 
   if (configured && !user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
     <AppLayout>
-      <Component {...rest} />
+      <Component />
     </AppLayout>
   );
 }

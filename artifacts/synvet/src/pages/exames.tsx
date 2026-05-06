@@ -4,13 +4,18 @@ import {
   getListExamsQueryKey,
   useCreateExam,
   useListPets,
+  useGetMe,
 } from "@workspace/api-client-react";
+import { uploadExamFile } from "@/lib/storage";
+import { supabaseConfigured } from "@/lib/supabase";
+import { Upload, FileText, ImageIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Plus, TestTube } from "lucide-react";
+import { useRef } from "react";
 import { format, parseISO } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -66,9 +71,13 @@ const newExamSchema = z.object({
 
 export default function Exames() {
   const [isOpen, setIsOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
   const { data: exams, isLoading } = useListExams({});
   const { data: pets } = useListPets({});
+  const { data: me } = useGetMe();
   const createExam = useCreateExam();
 
   const form = useForm<z.infer<typeof newExamSchema>>({
@@ -84,6 +93,22 @@ export default function Exames() {
     },
   });
 
+  const handleFile = async (file: File | undefined) => {
+    if (!file || !me?.clinicId) return;
+    setUploading(true);
+    try {
+      const result = await uploadExamFile(file, me.clinicId);
+      setUploadedFile(result);
+      form.setValue("fileUrl", result.url);
+      toast.success("Arquivo enviado");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Falha no upload";
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onSubmit = (values: z.infer<typeof newExamSchema>) => {
     createExam.mutate(
       {
@@ -93,8 +118,8 @@ export default function Exames() {
           category: values.category,
           status: values.status,
           performedAt: new Date(values.performedAt).toISOString(),
-          fileUrl: values.fileUrl || null,
-          fileType: null,
+          fileUrl: uploadedFile?.url || values.fileUrl || null,
+          fileType: uploadedFile?.type || null,
           notes: values.notes || null,
         },
       },
@@ -111,6 +136,8 @@ export default function Exames() {
             fileUrl: "",
             notes: "",
           });
+          setUploadedFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
           setIsOpen(false);
         },
         onError: () => toast.error("Erro ao registrar exame"),
@@ -240,12 +267,50 @@ export default function Exames() {
                     )}
                   />
                 </div>
+                <div className="space-y-2">
+                  <FormLabel>Laudo (PDF ou imagem)</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="hidden"
+                      onChange={(e) => handleFile(e.target.files?.[0])}
+                      data-testid="input-exam-file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      data-testid="button-upload-exam-file"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? "Enviando..." : uploadedFile ? "Trocar arquivo" : "Enviar arquivo"}
+                    </Button>
+                    {uploadedFile && (
+                      <a
+                        href={uploadedFile.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-primary hover:underline truncate"
+                      >
+                        Ver arquivo enviado
+                      </a>
+                    )}
+                  </div>
+                  {!supabaseConfigured && (
+                    <p className="text-xs text-muted-foreground">
+                      Em modo demo o upload é desabilitado — informe uma URL pública abaixo.
+                    </p>
+                  )}
+                </div>
                 <FormField
                   control={form.control}
                   name="fileUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL do laudo (opcional)</FormLabel>
+                      <FormLabel>Ou URL pública do laudo</FormLabel>
                       <FormControl>
                         <Input placeholder="https://..." {...field} />
                       </FormControl>
@@ -287,42 +352,63 @@ export default function Exames() {
         </div>
       ) : exams && exams.length > 0 ? (
         <div className="space-y-3">
-          {exams.map((exam) => (
-            <Card key={exam.id} className="border-border/50">
-              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary">{exam.category}</Badge>
-                    <h3 className="font-semibold text-lg">{exam.title}</h3>
+          {exams.map((exam) => {
+            const isImage = exam.fileType?.startsWith("image/");
+            const isPdf = exam.fileType === "application/pdf";
+            return (
+              <Card key={exam.id} className="border-border/50">
+                <CardContent className="p-4 flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{exam.category}</Badge>
+                        <h3 className="font-semibold text-lg">{exam.title}</h3>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Paciente: {exam.petName} • Data: {format(parseISO(exam.performedAt), "dd/MM/yyyy")}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {exam.fileUrl && (
+                        <a
+                          href={exam.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                        >
+                          {isImage ? <ImageIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                          Abrir laudo
+                        </a>
+                      )}
+                      {exam.status === "completed" ? (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
+                          Concluído
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">
+                          Pendente
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Paciente: {exam.petName} • Data: {format(parseISO(exam.performedAt), "dd/MM/yyyy")}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {exam.fileUrl && (
-                    <a
-                      href={exam.fileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Abrir laudo
-                    </a>
+                  {exam.fileUrl && isImage && (
+                    <img
+                      src={exam.fileUrl}
+                      alt={exam.title}
+                      className="max-h-72 w-auto rounded-md border border-border/50 object-contain bg-secondary/40"
+                    />
                   )}
-                  {exam.status === "completed" ? (
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
-                      Concluído
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">
-                      Pendente
-                    </Badge>
+                  {exam.fileUrl && isPdf && (
+                    <iframe
+                      title={exam.title}
+                      src={exam.fileUrl}
+                      className="w-full h-96 rounded-md border border-border/50 bg-secondary/40"
+                    />
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-20 text-center border rounded-lg border-dashed bg-card/30">

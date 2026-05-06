@@ -42,7 +42,7 @@ Plataforma multi-clínica para veterinários: pacientes, tutores, agenda de cons
 - **Datas**: colunas `date` do Drizzle exigem string `YYYY-MM-DD`. Helper `lib/dates.ts` converte `Date` (vindo do zod) para esse formato em INSERT/UPDATE.
 - **Tema fixo dark** (`<html class="dark">`) — paleta `#0B1020 / #111827 / #5B8CFF / #7A5CFF / #F8FAFC / #94A3B8` direto nas variáveis `.dark` do `index.css`.
 - **PWA**: `public/sw.js` é registrado pelo `main.tsx` apenas em produção (`import.meta.env.PROD`); shell mínimo em cache, requests para `/api` nunca cacheados.
-- **Upload de laudo**: campo `fileUrl` (URL pública) no exame em vez de upload direto ao Supabase Storage — mais simples e funciona em modo demo.
+- **Upload de laudo**: helper `lib/storage.ts` envia o arquivo para o bucket `exams` do Supabase Storage (chave `<clinicId>/<uuid>.<ext>`), valida tipo (PDF/PNG/JPEG/WEBP/GIF) e tamanho (<=15 MB), e persiste a URL pública + `fileType` no exame. Em modo demo (sem Supabase) o upload é desabilitado e a UI cai para um campo de URL pública. Lista de exames mostra preview inline (img para imagens, iframe para PDFs).
 
 ## Product
 

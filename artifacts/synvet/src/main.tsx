@@ -4,6 +4,8 @@ import App from "./App";
 import "./index.css";
 import { supabase } from "./lib/supabase";
 
+declare const __BUILD_VERSION__: string;
+
 setAuthTokenGetter(async () => {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
@@ -11,10 +13,57 @@ setAuthTokenGetter(async () => {
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    const swUrl = `${import.meta.env.BASE_URL}sw.js`;
-    navigator.serviceWorker.register(swUrl, { scope: import.meta.env.BASE_URL }).catch(() => {
-      // Registration failures shouldn't block the app.
+    const swUrl = `${import.meta.env.BASE_URL}sw.js?v=${__BUILD_VERSION__}`;
+    navigator.serviceWorker
+      .register(swUrl, { scope: import.meta.env.BASE_URL })
+      .then((reg) => {
+        // When a new SW is found, ask it to activate immediately, then reload.
+        const promote = (sw: ServiceWorker | null) => {
+          if (!sw) return;
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            sw.postMessage("SKIP_WAITING");
+          }
+          sw.addEventListener("statechange", () => {
+            if (sw.state === "installed" && navigator.serviceWorker.controller) {
+              sw.postMessage("SKIP_WAITING");
+            }
+          });
+        };
+        promote(reg.waiting);
+        reg.addEventListener("updatefound", () => promote(reg.installing));
+
+        // Periodic update check while the tab is open.
+        setInterval(() => {
+          reg.update().catch(() => undefined);
+        }, 60_000);
+      })
+      .catch(() => {
+        // Registration failures shouldn't block the app.
+      });
+
+    // When a new SW takes control, reload once to pick up new chunks.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
     });
+  });
+
+  // Recover from stale-chunk errors after a deploy: chunk hashes in the
+  // currently-loaded HTML may no longer exist on the server. Force a reload.
+  window.addEventListener("error", (event) => {
+    const msg = String(event.message ?? "");
+    if (
+      msg.includes("Failed to fetch dynamically imported module") ||
+      msg.includes("Importing a module script failed") ||
+      msg.includes("ChunkLoadError")
+    ) {
+      const key = "synvet-chunk-reload";
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      window.location.reload();
+    }
   });
 }
 

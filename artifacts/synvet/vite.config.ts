@@ -1,8 +1,25 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import fs from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+const BUILD_VERSION = String(Date.now());
+
+function swVersionPlugin(): Plugin {
+  return {
+    name: "synvet-sw-version",
+    apply: "build",
+    writeBundle(options) {
+      const outDir = options.dir ?? path.resolve(import.meta.dirname, "dist/public");
+      const swPath = path.join(outDir, "sw.js");
+      if (!fs.existsSync(swPath)) return;
+      const content = fs.readFileSync(swPath, "utf-8").replace(/__BUILD_VERSION__/g, BUILD_VERSION);
+      fs.writeFileSync(swPath, content);
+    },
+  };
+}
 
 const rawPort = process.env.PORT;
 
@@ -28,10 +45,14 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    __BUILD_VERSION__: JSON.stringify(BUILD_VERSION),
+  },
   plugins: [
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    swVersionPlugin(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

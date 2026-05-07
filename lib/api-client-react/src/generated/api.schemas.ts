@@ -81,6 +81,21 @@ export interface ActivityItem {
   timestamp: string;
 }
 
+export interface SignupBody {
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  clinicName: string;
+}
+
+export interface SignupResponse {
+  ok: boolean;
+  userId: string;
+}
+
 export interface Tutor {
   id: string;
   name: string;
@@ -142,6 +157,9 @@ export interface UpdateTutorBody {
 
 export type PetWithTutor = Pet & {
   tutorName: string;
+  tutorPhone?: string | null;
+  tutorWhatsapp?: string | null;
+  tutorAddress?: string | null;
 };
 
 export type PetDetailStats = {

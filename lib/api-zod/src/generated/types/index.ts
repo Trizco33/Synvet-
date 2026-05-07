@@ -53,6 +53,8 @@ export * from "./signedDownloadBody";
 export * from "./signedDownloadResponse";
 export * from "./signedUploadBody";
 export * from "./signedUploadResponse";
+export * from "./signupBody";
+export * from "./signupResponse";
 export * from "./teamMember";
 export * from "./teamMemberRole";
 export * from "./timelineEvent";

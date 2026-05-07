@@ -9,4 +9,7 @@ import type { Pet } from "./pet";
 
 export type PetWithTutor = Pet & {
   tutorName: string;
+  tutorPhone?: string | null;
+  tutorWhatsapp?: string | null;
+  tutorAddress?: string | null;
 };

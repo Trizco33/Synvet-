@@ -49,6 +49,8 @@ import type {
   SignedDownloadResponse,
   SignedUploadBody,
   SignedUploadResponse,
+  SignupBody,
+  SignupResponse,
   TeamMember,
   TimelineEvent,
   Tutor,
@@ -584,6 +586,92 @@ export function useGetRecentActivity<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Cadastrar novo usuário (sem confirmação de e-mail)
+ */
+export const getSignupUserUrl = () => {
+  return `/api/auth/signup`;
+};
+
+export const signupUser = async (
+  signupBody: SignupBody,
+  options?: RequestInit,
+): Promise<SignupResponse> => {
+  return customFetch<SignupResponse>(getSignupUserUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(signupBody),
+  });
+};
+
+export const getSignupUserMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signupUser>>,
+    TError,
+    { data: BodyType<SignupBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signupUser>>,
+  TError,
+  { data: BodyType<SignupBody> },
+  TContext
+> => {
+  const mutationKey = ["signupUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signupUser>>,
+    { data: BodyType<SignupBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signupUser(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignupUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signupUser>>
+>;
+export type SignupUserMutationBody = BodyType<SignupBody>;
+export type SignupUserMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Cadastrar novo usuário (sem confirmação de e-mail)
+ */
+export const useSignupUser = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signupUser>>,
+    TError,
+    { data: BodyType<SignupBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof signupUser>>,
+  TError,
+  { data: BodyType<SignupBody> },
+  TContext
+> => {
+  return useMutation(getSignupUserMutationOptions(options));
+};
 
 /**
  * @summary Listar tutores

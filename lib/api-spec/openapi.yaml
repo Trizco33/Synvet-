@@ -124,6 +124,24 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/ActivityItem" }
 
+  /auth/signup:
+    post:
+      operationId: signupUser
+      tags: [auth]
+      summary: Cadastrar novo usuário (sem confirmação de e-mail)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SignupBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignupResponse" }
+
   /tutors:
     get:
       operationId: listTutors
@@ -744,6 +762,22 @@ components:
         timestamp: { type: string, format: date-time }
       required: [id, type, title, timestamp]
 
+    SignupBody:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        name: { type: string, minLength: 1 }
+        clinicName: { type: string, minLength: 1 }
+      required: [email, password, name, clinicName]
+
+    SignupResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        userId: { type: string }
+      required: [ok, userId]
+
     Tutor:
       type: object
       properties:
@@ -813,6 +847,9 @@ components:
         - type: object
           properties:
             tutorName: { type: string }
+            tutorPhone: { type: string, nullable: true }
+            tutorWhatsapp: { type: string, nullable: true }
+            tutorAddress: { type: string, nullable: true }
           required: [tutorName]
 
     PetDetail:

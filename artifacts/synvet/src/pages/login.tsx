@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/use-auth";
+import { signupUser } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -50,7 +51,7 @@ type Tab = "login" | "signup";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { signInWithPassword, signUp, resetPassword, configured } = useAuth();
+  const { signInWithPassword, resetPassword, configured } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [recoverOpen, setRecoverOpen] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
@@ -85,16 +86,30 @@ export default function Login() {
 
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setIsLoading(true);
-    const { error } = await signUp(values.email, values.password, values.name, values.clinicName);
-    setIsLoading(false);
-    if (error) {
-      toast.error("Erro ao criar conta", { description: error });
-    } else {
-      toast.success("Conta criada com sucesso", {
-        description: "Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+    try {
+      await signupUser({
+        email: values.email,
+        password: values.password,
+        name: values.name,
+        clinicName: values.clinicName,
       });
-      setTab("login");
-      form.setValue("email", values.email);
+      const { error } = await signInWithPassword(values.email, values.password);
+      setIsLoading(false);
+      if (error) {
+        toast.error("Conta criada, mas falhou ao entrar", { description: error });
+        setTab("login");
+        form.setValue("email", values.email);
+      } else {
+        toast.success("Conta criada com sucesso");
+        setLocation("/");
+      }
+    } catch (err: unknown) {
+      setIsLoading(false);
+      const msg =
+        err && typeof err === "object" && "data" in err && (err as { data?: { error?: string } }).data?.error
+          ? (err as { data: { error: string } }).data.error
+          : "Não foi possível criar a conta. Tente novamente.";
+      toast.error("Erro ao criar conta", { description: msg });
     }
   };
 

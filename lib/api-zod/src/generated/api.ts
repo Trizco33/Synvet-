@@ -100,6 +100,18 @@ export const GetRecentActivityResponse = zod.array(
 );
 
 /**
+ * @summary Cadastrar novo usuário (sem confirmação de e-mail)
+ */
+export const signupUserBodyPasswordMin = 6;
+
+export const SignupUserBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(signupUserBodyPasswordMin),
+  name: zod.string().min(1),
+  clinicName: zod.string().min(1),
+});
+
+/**
  * @summary Listar tutores
  */
 export const ListTutorsQueryParams = zod.object({
@@ -228,6 +240,9 @@ export const ListPetsResponseItem = zod
   .and(
     zod.object({
       tutorName: zod.string(),
+      tutorPhone: zod.string().nullish(),
+      tutorWhatsapp: zod.string().nullish(),
+      tutorAddress: zod.string().nullish(),
     }),
   );
 export const ListPetsResponse = zod.array(ListPetsResponseItem);

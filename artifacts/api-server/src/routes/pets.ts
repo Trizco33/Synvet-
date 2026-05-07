@@ -55,6 +55,9 @@ router.get("/pets", async (req, res): Promise<void> => {
       createdAt: petsTable.createdAt,
       updatedAt: petsTable.updatedAt,
       tutorName: tutorsTable.name,
+      tutorPhone: tutorsTable.phone,
+      tutorWhatsapp: tutorsTable.whatsapp,
+      tutorAddress: tutorsTable.address,
     })
     .from(petsTable)
     .innerJoin(tutorsTable, eq(petsTable.tutorId, tutorsTable.id))

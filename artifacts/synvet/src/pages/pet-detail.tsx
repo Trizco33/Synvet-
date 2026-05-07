@@ -15,7 +15,10 @@ import {
   getListMedicalRecordsQueryKey,
   useGetPetTimeline,
   getGetPetTimelineQueryKey,
+  aiSummarizePetTimeline,
+  aiDetectClinicalPatterns,
 } from "@workspace/api-client-react";
+import { AIAssistantDrawer, AITriggerButton } from "@/components/ai/ai-assistant-drawer";
 import { ClinicalAlerts } from "@/components/clinical/clinical-alerts";
 import { ClinicalTimeline } from "@/components/clinical/clinical-timeline";
 import { useQueryClient } from "@tanstack/react-query";
@@ -114,6 +117,8 @@ export default function PetDetail() {
 
   const [isVaccineOpen, setIsVaccineOpen] = useState(false);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
+  const [aiTimelineOpen, setAiTimelineOpen] = useState(false);
+  const [aiPatternsOpen, setAiPatternsOpen] = useState(false);
 
   const editForm = useForm<z.infer<typeof updatePetSchema>>({
     resolver: zodResolver(updatePetSchema),
@@ -284,6 +289,23 @@ export default function PetDetail() {
 
       <ClinicalAlerts pet={petDetail} compact />
 
+      <AIAssistantDrawer
+        open={aiTimelineOpen}
+        onOpenChange={setAiTimelineOpen}
+        title={`Resumo de evolução · ${petDetail.name}`}
+        description="Síntese narrativa da timeline clínica gerada por IA."
+        run={(signal) => aiSummarizePetTimeline(petId, { signal })}
+        trigger={petId}
+      />
+      <AIAssistantDrawer
+        open={aiPatternsOpen}
+        onOpenChange={setAiPatternsOpen}
+        title={`Padrões clínicos · ${petDetail.name}`}
+        description="Sinais recorrentes, lacunas e sugestões de investigação detectadas pela IA."
+        run={(signal) => aiDetectClinicalPatterns(petId, { signal })}
+        trigger={petId}
+      />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-secondary/30">
           <CardContent className="p-4 flex flex-col justify-center items-center text-center">
@@ -326,9 +348,21 @@ export default function PetDetail() {
 
         <TabsContent value="timeline" className="mt-0">
           <Card>
-            <CardHeader>
-              <CardTitle>Linha do tempo clínica</CardTitle>
-              <CardDescription>Consultas, exames, vacinas e prontuário em ordem cronológica.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-4 flex-wrap">
+              <div>
+                <CardTitle>Linha do tempo clínica</CardTitle>
+                <CardDescription>Consultas, exames, vacinas e prontuário em ordem cronológica.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <AITriggerButton
+                  onClick={() => setAiTimelineOpen(true)}
+                  label="Resumir evolução (IA)"
+                />
+                <AITriggerButton
+                  onClick={() => setAiPatternsOpen(true)}
+                  label="Detectar padrões (IA)"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <ClinicalTimeline events={timeline ?? []} />

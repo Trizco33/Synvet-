@@ -18,6 +18,8 @@ import type {
 
 import type {
   ActivityItem,
+  AiOrganizeTextBody,
+  AiResult,
   Anamnesis,
   Clinic,
   Consultation,
@@ -3037,6 +3039,344 @@ export const useCreateExamSignedUpload = <
   TContext
 > => {
   return useMutation(getCreateExamSignedUploadMutationOptions(options));
+};
+
+/**
+ * @summary Gerar resumo clínico estruturado de uma consulta (assistivo)
+ */
+export const getAiSummarizeConsultationUrl = (consultationId: string) => {
+  return `/api/ai/consultations/${consultationId}/summary`;
+};
+
+export const aiSummarizeConsultation = async (
+  consultationId: string,
+  options?: RequestInit,
+): Promise<AiResult> => {
+  return customFetch<AiResult>(getAiSummarizeConsultationUrl(consultationId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAiSummarizeConsultationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiSummarizeConsultation>>,
+    TError,
+    { consultationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiSummarizeConsultation>>,
+  TError,
+  { consultationId: string },
+  TContext
+> => {
+  const mutationKey = ["aiSummarizeConsultation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiSummarizeConsultation>>,
+    { consultationId: string }
+  > = (props) => {
+    const { consultationId } = props ?? {};
+
+    return aiSummarizeConsultation(consultationId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiSummarizeConsultationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiSummarizeConsultation>>
+>;
+
+export type AiSummarizeConsultationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Gerar resumo clínico estruturado de uma consulta (assistivo)
+ */
+export const useAiSummarizeConsultation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiSummarizeConsultation>>,
+    TError,
+    { consultationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof aiSummarizeConsultation>>,
+  TError,
+  { consultationId: string },
+  TContext
+> => {
+  return useMutation(getAiSummarizeConsultationMutationOptions(options));
+};
+
+/**
+ * @summary Reorganizar texto clínico livre em formato profissional
+ */
+export const getAiOrganizeTextUrl = () => {
+  return `/api/ai/organize-text`;
+};
+
+export const aiOrganizeText = async (
+  aiOrganizeTextBody: AiOrganizeTextBody,
+  options?: RequestInit,
+): Promise<AiResult> => {
+  return customFetch<AiResult>(getAiOrganizeTextUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(aiOrganizeTextBody),
+  });
+};
+
+export const getAiOrganizeTextMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiOrganizeText>>,
+    TError,
+    { data: BodyType<AiOrganizeTextBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiOrganizeText>>,
+  TError,
+  { data: BodyType<AiOrganizeTextBody> },
+  TContext
+> => {
+  const mutationKey = ["aiOrganizeText"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiOrganizeText>>,
+    { data: BodyType<AiOrganizeTextBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return aiOrganizeText(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiOrganizeTextMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiOrganizeText>>
+>;
+export type AiOrganizeTextMutationBody = BodyType<AiOrganizeTextBody>;
+export type AiOrganizeTextMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reorganizar texto clínico livre em formato profissional
+ */
+export const useAiOrganizeText = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiOrganizeText>>,
+    TError,
+    { data: BodyType<AiOrganizeTextBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof aiOrganizeText>>,
+  TError,
+  { data: BodyType<AiOrganizeTextBody> },
+  TContext
+> => {
+  return useMutation(getAiOrganizeTextMutationOptions(options));
+};
+
+/**
+ * @summary Resumo longitudinal da timeline clínica do paciente
+ */
+export const getAiSummarizePetTimelineUrl = (petId: string) => {
+  return `/api/ai/pets/${petId}/timeline-summary`;
+};
+
+export const aiSummarizePetTimeline = async (
+  petId: string,
+  options?: RequestInit,
+): Promise<AiResult> => {
+  return customFetch<AiResult>(getAiSummarizePetTimelineUrl(petId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAiSummarizePetTimelineMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiSummarizePetTimeline>>,
+    TError,
+    { petId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiSummarizePetTimeline>>,
+  TError,
+  { petId: string },
+  TContext
+> => {
+  const mutationKey = ["aiSummarizePetTimeline"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiSummarizePetTimeline>>,
+    { petId: string }
+  > = (props) => {
+    const { petId } = props ?? {};
+
+    return aiSummarizePetTimeline(petId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiSummarizePetTimelineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiSummarizePetTimeline>>
+>;
+
+export type AiSummarizePetTimelineMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Resumo longitudinal da timeline clínica do paciente
+ */
+export const useAiSummarizePetTimeline = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiSummarizePetTimeline>>,
+    TError,
+    { petId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof aiSummarizePetTimeline>>,
+  TError,
+  { petId: string },
+  TContext
+> => {
+  return useMutation(getAiSummarizePetTimelineMutationOptions(options));
+};
+
+/**
+ * @summary Detectar padrões clínicos relevantes na timeline do paciente
+ */
+export const getAiDetectClinicalPatternsUrl = (petId: string) => {
+  return `/api/ai/pets/${petId}/clinical-patterns`;
+};
+
+export const aiDetectClinicalPatterns = async (
+  petId: string,
+  options?: RequestInit,
+): Promise<AiResult> => {
+  return customFetch<AiResult>(getAiDetectClinicalPatternsUrl(petId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAiDetectClinicalPatternsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiDetectClinicalPatterns>>,
+    TError,
+    { petId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiDetectClinicalPatterns>>,
+  TError,
+  { petId: string },
+  TContext
+> => {
+  const mutationKey = ["aiDetectClinicalPatterns"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiDetectClinicalPatterns>>,
+    { petId: string }
+  > = (props) => {
+    const { petId } = props ?? {};
+
+    return aiDetectClinicalPatterns(petId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiDetectClinicalPatternsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiDetectClinicalPatterns>>
+>;
+
+export type AiDetectClinicalPatternsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Detectar padrões clínicos relevantes na timeline do paciente
+ */
+export const useAiDetectClinicalPatterns = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiDetectClinicalPatterns>>,
+    TError,
+    { petId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof aiDetectClinicalPatterns>>,
+  TError,
+  { petId: string },
+  TContext
+> => {
+  return useMutation(getAiDetectClinicalPatternsMutationOptions(options));
 };
 
 /**

@@ -503,6 +503,47 @@ export interface SignedDownloadResponse {
   expiresIn: number;
 }
 
+export type AiResultTokens = {
+  prompt: number;
+  completion: number;
+  total: number;
+};
+
+export interface AiResult {
+  content: string;
+  disclaimer: string;
+  model: string;
+  promptVersion: string;
+  durationMs: number;
+  estimatedCostUsd: number;
+  tokens: AiResultTokens;
+}
+
+export interface AiSummarizeConsultationParams {
+  /** @minLength 1 */
+  consultationId: string;
+}
+
+export interface AiPetParams {
+  /** @minLength 1 */
+  petId: string;
+}
+
+export type AiOrganizeTextBodyPetContext = {
+  species: string;
+  breed?: string | null;
+  ageYears?: number | null;
+} | null;
+
+export interface AiOrganizeTextBody {
+  /**
+   * @minLength 5
+   * @maxLength 8000
+   */
+  rawText: string;
+  petContext?: AiOrganizeTextBodyPetContext;
+}
+
 export type ListTutorsParams = {
   q?: string;
 };

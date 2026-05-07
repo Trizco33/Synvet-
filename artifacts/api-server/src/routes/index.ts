@@ -9,6 +9,7 @@ import dashboardRouter from "./dashboard";
 import timelineRouter from "./timeline";
 import teamRouter from "./team";
 import storageRouter from "./storage";
+import aiRouter from "./ai";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -25,5 +26,6 @@ router.use(examsRouter);
 router.use(dashboardRouter);
 router.use(teamRouter);
 router.use(storageRouter);
+router.use(aiRouter);
 
 export default router;

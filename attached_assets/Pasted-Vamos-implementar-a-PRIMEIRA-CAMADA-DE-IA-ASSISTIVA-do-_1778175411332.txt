@@ -1,0 +1,310 @@
+Vamos implementar a PRIMEIRA CAMADA DE IA ASSISTIVA do Synvet.
+
+IMPORTANTE:
+A IA NÃO deve substituir o veterinário.
+A IA deve atuar como:
+
+- assistente clínico
+- organizador inteligente
+- copiloto de documentação
+- acelerador de raciocínio clínico
+
+==================================================
+
+OBJETIVO
+
+==================================================
+
+Criar um módulo de IA assistiva veterinária integrado ao fluxo clínico do Synvet.
+
+A IA deve:
+
+- economizar tempo
+- organizar informações
+- resumir prontuários
+- transformar texto clínico caótico em documentação estruturada
+- destacar pontos relevantes
+- auxiliar sem assumir responsabilidade diagnóstica
+
+==================================================
+
+DIRETRIZES FUNDAMENTAIS
+
+==================================================
+
+A IA:
+
+- NÃO fornece diagnóstico definitivo
+- NÃO substitui decisão veterinária
+- NÃO prescreve medicamentos
+- NÃO toma decisões clínicas
+- NÃO gera condutas definitivas
+
+A IA SEMPRE deve:
+
+- deixar claro que é assistiva
+- sugerir investigação complementar quando necessário
+- atuar como apoio documental e organizacional
+
+==================================================
+
+STACK
+
+==================================================
+
+Provider inicial:
+
+- OpenAI API
+
+Modelo:
+
+- GPT-5.5 ou GPT-4.1
+
+Arquitetura:
+
+- preparada para múltiplos providers no futuro
+- criar camada de abstração de IA
+
+==================================================
+
+IMPLEMENTAR
+
+==================================================
+
+1. MÓDULO "ASSISTENTE CLÍNICO"
+
+Criar novo módulo:
+
+- AI Assistant
+- integrado ao prontuário
+- integrado às consultas
+- integrado à timeline
+
+==================================================
+
+2. FUNÇÃO: RESUMO CLÍNICO AUTOMÁTICO
+
+Entrada:
+
+- consulta
+- anamnese
+- exames
+- observações clínicas
+
+Saída:
+
+- resumo estruturado
+- linguagem profissional veterinária
+- organizado por tópicos
+
+Formato:
+
+- Queixa principal
+- Histórico relevante
+- Sintomas observados
+- Alterações importantes
+- Exames relacionados
+- Pontos de atenção
+- Sugestões de investigação complementar
+
+==================================================
+
+3. FUNÇÃO: ORGANIZAÇÃO DE TEXTO CLÍNICO
+
+Veterinário pode escrever:
+
+- texto livre
+- abreviado
+- desorganizado
+
+A IA deve:
+
+- reorganizar
+- corrigir estrutura
+- transformar em prontuário clínico profissional
+
+==================================================
+
+4. FUNÇÃO: ALERTAS CLÍNICOS
+
+A IA pode destacar:
+
+- alergias
+- medicação contínua
+- sintomas recorrentes
+- exames alterados
+- padrões importantes
+
+SEM gerar diagnóstico definitivo.
+
+==================================================
+
+5. FUNÇÃO: RESUMO DA TIMELINE
+
+A IA deve conseguir:
+
+- analisar timeline clínica do pet
+- gerar resumo longitudinal
+- identificar recorrências
+- resumir evolução clínica
+
+==================================================
+
+6. UX / INTERFACE
+
+==================================================
+
+Criar UI premium coerente com o Synvet:
+
+- dark mode
+- elegante
+- minimalista
+- rápida
+- responsiva mobile
+
+Adicionar:
+
+- botão "Gerar resumo IA"
+- loading states
+- skeletons
+- cancelamento
+- retry
+
+==================================================
+
+7. SEGURANÇA
+
+==================================================
+
+NUNCA enviar:
+
+- clinicId
+- secrets
+- tokens
+- dados internos desnecessários
+
+Implementar:
+
+- sanitização
+- rate limit
+- logs
+- timeout
+- tratamento de erro
+
+==================================================
+
+8. ARQUITETURA
+
+==================================================
+
+Criar:
+
+- provider layer
+- ai.service.ts
+- prompts versionados
+- estrutura preparada para Claude futuramente
+
+Separar:
+
+- prompts
+- adapters
+- providers
+- parsing
+- validações
+
+==================================================
+
+9. PROMPT ENGINEERING
+
+==================================================
+
+Criar prompts extremamente profissionais.
+
+A IA deve responder:
+
+- objetivamente
+- tecnicamente
+- sem exageros
+- sem linguagem alarmista
+- sem inventar informações
+- sem alucinações clínicas
+
+==================================================
+
+10. OBSERVABILIDADE
+
+==================================================
+
+Adicionar:
+
+- logs de uso
+- custo estimado por request
+- tempo de resposta
+- fallback elegante em erro
+
+==================================================
+
+11. PREPARAÇÃO FUTURA
+
+==================================================
+
+Estruturar arquitetura para:
+
+- RAG veterinário
+- interpretação de exames
+- leitura de PDFs
+- embeddings
+- protocolos clínicos
+- telemedicina
+
+SEM implementar ainda.
+
+==================================================
+
+12. IMPORTANTE
+
+==================================================
+
+NÃO quebrar:
+
+- multi-tenancy
+- RBAC
+- timeline
+- uploads
+- autenticação
+
+NÃO criar:
+
+- IA diagnóstica agressiva
+- IA autônoma
+- automações perigosas
+
+==================================================
+
+QUALIDADE ESPERADA
+
+==================================================
+
+Quero:
+
+- arquitetura profissional
+- código limpo
+- escalabilidade
+- UX premium
+- segurança
+- estabilidade
+- integração elegante com o fluxo clínico
+
+==================================================
+
+ENTREGA
+
+==================================================
+
+Ao finalizar:
+
+1. explicar arquitetura da IA
+2. mostrar fluxo completo
+3. mostrar custo estimado
+4. mostrar escalabilidade futura
+5. sugerir melhorias futuras

@@ -30,6 +30,8 @@ tags:
     description: Equipe e permissões
   - name: storage
     description: Upload e armazenamento de arquivos
+  - name: ai
+    description: IA assistiva clínica (resumos, organização de texto, padrões)
 paths:
   /healthz:
     get:
@@ -585,6 +587,74 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SignedUploadResponse" }
 
+  /ai/consultations/{consultationId}/summary:
+    post:
+      operationId: aiSummarizeConsultation
+      tags: [ai]
+      summary: Gerar resumo clínico estruturado de uma consulta (assistivo)
+      parameters:
+        - in: path
+          name: consultationId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiResult" }
+
+  /ai/organize-text:
+    post:
+      operationId: aiOrganizeText
+      tags: [ai]
+      summary: Reorganizar texto clínico livre em formato profissional
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AiOrganizeTextBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiResult" }
+
+  /ai/pets/{petId}/timeline-summary:
+    post:
+      operationId: aiSummarizePetTimeline
+      tags: [ai]
+      summary: Resumo longitudinal da timeline clínica do paciente
+      parameters:
+        - in: path
+          name: petId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiResult" }
+
+  /ai/pets/{petId}/clinical-patterns:
+    post:
+      operationId: aiDetectClinicalPatterns
+      tags: [ai]
+      summary: Detectar padrões clínicos relevantes na timeline do paciente
+      parameters:
+        - in: path
+          name: petId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiResult" }
+
   /storage/exams/signed-download:
     post:
       operationId: createExamSignedDownload
@@ -1027,3 +1097,47 @@ components:
         path: { type: string }
         expiresIn: { type: integer }
       required: [url, path, expiresIn]
+
+    AiResult:
+      type: object
+      properties:
+        content: { type: string }
+        disclaimer: { type: string }
+        model: { type: string }
+        promptVersion: { type: string }
+        durationMs: { type: integer }
+        estimatedCostUsd: { type: number }
+        tokens:
+          type: object
+          properties:
+            prompt: { type: integer }
+            completion: { type: integer }
+            total: { type: integer }
+          required: [prompt, completion, total]
+      required: [content, disclaimer, model, promptVersion, durationMs, estimatedCostUsd, tokens]
+
+    AiSummarizeConsultationParams:
+      type: object
+      properties:
+        consultationId: { type: string, minLength: 1 }
+      required: [consultationId]
+
+    AiPetParams:
+      type: object
+      properties:
+        petId: { type: string, minLength: 1 }
+      required: [petId]
+
+    AiOrganizeTextBody:
+      type: object
+      properties:
+        rawText: { type: string, minLength: 5, maxLength: 8000 }
+        petContext:
+          type: object
+          nullable: true
+          properties:
+            species: { type: string }
+            breed: { type: string, nullable: true }
+            ageYears: { type: number, nullable: true }
+          required: [species]
+      required: [rawText]

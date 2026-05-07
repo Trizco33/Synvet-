@@ -8,6 +8,12 @@
 
 export * from "./activityItem";
 export * from "./activityItemType";
+export * from "./aiOrganizeTextBody";
+export * from "./aiOrganizeTextBodyPetContext";
+export * from "./aiPetParams";
+export * from "./aiResult";
+export * from "./aiResultTokens";
+export * from "./aiSummarizeConsultationParams";
 export * from "./anamnesis";
 export * from "./clinic";
 export * from "./consultation";

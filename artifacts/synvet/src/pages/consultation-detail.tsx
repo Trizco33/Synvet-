@@ -7,13 +7,16 @@ import {
   useGetAnamnesis,
   useUpsertAnamnesis,
   getGetConsultationQueryKey,
-  getGetAnamnesisQueryKey
+  getGetAnamnesisQueryKey,
+  aiSummarizeConsultation,
+  aiOrganizeText,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
-  ArrowLeft, CalendarDays, Clock, User, Dog, Cat, FileText, Activity
+  ArrowLeft, CalendarDays, Clock, User, Dog, Cat, FileText, Activity, Sparkles, Loader2
 } from "lucide-react";
+import { AIAssistantDrawer, AITriggerButton } from "@/components/ai/ai-assistant-drawer";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,6 +60,34 @@ export default function ConsultationDetail() {
 
   const initConsultation = useRef(false);
   const initAnamnesis = useRef(false);
+
+  const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
+  const [organizingField, setOrganizingField] = useState<null | keyof typeof notes>(null);
+
+  const handleOrganize = async (field: "symptoms" | "observations" | "evolution") => {
+    const raw = notes[field]?.trim();
+    if (!raw || raw.length < 5) {
+      toast.error("Escreva ao menos algumas palavras antes de organizar.");
+      return;
+    }
+    setOrganizingField(field);
+    try {
+      const petContext = consultation?.pet
+        ? {
+            species: consultation.pet.species ?? "Desconhecida",
+            breed: consultation.pet.breed ?? null,
+            ageYears: null,
+          }
+        : null;
+      const result = await aiOrganizeText({ rawText: raw, petContext });
+      setNotes((prev) => ({ ...prev, [field]: result.content }));
+      toast.success("Texto organizado pela IA — revise antes de salvar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao organizar texto");
+    } finally {
+      setOrganizingField(null);
+    }
+  };
 
   useEffect(() => {
     if (consultation && !initConsultation.current) {
@@ -132,14 +163,27 @@ export default function ConsultationDetail() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">Detalhes da Consulta</h1>
           <div className="flex items-center gap-4 text-muted-foreground text-sm mt-1">
             <span className="flex items-center gap-1"><CalendarDays className="w-4 h-4" /> {format(parseISO(consultation.scheduledAt), "dd/MM/yyyy")}</span>
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {format(parseISO(consultation.scheduledAt), "HH:mm")}</span>
           </div>
         </div>
+        <AITriggerButton
+          onClick={() => setAiSummaryOpen(true)}
+          label="Resumir consulta (IA)"
+        />
       </div>
+
+      <AIAssistantDrawer
+        open={aiSummaryOpen}
+        onOpenChange={setAiSummaryOpen}
+        title="Resumo da consulta"
+        description="Síntese gerada por IA com base na anamnese, queixa, sintomas e evolução."
+        run={(signal) => aiSummarizeConsultation(consultationId, { signal })}
+        trigger={consultationId}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-6 lg:col-span-1">
@@ -180,7 +224,24 @@ export default function ConsultationDetail() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Sintomas</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Sintomas</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs gap-1.5 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => handleOrganize("symptoms")}
+                    disabled={organizingField === "symptoms"}
+                  >
+                    {organizingField === "symptoms" ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    Organizar com IA
+                  </Button>
+                </div>
                 <Textarea 
                   value={notes.symptoms} 
                   onChange={(e) => setNotes({ ...notes, symptoms: e.target.value })} 
@@ -282,7 +343,24 @@ export default function ConsultationDetail() {
               )}
 
               <div className="mt-8 space-y-2">
-                <Label className="text-base font-semibold">Evolução / Observações Finais</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Evolução / Observações Finais</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs gap-1.5 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => handleOrganize("evolution")}
+                    disabled={organizingField === "evolution"}
+                  >
+                    {organizingField === "evolution" ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    Organizar com IA
+                  </Button>
+                </div>
                 <Textarea 
                   value={notes.evolution} 
                   onChange={(e) => setNotes({ ...notes, evolution: e.target.value })} 

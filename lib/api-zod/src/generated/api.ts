@@ -734,6 +734,103 @@ export const CreateExamSignedUploadResponse = zod.object({
 });
 
 /**
+ * @summary Gerar resumo clínico estruturado de uma consulta (assistivo)
+ */
+export const AiSummarizeConsultationParams = zod.object({
+  consultationId: zod.coerce.string(),
+});
+
+export const AiSummarizeConsultationResponse = zod.object({
+  content: zod.string(),
+  disclaimer: zod.string(),
+  model: zod.string(),
+  promptVersion: zod.string(),
+  durationMs: zod.number(),
+  estimatedCostUsd: zod.number(),
+  tokens: zod.object({
+    prompt: zod.number(),
+    completion: zod.number(),
+    total: zod.number(),
+  }),
+});
+
+/**
+ * @summary Reorganizar texto clínico livre em formato profissional
+ */
+export const aiOrganizeTextBodyRawTextMin = 5;
+export const aiOrganizeTextBodyRawTextMax = 8000;
+
+export const AiOrganizeTextBody = zod.object({
+  rawText: zod
+    .string()
+    .min(aiOrganizeTextBodyRawTextMin)
+    .max(aiOrganizeTextBodyRawTextMax),
+  petContext: zod
+    .object({
+      species: zod.string(),
+      breed: zod.string().nullish(),
+      ageYears: zod.number().nullish(),
+    })
+    .nullish(),
+});
+
+export const AiOrganizeTextResponse = zod.object({
+  content: zod.string(),
+  disclaimer: zod.string(),
+  model: zod.string(),
+  promptVersion: zod.string(),
+  durationMs: zod.number(),
+  estimatedCostUsd: zod.number(),
+  tokens: zod.object({
+    prompt: zod.number(),
+    completion: zod.number(),
+    total: zod.number(),
+  }),
+});
+
+/**
+ * @summary Resumo longitudinal da timeline clínica do paciente
+ */
+export const AiSummarizePetTimelineParams = zod.object({
+  petId: zod.coerce.string(),
+});
+
+export const AiSummarizePetTimelineResponse = zod.object({
+  content: zod.string(),
+  disclaimer: zod.string(),
+  model: zod.string(),
+  promptVersion: zod.string(),
+  durationMs: zod.number(),
+  estimatedCostUsd: zod.number(),
+  tokens: zod.object({
+    prompt: zod.number(),
+    completion: zod.number(),
+    total: zod.number(),
+  }),
+});
+
+/**
+ * @summary Detectar padrões clínicos relevantes na timeline do paciente
+ */
+export const AiDetectClinicalPatternsParams = zod.object({
+  petId: zod.coerce.string(),
+});
+
+export const AiDetectClinicalPatternsResponse = zod.object({
+  content: zod.string(),
+  disclaimer: zod.string(),
+  model: zod.string(),
+  promptVersion: zod.string(),
+  durationMs: zod.number(),
+  estimatedCostUsd: zod.number(),
+  tokens: zod.object({
+    prompt: zod.number(),
+    completion: zod.number(),
+    total: zod.number(),
+  }),
+});
+
+/**
  * @summary Gerar URL assinada de download para um laudo já enviado
  */
 

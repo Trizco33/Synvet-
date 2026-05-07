@@ -730,3 +730,24 @@ export const CreateExamSignedUploadResponse = zod.object({
   publicUrl: zod.string(),
   bucket: zod.string(),
 });
+
+/**
+ * @summary Gerar URL assinada de download para um laudo já enviado
+ */
+
+export const createExamSignedDownloadBodyExpiresInDefault = 3600;
+export const createExamSignedDownloadBodyExpiresInMin = 60;
+
+export const CreateExamSignedDownloadBody = zod.object({
+  path: zod.string().min(1),
+  expiresIn: zod
+    .number()
+    .min(createExamSignedDownloadBodyExpiresInMin)
+    .default(createExamSignedDownloadBodyExpiresInDefault),
+});
+
+export const CreateExamSignedDownloadResponse = zod.object({
+  url: zod.string(),
+  path: zod.string(),
+  expiresIn: zod.number(),
+});

@@ -1,4 +1,7 @@
-import { createExamSignedUpload } from "@workspace/api-client-react";
+import {
+  createExamSignedDownload,
+  createExamSignedUpload,
+} from "@workspace/api-client-react";
 import { supabaseConfigured } from "./supabase";
 
 export const EXAMS_BUCKET = "exams";
@@ -71,8 +74,16 @@ export async function uploadExamFile(
     xhr.send(file);
   });
 
+  // Bucket é privado: gerar URL assinada de download para exibição.
+  // O servidor limita o TTL a no máximo 7 dias.
+  const SEVEN_DAYS = 60 * 60 * 24 * 7;
+  const dl = await createExamSignedDownload({
+    path: signed.path,
+    expiresIn: SEVEN_DAYS,
+  });
+
   return {
-    url: signed.publicUrl,
+    url: dl.url,
     type: file.type,
     size: file.size,
     path: signed.path,

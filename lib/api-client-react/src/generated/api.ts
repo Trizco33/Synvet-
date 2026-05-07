@@ -43,6 +43,8 @@ import type {
   PetDetail,
   PetWithTutor,
   ScheduledConsultation,
+  SignedDownloadBody,
+  SignedDownloadResponse,
   SignedUploadBody,
   SignedUploadResponse,
   TeamMember,
@@ -3035,4 +3037,90 @@ export const useCreateExamSignedUpload = <
   TContext
 > => {
   return useMutation(getCreateExamSignedUploadMutationOptions(options));
+};
+
+/**
+ * @summary Gerar URL assinada de download para um laudo já enviado
+ */
+export const getCreateExamSignedDownloadUrl = () => {
+  return `/api/storage/exams/signed-download`;
+};
+
+export const createExamSignedDownload = async (
+  signedDownloadBody: SignedDownloadBody,
+  options?: RequestInit,
+): Promise<SignedDownloadResponse> => {
+  return customFetch<SignedDownloadResponse>(getCreateExamSignedDownloadUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(signedDownloadBody),
+  });
+};
+
+export const getCreateExamSignedDownloadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamSignedDownload>>,
+    TError,
+    { data: BodyType<SignedDownloadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createExamSignedDownload>>,
+  TError,
+  { data: BodyType<SignedDownloadBody> },
+  TContext
+> => {
+  const mutationKey = ["createExamSignedDownload"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createExamSignedDownload>>,
+    { data: BodyType<SignedDownloadBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createExamSignedDownload(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateExamSignedDownloadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createExamSignedDownload>>
+>;
+export type CreateExamSignedDownloadMutationBody = BodyType<SignedDownloadBody>;
+export type CreateExamSignedDownloadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Gerar URL assinada de download para um laudo já enviado
+ */
+export const useCreateExamSignedDownload = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamSignedDownload>>,
+    TError,
+    { data: BodyType<SignedDownloadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createExamSignedDownload>>,
+  TError,
+  { data: BodyType<SignedDownloadBody> },
+  TContext
+> => {
+  return useMutation(getCreateExamSignedDownloadMutationOptions(options));
 };

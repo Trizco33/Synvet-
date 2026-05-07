@@ -585,6 +585,23 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SignedUploadResponse" }
 
+  /storage/exams/signed-download:
+    post:
+      operationId: createExamSignedDownload
+      tags: [storage]
+      summary: Gerar URL assinada de download para um laudo já enviado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SignedDownloadBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignedDownloadResponse" }
+
 components:
   schemas:
     HealthStatus:
@@ -994,3 +1011,18 @@ components:
         filename: { type: string, minLength: 1 }
         contentType: { type: string, minLength: 1 }
       required: [filename, contentType]
+
+    SignedDownloadBody:
+      type: object
+      properties:
+        path: { type: string, minLength: 1 }
+        expiresIn: { type: integer, minimum: 60, default: 3600 }
+      required: [path]
+
+    SignedDownloadResponse:
+      type: object
+      properties:
+        url: { type: string }
+        path: { type: string }
+        expiresIn: { type: integer }
+      required: [url, path, expiresIn]

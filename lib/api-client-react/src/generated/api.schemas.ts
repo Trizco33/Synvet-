@@ -489,6 +489,19 @@ export interface SignedUploadBody {
   contentType: string;
 }
 
+export interface SignedDownloadBody {
+  /** @minLength 1 */
+  path: string;
+  /** @minimum 60 */
+  expiresIn?: number;
+}
+
+export interface SignedDownloadResponse {
+  url: string;
+  path: string;
+  expiresIn: number;
+}
+
 export type ListTutorsParams = {
   q?: string;
 };

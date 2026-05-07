@@ -58,4 +58,43 @@ router.post("/storage/exams/signed-upload", async (req, res): Promise<void> => {
   );
 });
 
+router.post("/storage/exams/signed-download", async (req, res): Promise<void> => {
+  const user = requireAuth(req);
+  const parsed = schemas.CreateExamSignedDownloadBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    res
+      .status(503)
+      .json({ error: "Storage não configurado. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY." });
+    return;
+  }
+  const path = parsed.data.path;
+  // Tenancy guard: path is "<clinicId>/<uuid>.<ext>"
+  if (!path.startsWith(`${user.clinicId}/`)) {
+    res.status(403).json({ error: "Acesso negado a este arquivo" });
+    return;
+  }
+  const MAX_TTL = 60 * 60 * 24 * 7; // 7 dias
+  const expiresIn = Math.min(parsed.data.expiresIn ?? 3600, MAX_TTL);
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, expiresIn);
+  if (error || !data) {
+    req.log.error({ err: error }, "Failed to create signed download URL");
+    res.status(500).json({ error: "Falha ao gerar URL de download" });
+    return;
+  }
+  res.json(
+    schemas.CreateExamSignedDownloadResponse.parse({
+      url: data.signedUrl,
+      path,
+      expiresIn,
+    }),
+  );
+});
+
 export default router;

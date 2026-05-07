@@ -18,6 +18,7 @@ import { Plus, TestTube } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -248,7 +249,7 @@ export default function Exames() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <FormLabel>Laudo (PDF ou imagem)</FormLabel>
+                  <Label>Laudo (PDF ou imagem)</Label>
                   <FileUploader
                     current={uploadedFile}
                     onUploaded={(f) => {

@@ -43,6 +43,8 @@ export * from "./petDetailStats";
 export * from "./petSex";
 export * from "./petWithTutor";
 export * from "./scheduledConsultation";
+export * from "./signedDownloadBody";
+export * from "./signedDownloadResponse";
 export * from "./signedUploadBody";
 export * from "./signedUploadResponse";
 export * from "./teamMember";

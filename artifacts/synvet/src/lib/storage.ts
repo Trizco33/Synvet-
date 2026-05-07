@@ -74,12 +74,11 @@ export async function uploadExamFile(
     xhr.send(file);
   });
 
-  // Bucket é privado: gerar URL assinada de download para exibição.
-  // O servidor limita o TTL a no máximo 7 dias.
-  const SEVEN_DAYS = 60 * 60 * 24 * 7;
+  // URL curta (1h) só para preview imediato no dialog de criação.
+  // A exibição persistente é re-assinada pelo backend a cada read do exame.
   const dl = await createExamSignedDownload({
     path: signed.path,
-    expiresIn: SEVEN_DAYS,
+    expiresIn: 3600,
   });
 
   return {

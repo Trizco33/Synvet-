@@ -99,7 +99,7 @@ export default function Exames() {
           category: values.category,
           status: values.status,
           performedAt: new Date(values.performedAt).toISOString(),
-          fileUrl: uploadedFile?.url || values.fileUrl || null,
+          filePath: uploadedFile?.path || null,
           fileType: uploadedFile?.type || null,
           fileSize: uploadedFile?.size != null ? String(uploadedFile.size) : null,
           notes: values.notes || null,

@@ -22,6 +22,7 @@ export const examsTable = pgTable(
     status: text("status", { enum: ["pending", "completed"] })
       .notNull()
       .default("pending"),
+    filePath: text("file_path"),
     fileUrl: text("file_url"),
     fileType: text("file_type"),
     fileSize: text("file_size"),

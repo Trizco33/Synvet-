@@ -1,5 +1,12 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { ensureExamsBucket } from "./lib/exam-files";
+
+const EXAM_MAX_BYTES = 15 * 1024 * 1024; // 15 MB — alinhado ao limite client-side
+
+ensureExamsBucket(EXAM_MAX_BYTES).catch((err) => {
+  logger.warn({ err }, "Falha ao garantir configuração do bucket exams (segue sem bloquear)");
+});
 
 const rawPort = process.env["PORT"];
 

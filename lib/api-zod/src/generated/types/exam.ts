@@ -14,6 +14,7 @@ export interface Exam {
   title: string;
   category: string;
   status: ExamStatus;
+  filePath?: string | null;
   fileUrl?: string | null;
   fileType?: string | null;
   fileSize?: string | null;

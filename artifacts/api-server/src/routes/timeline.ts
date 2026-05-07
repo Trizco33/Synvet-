@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { signExamPaths } from "../lib/exam-files";
 
 const router: IRouter = Router();
 
@@ -102,7 +103,8 @@ router.get("/pets/:petId/timeline", async (req, res): Promise<void> => {
     });
   }
 
-  for (const e of exams) {
+  const examUrls = await signExamPaths(exams.map((e) => e.filePath));
+  exams.forEach((e, i) => {
     events.push({
       id: e.id,
       type: "exam",
@@ -112,9 +114,9 @@ router.get("/pets/:petId/timeline", async (req, res): Promise<void> => {
       status: e.status,
       category: e.category,
       severity: e.status === "pending" ? "warning" : "info",
-      sourceUrl: e.fileUrl || null,
+      sourceUrl: examUrls[i] ?? e.fileUrl ?? null,
     });
-  }
+  });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

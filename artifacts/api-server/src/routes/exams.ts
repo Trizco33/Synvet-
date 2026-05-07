@@ -4,6 +4,7 @@ import { db, examsTable, petsTable, tutorsTable, consultationsTable } from "@wor
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { toDateString } from "../lib/dates";
+import { signExamPath, signExamPaths } from "../lib/exam-files";
 
 const router: IRouter = Router();
 
@@ -25,6 +26,7 @@ router.get("/exams", async (req, res): Promise<void> => {
       title: examsTable.title,
       category: examsTable.category,
       status: examsTable.status,
+      filePath: examsTable.filePath,
       fileUrl: examsTable.fileUrl,
       fileType: examsTable.fileType,
       fileSize: examsTable.fileSize,
@@ -40,7 +42,10 @@ router.get("/exams", async (req, res): Promise<void> => {
     .innerJoin(tutorsTable, eq(petsTable.tutorId, tutorsTable.id))
     .where(and(...filters))
     .orderBy(desc(examsTable.performedAt));
-  res.json(schemas.ListExamsResponse.parse(rows));
+  // Re-assina cada filePath sob demanda (TTL 1h). Mantém fileUrl legado se não houver path.
+  const signed = await signExamPaths(rows.map((r) => r.filePath));
+  const out = rows.map((r, i) => ({ ...r, fileUrl: signed[i] ?? r.fileUrl }));
+  res.json(schemas.ListExamsResponse.parse(out));
 });
 
 router.post("/exams", requireRole("admin", "vet"), async (req, res): Promise<void> => {
@@ -75,6 +80,11 @@ router.post("/exams", requireRole("admin", "vet"), async (req, res): Promise<voi
       return;
     }
   }
+  // Tenancy guard no filePath: precisa começar com <clinicId>/
+  if (parsed.data.filePath && !parsed.data.filePath.startsWith(`${user.clinicId}/`)) {
+    res.status(403).json({ error: "filePath fora da clínica" });
+    return;
+  }
   const [exam] = await db
     .insert(examsTable)
     .values({
@@ -84,7 +94,9 @@ router.post("/exams", requireRole("admin", "vet"), async (req, res): Promise<voi
       createdBy: user.id,
     })
     .returning();
-  res.status(201).json(exam);
+  // Re-assina filePath na resposta para o frontend exibir imediatamente.
+  const fileUrl = (await signExamPath(exam.filePath)) ?? exam.fileUrl;
+  res.status(201).json({ ...exam, fileUrl });
 });
 
 router.delete("/exams/:examId", requireRole("admin", "vet"), async (req, res): Promise<void> => {

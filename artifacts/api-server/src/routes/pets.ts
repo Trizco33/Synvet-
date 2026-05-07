@@ -12,6 +12,7 @@ import {
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { toDateString } from "../lib/dates";
+import { signExamPaths } from "../lib/exam-files";
 
 const router: IRouter = Router();
 
@@ -210,7 +211,9 @@ router.get("/pets/:petId/exams", async (req, res): Promise<void> => {
       ),
     )
     .orderBy(desc(examsTable.performedAt));
-  res.json(schemas.ListPetExamsResponse.parse(rows));
+  const signed = await signExamPaths(rows.map((r) => r.filePath));
+  const out = rows.map((r, i) => ({ ...r, fileUrl: signed[i] ?? r.fileUrl }));
+  res.json(schemas.ListPetExamsResponse.parse(out));
 });
 
 router.get("/pets/:petId/vaccines", async (req, res): Promise<void> => {

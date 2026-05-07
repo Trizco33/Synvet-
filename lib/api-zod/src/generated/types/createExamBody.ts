@@ -14,7 +14,7 @@ export interface CreateExamBody {
   title: string;
   category: string;
   status: CreateExamBodyStatus;
-  fileUrl?: string | null;
+  filePath?: string | null;
   fileType?: string | null;
   fileSize?: string | null;
   notes?: string | null;

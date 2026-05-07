@@ -318,6 +318,7 @@ export interface Exam {
   title: string;
   category: string;
   status: ExamStatus;
+  filePath?: string | null;
   fileUrl?: string | null;
   fileType?: string | null;
   fileSize?: string | null;
@@ -347,7 +348,7 @@ export interface CreateExamBody {
   title: string;
   category: string;
   status: CreateExamBodyStatus;
-  fileUrl?: string | null;
+  filePath?: string | null;
   fileType?: string | null;
   fileSize?: string | null;
   notes?: string | null;

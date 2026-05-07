@@ -888,6 +888,7 @@ components:
         title: { type: string }
         category: { type: string }
         status: { type: string, enum: [pending, completed] }
+        filePath: { type: string, nullable: true }
         fileUrl: { type: string, nullable: true }
         fileType: { type: string, nullable: true }
         fileSize: { type: string, nullable: true }
@@ -914,7 +915,7 @@ components:
         title: { type: string, minLength: 1 }
         category: { type: string }
         status: { type: string, enum: [pending, completed] }
-        fileUrl: { type: string, nullable: true }
+        filePath: { type: string, nullable: true }
         fileType: { type: string, nullable: true }
         fileSize: { type: string, nullable: true }
         notes: { type: string, nullable: true }

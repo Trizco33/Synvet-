@@ -1,49 +1,77 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# ============================================================
+# Synvet — .gitignore
+# ============================================================
 
-# compiled output
-dist
-tmp
-out-tsc
+# ---- Build outputs --------------------------------------------------
+dist/
+build/
+out-tsc/
 *.tsbuildinfo
 .expo
 .expo-shared
+coverage/
+.nyc_output/
 
-# dependencies
-node_modules
+# ---- Dependencies --------------------------------------------------
+node_modules/
 
-# IDEs and editors
-/.idea
+# ---- Environment / secrets (NUNCA commitar) ------------------------
+# Apenas .env.example é commitado.
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+.env.test
+**/.env
+**/.env.local
+**/.env.*.local
+
+# ---- Logs ----------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+testem.log
+
+# ---- IDEs / editores -----------------------------------------------
+.idea/
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
-
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# ---- Sistema operacional -------------------------------------------
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
+# ---- Caches diversos -----------------------------------------------
+.sass-cache/
+.parcel-cache/
+.turbo/
+.swc/
+.eslintcache
+.stylelintcache
+
+# ---- Tooling do agente Replit (não fazem sentido fora) -------------
+.cache/
+.local/
+.agents/
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
-.cache/
-.local/
+# ---- Artefatos temporários do projeto ------------------------------
+/tmp/
+*.tmp
+*.bak
+*.old

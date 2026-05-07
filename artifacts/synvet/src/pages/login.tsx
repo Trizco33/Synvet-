@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Stethoscope } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import logoUrl from "@assets/synvet-logo.png";
 import {
   Dialog,
   DialogContent,
@@ -86,10 +86,7 @@ export default function Login() {
 
       <Card className="w-full max-w-md border-border/50 shadow-2xl bg-card/80 backdrop-blur-sm z-10">
         <CardHeader className="space-y-3 text-center pb-8 pt-10">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-2 shadow-inner border border-primary/20">
-            <Stethoscope className="w-8 h-8 text-primary" />
-          </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">Synvet</CardTitle>
+          <img src={logoUrl} alt="Synvet" className="mx-auto h-16 w-auto mb-2" />
           <CardDescription className="text-base">
             O sistema operacional da sua clínica veterinária.
           </CardDescription>

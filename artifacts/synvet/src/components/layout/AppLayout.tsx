@@ -9,9 +9,9 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  X
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import logoUrl from "@assets/synvet-logo.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useGetMe } from "@workspace/api-client-react";
@@ -67,10 +67,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-20">
-        <div className="flex items-center gap-2 font-bold text-lg text-primary">
-          <Stethoscope className="w-6 h-6" />
-          <span>Synvet</span>
-        </div>
+        <img src={logoUrl} alt="Synvet" className="h-8 w-auto" />
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
@@ -79,10 +76,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0 flex flex-col bg-card border-r-border">
             <div className="p-6">
-              <div className="flex items-center gap-2 font-bold text-xl text-primary mb-8">
-                <Stethoscope className="w-6 h-6" />
-                <span>Synvet</span>
-              </div>
+              <img src={logoUrl} alt="Synvet" className="h-10 w-auto mb-8" />
               <NavLinks />
             </div>
             <div className="mt-auto p-6 border-t border-border">
@@ -109,10 +103,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-[280px] bg-card border-r border-border h-screen sticky top-0">
         <div className="p-6">
-          <div className="flex items-center gap-2 font-bold text-2xl text-primary mb-8">
-            <Stethoscope className="w-8 h-8" />
-            <span>Synvet</span>
-          </div>
+          <img src={logoUrl} alt="Synvet" className="h-12 w-auto mb-8" />
           <NavLinks />
         </div>
         

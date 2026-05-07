@@ -10,7 +10,10 @@ Plataforma multi-clínica para veterinários: pacientes, tutores, agenda de cons
 - `pnpm --filter @workspace/api-spec run codegen` — regerar hooks/Zod a partir do OpenAPI
 - `pnpm --filter @workspace/db run push` — aplicar mudanças de schema (dev)
 - Vars obrigatórias: `DATABASE_URL` (Postgres provisionado).
-- Vars opcionais (autenticação real Supabase): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (servidor) e `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (cliente). Sem elas o backend cria automaticamente uma clínica/usuário **demo** e o frontend exibe um aviso e libera o acesso.
+- Vars opcionais (autenticação real Supabase):
+  - **Servidor**: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (chave `sb_secret_…` — bypass de RLS para verificar JWT e gerar URLs assinadas; nunca pode aparecer no frontend)
+  - **Cliente**: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (chave `sb_publishable_…` — exposta no bundle, OK)
+  - Sem elas o backend cria automaticamente uma clínica/usuário **demo** e o frontend exibe um aviso e libera o acesso.
 
 ## Stack
 

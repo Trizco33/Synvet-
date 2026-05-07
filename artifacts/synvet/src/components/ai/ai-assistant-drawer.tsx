@@ -205,23 +205,42 @@ export function AIAssistantDrawer({
 interface AITriggerButtonProps {
   onClick: () => void;
   label: string;
-  variant?: "default" | "outline" | "ghost" | "secondary";
-  size?: "default" | "sm";
+  variant?: "default" | "outline" | "ghost" | "secondary" | "gradient";
+  size?: "default" | "sm" | "lg";
   className?: string;
 }
 
 export function AITriggerButton({
   onClick,
   label,
-  variant = "outline",
-  size = "sm",
+  variant = "gradient",
+  size = "default",
   className,
 }: AITriggerButtonProps) {
+  if (variant === "gradient") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center justify-center gap-2 rounded-md px-4 font-semibold text-white shadow-md shadow-primary/20 ring-1 ring-white/10 transition-all hover:shadow-lg hover:shadow-primary/30 hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:pointer-events-none disabled:opacity-50 ${
+          size === "lg" ? "h-11 text-base" : size === "sm" ? "h-9 text-xs" : "h-10 text-sm"
+        } ${className ?? ""}`}
+        style={{
+          background:
+            "linear-gradient(135deg, #5B8CFF 0%, #7A5CFF 100%)",
+        }}
+        data-testid="ai-trigger-button"
+      >
+        <Sparkles className="w-4 h-4" />
+        {label}
+      </button>
+    );
+  }
   return (
     <Button
       onClick={onClick}
       variant={variant}
-      size={size}
+      size={size === "lg" ? "default" : size}
       className={`gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 ${className ?? ""}`}
     >
       <Sparkles className="w-4 h-4 text-primary" />

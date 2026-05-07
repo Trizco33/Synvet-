@@ -1,11 +1,12 @@
 import { useGetDashboardSummary, useGetTodaySchedule, useGetRecentActivity } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dog, CalendarDays, TestTube, Users, Clock, Activity, FileText } from "lucide-react";
+import { Dog, CalendarDays, TestTube, Users, Clock, Activity, FileText, Sparkles, ArrowRight } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
@@ -96,6 +97,90 @@ export default function Dashboard() {
           </Card>
         </motion.div>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45 }}
+      >
+        <Card
+          className="relative overflow-hidden border-primary/30"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(91,140,255,0.10) 0%, rgba(122,92,255,0.10) 100%)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full opacity-30 blur-3xl"
+            style={{ background: "radial-gradient(circle, #7A5CFF 0%, transparent 70%)" }}
+          />
+          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/30"
+                style={{ background: "linear-gradient(135deg, #5B8CFF 0%, #7A5CFF 100%)" }}
+              >
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-xl">Assistente IA</CardTitle>
+                  <Badge variant="outline" className="border-primary/40 text-primary text-[10px] uppercase tracking-wide">
+                    Assistivo · revise sempre
+                  </Badge>
+                </div>
+                <CardDescription className="mt-1 max-w-2xl">
+                  Resuma consultas, organize anamnese, identifique padrões clínicos e gere
+                  resumos longitudinais da timeline do paciente — direto dentro de cada
+                  registro.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/consultas">
+              <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-summarize">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Resumir consulta
+                </div>
+                <p className="text-xs text-muted-foreground">Abra uma consulta → botão no topo direito.</p>
+                <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </Link>
+            <Link href="/consultas">
+              <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-organize">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Organizar texto clínico
+                </div>
+                <p className="text-xs text-muted-foreground">Em Sintomas/Evolução: link "Organizar com IA".</p>
+                <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </Link>
+            <Link href="/pacientes">
+              <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-timeline">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Resumir evolução
+                </div>
+                <p className="text-xs text-muted-foreground">Paciente → aba Timeline → "Resumir evolução".</p>
+                <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </Link>
+            <Link href="/pacientes">
+              <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-patterns">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Detectar padrões
+                </div>
+                <p className="text-xs text-muted-foreground">Paciente → aba Timeline → "Detectar padrões".</p>
+                <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}>

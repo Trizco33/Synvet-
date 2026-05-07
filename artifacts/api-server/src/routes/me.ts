@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, clinicsTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -32,7 +32,7 @@ router.get("/clinic", async (req, res): Promise<void> => {
   res.json(schemas.GetClinicResponse.parse(clinic));
 });
 
-router.patch("/clinic", async (req, res): Promise<void> => {
+router.patch("/clinic", requireRole("admin"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const parsed = schemas.UpdateClinicBody.safeParse(req.body);
   if (!parsed.success) {
@@ -41,7 +41,7 @@ router.patch("/clinic", async (req, res): Promise<void> => {
   }
   const [clinic] = await db
     .update(clinicsTable)
-    .set(parsed.data)
+    .set({ ...parsed.data, updatedAt: new Date() })
     .where(eq(clinicsTable.id, user.clinicId))
     .returning();
   res.json(schemas.UpdateClinicResponse.parse(clinic));

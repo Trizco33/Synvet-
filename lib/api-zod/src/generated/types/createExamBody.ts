@@ -9,12 +9,14 @@ import type { CreateExamBodyStatus } from "./createExamBodyStatus";
 
 export interface CreateExamBody {
   petId: string;
+  consultationId?: string | null;
   /** @minLength 1 */
   title: string;
   category: string;
   status: CreateExamBodyStatus;
   fileUrl?: string | null;
   fileType?: string | null;
+  fileSize?: string | null;
   notes?: string | null;
   performedAt: Date;
 }

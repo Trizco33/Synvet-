@@ -15,6 +15,7 @@ export type MeResponseRole =
 export const MeResponseRole = {
   vet: "vet",
   admin: "admin",
+  assistant: "assistant",
 } as const;
 
 export interface MeResponse {
@@ -32,6 +33,7 @@ export interface Clinic {
   phone?: string | null;
   address?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface UpdateClinicBody {
@@ -87,6 +89,7 @@ export interface Tutor {
   whatsapp?: string | null;
   address?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type PetSex = (typeof PetSex)[keyof typeof PetSex];
@@ -108,9 +111,12 @@ export interface Pet {
   weightKg?: number | null;
   neutered: boolean;
   allergies?: string | null;
+  continuousMedications?: string | null;
+  isCritical: boolean;
   notes?: string | null;
   photoUrl?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type TutorWithPets = Tutor & {
@@ -170,6 +176,8 @@ export interface CreatePetBody {
   weightKg?: number | null;
   neutered: boolean;
   allergies?: string | null;
+  continuousMedications?: string | null;
+  isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
 }
@@ -193,6 +201,8 @@ export interface UpdatePetBody {
   weightKg?: number | null;
   neutered?: boolean;
   allergies?: string | null;
+  continuousMedications?: string | null;
+  isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
 }
@@ -218,6 +228,7 @@ export interface Consultation {
   evolution?: string | null;
   medications?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type ConsultationWithPet = Consultation & {
@@ -234,6 +245,7 @@ export interface Anamnesis {
   respiratory?: string | null;
   dermatological?: string | null;
   general?: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -302,14 +314,17 @@ export const ExamStatus = {
 export interface Exam {
   id: string;
   petId: string;
+  consultationId?: string | null;
   title: string;
   category: string;
   status: ExamStatus;
   fileUrl?: string | null;
   fileType?: string | null;
+  fileSize?: string | null;
   notes?: string | null;
   performedAt: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type ExamWithPet = Exam & {
@@ -327,12 +342,14 @@ export const CreateExamBodyStatus = {
 
 export interface CreateExamBody {
   petId: string;
+  consultationId?: string | null;
   /** @minLength 1 */
   title: string;
   category: string;
   status: CreateExamBodyStatus;
   fileUrl?: string | null;
   fileType?: string | null;
+  fileSize?: string | null;
   notes?: string | null;
   performedAt: string;
 }
@@ -345,6 +362,7 @@ export interface Vaccine {
   nextDueAt?: string | null;
   notes?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateVaccineBody {
@@ -355,19 +373,120 @@ export interface CreateVaccineBody {
   notes?: string | null;
 }
 
+export type MedicalRecordSourceType =
+  (typeof MedicalRecordSourceType)[keyof typeof MedicalRecordSourceType];
+
+export const MedicalRecordSourceType = {
+  manual: "manual",
+  consultation: "consultation",
+  exam: "exam",
+} as const;
+
 export interface MedicalRecord {
   id: string;
   petId: string;
   title: string;
   content: string;
+  sourceType: MedicalRecordSourceType;
+  sourceId?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
+
+export type CreateMedicalRecordBodySourceType =
+  (typeof CreateMedicalRecordBodySourceType)[keyof typeof CreateMedicalRecordBodySourceType];
+
+export const CreateMedicalRecordBodySourceType = {
+  manual: "manual",
+  consultation: "consultation",
+  exam: "exam",
+} as const;
 
 export interface CreateMedicalRecordBody {
   /** @minLength 1 */
   title: string;
   /** @minLength 1 */
   content: string;
+  sourceType?: CreateMedicalRecordBodySourceType;
+  sourceId?: string | null;
+}
+
+export type TimelineEventType =
+  (typeof TimelineEventType)[keyof typeof TimelineEventType];
+
+export const TimelineEventType = {
+  consultation: "consultation",
+  exam: "exam",
+  vaccine: "vaccine",
+  record: "record",
+} as const;
+
+export type TimelineEventSeverity =
+  | (typeof TimelineEventSeverity)[keyof typeof TimelineEventSeverity]
+  | null;
+
+export const TimelineEventSeverity = {
+  info: "info",
+  warning: "warning",
+  critical: "critical",
+} as const;
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType;
+  date: string;
+  title: string;
+  description?: string | null;
+  status?: string | null;
+  category?: string | null;
+  severity?: TimelineEventSeverity;
+  sourceUrl?: string | null;
+}
+
+export type TeamMemberRole =
+  (typeof TeamMemberRole)[keyof typeof TeamMemberRole];
+
+export const TeamMemberRole = {
+  vet: "vet",
+  admin: "admin",
+  assistant: "assistant",
+} as const;
+
+export interface TeamMember {
+  id: string;
+  email: string;
+  name?: string | null;
+  role: TeamMemberRole;
+  createdAt: string;
+}
+
+export type UpdateTeamMemberBodyRole =
+  (typeof UpdateTeamMemberBodyRole)[keyof typeof UpdateTeamMemberBodyRole];
+
+export const UpdateTeamMemberBodyRole = {
+  vet: "vet",
+  admin: "admin",
+  assistant: "assistant",
+} as const;
+
+export interface UpdateTeamMemberBody {
+  role?: UpdateTeamMemberBodyRole;
+  name?: string | null;
+}
+
+export interface SignedUploadResponse {
+  url: string;
+  token: string;
+  path: string;
+  publicUrl: string;
+  bucket: string;
+}
+
+export interface SignedUploadBody {
+  /** @minLength 1 */
+  filename: string;
+  /** @minLength 1 */
+  contentType: string;
 }
 
 export type ListTutorsParams = {

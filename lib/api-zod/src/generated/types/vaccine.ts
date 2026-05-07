@@ -14,4 +14,5 @@ export interface Vaccine {
   nextDueAt?: Date | null;
   notes?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

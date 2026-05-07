@@ -5,14 +5,12 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { TeamMemberRole } from "./teamMemberRole";
 
-export interface Tutor {
+export interface TeamMember {
   id: string;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  whatsapp?: string | null;
-  address?: string | null;
+  email: string;
+  name?: string | null;
+  role: TeamMemberRole;
   createdAt: Date;
-  updatedAt: Date;
 }

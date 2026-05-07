@@ -14,5 +14,6 @@ export interface Anamnesis {
   respiratory?: string | null;
   dermatological?: string | null;
   general?: string | null;
+  createdAt: Date;
   updatedAt: Date;
 }

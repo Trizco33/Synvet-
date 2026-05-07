@@ -1,15 +1,40 @@
-import { useGetClinic, useUpdateClinic, useGetMe } from "@workspace/api-client-react";
+import {
+  useGetClinic,
+  useUpdateClinic,
+  useGetMe,
+  useListTeam,
+  useUpdateTeamMember,
+  getListTeamQueryKey,
+  type TeamMember,
+  type UpdateTeamMemberBodyRole,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useEffect } from "react";
-import { Building, MapPin, Phone, FileText } from "lucide-react";
+import { Building, MapPin, Phone, FileText, Users } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePermissions } from "@/hooks/use-permissions";
+
+const ROLE_LABEL: Record<TeamMember["role"], string> = {
+  admin: "Administrador",
+  vet: "Veterinário(a)",
+  assistant: "Assistente",
+};
 
 const clinicSchema = z.object({
   name: z.string().min(2, "Nome é obrigatório"),
@@ -22,6 +47,7 @@ export default function Configuracoes() {
   const { data: clinic, isLoading: clinicLoading } = useGetClinic();
   const { data: me, isLoading: meLoading } = useGetMe();
   const updateClinic = useUpdateClinic();
+  const { isAdmin } = usePermissions();
 
   const form = useForm<z.infer<typeof clinicSchema>>({
     resolver: zodResolver(clinicSchema),
@@ -158,6 +184,8 @@ export default function Configuracoes() {
         </CardContent>
       </Card>
 
+      <TeamSection canManage={isAdmin} currentUserId={me?.userId} />
+
       <Card>
         <CardHeader>
           <CardTitle>Meu Perfil</CardTitle>
@@ -175,11 +203,123 @@ export default function Configuracoes() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Cargo</p>
-              <p className="text-lg capitalize">{me?.role}</p>
+              <p className="text-lg">{me?.role ? ROLE_LABEL[me.role as TeamMember["role"]] ?? me.role : "—"}</p>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function TeamSection({
+  canManage,
+  currentUserId,
+}: {
+  canManage: boolean;
+  currentUserId?: string;
+}) {
+  const queryClient = useQueryClient();
+  const { data: team, isLoading } = useListTeam();
+  const updateMember = useUpdateTeamMember();
+
+  const handleRoleChange = (memberId: string, role: UpdateTeamMemberBodyRole) => {
+    updateMember.mutate(
+      { memberId, data: { role } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTeamQueryKey() });
+          toast.success("Cargo atualizado");
+        },
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : "Erro ao atualizar cargo";
+          toast.error(msg);
+        },
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary" />
+          Equipe
+        </CardTitle>
+        <CardDescription>
+          {canManage
+            ? "Gerencie quem tem acesso e em qual cargo. Apenas administradores podem alterar cargos."
+            : "Membros da clínica. Somente administradores podem alterar cargos."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : !team || team.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum membro registrado.</p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {team.map((m) => {
+              const isSelf = m.id === currentUserId;
+              return (
+                <li
+                  key={m.id}
+                  className="py-3 flex items-center justify-between gap-3 flex-wrap"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar>
+                      <AvatarFallback className="bg-primary/20 text-primary">
+                        {(m.name?.charAt(0) || m.email.charAt(0)).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {m.name || m.email}
+                        {isSelf && (
+                          <span className="text-xs text-muted-foreground ml-2">(você)</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                    </div>
+                  </div>
+                  {canManage && !(isSelf && m.role === "admin") ? (
+                    <Select
+                      value={m.role}
+                      onValueChange={(v) =>
+                        handleRoleChange(m.id, v as UpdateTeamMemberBodyRole)
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]" data-testid={`select-role-${m.id}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="vet">Veterinário(a)</SelectItem>
+                        <SelectItem value="assistant">Assistente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="text-sm rounded-md border border-border px-2 py-1">
+                      {ROLE_LABEL[m.role]}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {!canManage && (
+          <p className="text-xs text-muted-foreground mt-3">
+            Para convidar novos membros, peça ao administrador da clínica.
+          </p>
+        )}
+        {canManage && (
+          <p className="text-xs text-muted-foreground mt-3">
+            Convites por e-mail são feitos pelo Supabase Auth. Após o primeiro login do
+            convidado o registro aparecerá aqui automaticamente.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -10,12 +10,15 @@ import type { ExamStatus } from "./examStatus";
 export interface Exam {
   id: string;
   petId: string;
+  consultationId?: string | null;
   title: string;
   category: string;
   status: ExamStatus;
   fileUrl?: string | null;
   fileType?: string | null;
+  fileSize?: string | null;
   notes?: string | null;
   performedAt: Date;
   createdAt: Date;
+  updatedAt: Date;
 }

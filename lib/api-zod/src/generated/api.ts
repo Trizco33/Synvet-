@@ -22,7 +22,7 @@ export const GetMeResponse = zod.object({
   email: zod.string(),
   name: zod.string().nullish(),
   clinicId: zod.string(),
-  role: zod.enum(["vet", "admin"]),
+  role: zod.enum(["vet", "admin", "assistant"]),
 });
 
 /**
@@ -35,6 +35,7 @@ export const GetClinicResponse = zod.object({
   phone: zod.string().nullish(),
   address: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
@@ -54,6 +55,7 @@ export const UpdateClinicResponse = zod.object({
   phone: zod.string().nullish(),
   address: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
@@ -112,6 +114,7 @@ export const ListTutorsResponseItem = zod.object({
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 export const ListTutorsResponse = zod.array(ListTutorsResponseItem);
 
@@ -140,6 +143,7 @@ export const GetTutorResponse = zod
     whatsapp: zod.string().nullish(),
     address: zod.string().nullish(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -155,9 +159,12 @@ export const GetTutorResponse = zod
           weightKg: zod.number().nullish(),
           neutered: zod.boolean(),
           allergies: zod.string().nullish(),
+          continuousMedications: zod.string().nullish(),
+          isCritical: zod.boolean(),
           notes: zod.string().nullish(),
           photoUrl: zod.string().nullish(),
           createdAt: zod.coerce.date(),
+          updatedAt: zod.coerce.date(),
         }),
       ),
     }),
@@ -183,6 +190,7 @@ export const UpdateTutorResponse = zod.object({
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 export const DeleteTutorParams = zod.object({
@@ -210,9 +218,12 @@ export const ListPetsResponseItem = zod
     weightKg: zod.number().nullish(),
     neutered: zod.boolean(),
     allergies: zod.string().nullish(),
+    continuousMedications: zod.string().nullish(),
+    isCritical: zod.boolean(),
     notes: zod.string().nullish(),
     photoUrl: zod.string().nullish(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -235,6 +246,8 @@ export const CreatePetBody = zod.object({
   weightKg: zod.number().nullish(),
   neutered: zod.boolean(),
   allergies: zod.string().nullish(),
+  continuousMedications: zod.string().nullish(),
+  isCritical: zod.boolean().optional(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
 });
@@ -255,9 +268,12 @@ export const GetPetResponse = zod
     weightKg: zod.number().nullish(),
     neutered: zod.boolean(),
     allergies: zod.string().nullish(),
+    continuousMedications: zod.string().nullish(),
+    isCritical: zod.boolean(),
     notes: zod.string().nullish(),
     photoUrl: zod.string().nullish(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -269,6 +285,7 @@ export const GetPetResponse = zod
         whatsapp: zod.string().nullish(),
         address: zod.string().nullish(),
         createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
       }),
       stats: zod.object({
         consultationsCount: zod.number(),
@@ -293,6 +310,8 @@ export const UpdatePetBody = zod.object({
   weightKg: zod.number().nullish(),
   neutered: zod.boolean().optional(),
   allergies: zod.string().nullish(),
+  continuousMedications: zod.string().nullish(),
+  isCritical: zod.boolean().optional(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
 });
@@ -308,9 +327,12 @@ export const UpdatePetResponse = zod.object({
   weightKg: zod.number().nullish(),
   neutered: zod.boolean(),
   allergies: zod.string().nullish(),
+  continuousMedications: zod.string().nullish(),
+  isCritical: zod.boolean(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 export const DeletePetParams = zod.object({
@@ -332,6 +354,7 @@ export const ListPetConsultationsResponseItem = zod.object({
   evolution: zod.string().nullish(),
   medications: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 export const ListPetConsultationsResponse = zod.array(
   ListPetConsultationsResponseItem,
@@ -344,14 +367,17 @@ export const ListPetExamsParams = zod.object({
 export const ListPetExamsResponseItem = zod.object({
   id: zod.string(),
   petId: zod.string(),
+  consultationId: zod.string().nullish(),
   title: zod.string(),
   category: zod.string(),
   status: zod.enum(["pending", "completed"]),
   fileUrl: zod.string().nullish(),
   fileType: zod.string().nullish(),
+  fileSize: zod.string().nullish(),
   notes: zod.string().nullish(),
   performedAt: zod.coerce.date(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 export const ListPetExamsResponse = zod.array(ListPetExamsResponseItem);
 
@@ -367,6 +393,7 @@ export const ListPetVaccinesResponseItem = zod.object({
   nextDueAt: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 export const ListPetVaccinesResponse = zod.array(ListPetVaccinesResponseItem);
 
@@ -381,6 +408,26 @@ export const CreateVaccineBody = zod.object({
   notes: zod.string().nullish(),
 });
 
+/**
+ * @summary Linha do tempo unificada do paciente
+ */
+export const GetPetTimelineParams = zod.object({
+  petId: zod.coerce.string(),
+});
+
+export const GetPetTimelineResponseItem = zod.object({
+  id: zod.string(),
+  type: zod.enum(["consultation", "exam", "vaccine", "record"]),
+  date: zod.coerce.date(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.string().nullish(),
+  category: zod.string().nullish(),
+  severity: zod.enum(["info", "warning", "critical"]).nullish(),
+  sourceUrl: zod.string().nullish(),
+});
+export const GetPetTimelineResponse = zod.array(GetPetTimelineResponseItem);
+
 export const ListMedicalRecordsParams = zod.object({
   petId: zod.coerce.string(),
 });
@@ -390,7 +437,10 @@ export const ListMedicalRecordsResponseItem = zod.object({
   petId: zod.string(),
   title: zod.string(),
   content: zod.string(),
+  sourceType: zod.enum(["manual", "consultation", "exam"]),
+  sourceId: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 export const ListMedicalRecordsResponse = zod.array(
   ListMedicalRecordsResponseItem,
@@ -403,6 +453,8 @@ export const CreateMedicalRecordParams = zod.object({
 export const CreateMedicalRecordBody = zod.object({
   title: zod.string().min(1),
   content: zod.string().min(1),
+  sourceType: zod.enum(["manual", "consultation", "exam"]).optional(),
+  sourceId: zod.string().nullish(),
 });
 
 export const ListConsultationsQueryParams = zod.object({
@@ -422,6 +474,7 @@ export const ListConsultationsResponseItem = zod
     evolution: zod.string().nullish(),
     medications: zod.string().nullish(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -461,6 +514,7 @@ export const GetConsultationResponse = zod
     evolution: zod.string().nullish(),
     medications: zod.string().nullish(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -475,9 +529,12 @@ export const GetConsultationResponse = zod
         weightKg: zod.number().nullish(),
         neutered: zod.boolean(),
         allergies: zod.string().nullish(),
+        continuousMedications: zod.string().nullish(),
+        isCritical: zod.boolean(),
         notes: zod.string().nullish(),
         photoUrl: zod.string().nullish(),
         createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
       }),
       tutor: zod.object({
         id: zod.string(),
@@ -487,6 +544,7 @@ export const GetConsultationResponse = zod
         whatsapp: zod.string().nullish(),
         address: zod.string().nullish(),
         createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
       }),
       anamnesis: zod
         .object({
@@ -497,6 +555,7 @@ export const GetConsultationResponse = zod
           respiratory: zod.string().nullish(),
           dermatological: zod.string().nullish(),
           general: zod.string().nullish(),
+          createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
         })
         .nullish(),
@@ -530,6 +589,7 @@ export const UpdateConsultationResponse = zod.object({
   evolution: zod.string().nullish(),
   medications: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 export const DeleteConsultationParams = zod.object({
@@ -548,6 +608,7 @@ export const GetAnamnesisResponse = zod.object({
   respiratory: zod.string().nullish(),
   dermatological: zod.string().nullish(),
   general: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
 
@@ -571,6 +632,7 @@ export const UpsertAnamnesisResponse = zod.object({
   respiratory: zod.string().nullish(),
   dermatological: zod.string().nullish(),
   general: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
 
@@ -583,14 +645,17 @@ export const ListExamsResponseItem = zod
   .object({
     id: zod.string(),
     petId: zod.string(),
+    consultationId: zod.string().nullish(),
     title: zod.string(),
     category: zod.string(),
     status: zod.enum(["pending", "completed"]),
     fileUrl: zod.string().nullish(),
     fileType: zod.string().nullish(),
+    fileSize: zod.string().nullish(),
     notes: zod.string().nullish(),
     performedAt: zod.coerce.date(),
     createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
   })
   .and(
     zod.object({
@@ -602,15 +667,66 @@ export const ListExamsResponse = zod.array(ListExamsResponseItem);
 
 export const CreateExamBody = zod.object({
   petId: zod.string(),
+  consultationId: zod.string().nullish(),
   title: zod.string().min(1),
   category: zod.string(),
   status: zod.enum(["pending", "completed"]),
   fileUrl: zod.string().nullish(),
   fileType: zod.string().nullish(),
+  fileSize: zod.string().nullish(),
   notes: zod.string().nullish(),
   performedAt: zod.coerce.date(),
 });
 
 export const DeleteExamParams = zod.object({
   examId: zod.coerce.string(),
+});
+
+/**
+ * @summary Listar membros da clínica
+ */
+export const ListTeamResponseItem = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  name: zod.string().nullish(),
+  role: zod.enum(["vet", "admin", "assistant"]),
+  createdAt: zod.coerce.date(),
+});
+export const ListTeamResponse = zod.array(ListTeamResponseItem);
+
+/**
+ * @summary Atualizar role/nome de membro (admin only)
+ */
+export const UpdateTeamMemberParams = zod.object({
+  memberId: zod.coerce.string(),
+});
+
+export const UpdateTeamMemberBody = zod.object({
+  role: zod.enum(["vet", "admin", "assistant"]).optional(),
+  name: zod.string().nullish(),
+});
+
+export const UpdateTeamMemberResponse = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  name: zod.string().nullish(),
+  role: zod.enum(["vet", "admin", "assistant"]),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Criar URL assinada para upload de laudo (com progresso)
+ */
+
+export const CreateExamSignedUploadBody = zod.object({
+  filename: zod.string().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const CreateExamSignedUploadResponse = zod.object({
+  url: zod.string(),
+  token: zod.string(),
+  path: zod.string(),
+  publicUrl: zod.string(),
+  bucket: zod.string(),
 });

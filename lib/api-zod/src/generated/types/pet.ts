@@ -18,7 +18,10 @@ export interface Pet {
   weightKg?: number | null;
   neutered: boolean;
   allergies?: string | null;
+  continuousMedications?: string | null;
+  isCritical: boolean;
   notes?: string | null;
   photoUrl?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

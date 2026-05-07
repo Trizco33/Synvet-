@@ -7,6 +7,7 @@ export const clinicsTable = pgTable("clinics", {
   phone: text("phone"),
   address: text("address"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type Clinic = typeof clinicsTable.$inferSelect;

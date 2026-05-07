@@ -11,6 +11,7 @@ import {
 import { relations } from "drizzle-orm";
 import { clinicsTable } from "./clinics";
 import { tutorsTable } from "./tutors";
+import { usersTable } from "./users";
 
 export const petsTable = pgTable(
   "pets",
@@ -30,13 +31,20 @@ export const petsTable = pgTable(
     weightKg: doublePrecision("weight_kg"),
     neutered: boolean("neutered").notNull().default(false),
     allergies: text("allergies"),
+    continuousMedications: text("continuous_medications"),
+    isCritical: boolean("is_critical").notNull().default(false),
     notes: text("notes"),
     photoUrl: text("photo_url"),
+    createdBy: uuid("created_by").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index("pets_clinic_idx").on(t.clinicId),
     index("pets_tutor_idx").on(t.tutorId),
+    index("pets_critical_idx").on(t.clinicId, t.isCritical),
   ],
 );
 

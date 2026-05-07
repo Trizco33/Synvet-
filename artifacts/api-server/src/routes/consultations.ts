@@ -8,7 +8,7 @@ import {
   anamnesesTable,
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -38,6 +38,7 @@ router.get("/consultations", async (req, res): Promise<void> => {
       evolution: consultationsTable.evolution,
       medications: consultationsTable.medications,
       createdAt: consultationsTable.createdAt,
+      updatedAt: consultationsTable.updatedAt,
       petName: petsTable.name,
       petSpecies: petsTable.species,
       tutorName: tutorsTable.name,
@@ -50,7 +51,7 @@ router.get("/consultations", async (req, res): Promise<void> => {
   res.json(schemas.ListConsultationsResponse.parse(rows));
 });
 
-router.post("/consultations", async (req, res): Promise<void> => {
+router.post("/consultations", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const parsed = schemas.CreateConsultationBody.safeParse(req.body);
   if (!parsed.success) {
@@ -69,7 +70,7 @@ router.post("/consultations", async (req, res): Promise<void> => {
   }
   const [c] = await db
     .insert(consultationsTable)
-    .values({ ...parsed.data, clinicId: user.clinicId })
+    .values({ ...parsed.data, clinicId: user.clinicId, createdBy: user.id })
     .returning();
   res.status(201).json(c);
 });
@@ -116,7 +117,7 @@ router.get("/consultations/:consultationId", async (req, res): Promise<void> => 
   );
 });
 
-router.patch("/consultations/:consultationId", async (req, res): Promise<void> => {
+router.patch("/consultations/:consultationId", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.UpdateConsultationParams.safeParse(req.params);
   const body = schemas.UpdateConsultationBody.safeParse(req.body);
@@ -126,7 +127,7 @@ router.patch("/consultations/:consultationId", async (req, res): Promise<void> =
   }
   const [c] = await db
     .update(consultationsTable)
-    .set(body.data)
+    .set({ ...body.data, updatedAt: new Date() })
     .where(
       and(
         eq(consultationsTable.id, params.data.consultationId),
@@ -141,7 +142,7 @@ router.patch("/consultations/:consultationId", async (req, res): Promise<void> =
   res.json(schemas.UpdateConsultationResponse.parse(c));
 });
 
-router.delete("/consultations/:consultationId", async (req, res): Promise<void> => {
+router.delete("/consultations/:consultationId", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.DeleteConsultationParams.safeParse(req.params);
   if (!params.success) {
@@ -231,6 +232,7 @@ router.put(
           ...body.data,
           consultationId: c.id,
           clinicId: user.clinicId,
+          createdBy: user.id,
         })
         .returning();
     }

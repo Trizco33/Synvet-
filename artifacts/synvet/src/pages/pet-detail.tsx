@@ -12,16 +12,20 @@ import {
   getListPetVaccinesQueryKey,
   useListMedicalRecords,
   useCreateMedicalRecord,
-  getListMedicalRecordsQueryKey
+  getListMedicalRecordsQueryKey,
+  useGetPetTimeline,
+  getGetPetTimelineQueryKey,
 } from "@workspace/api-client-react";
+import { ClinicalAlerts } from "@/components/clinical/clinical-alerts";
+import { ClinicalTimeline } from "@/components/clinical/clinical-timeline";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { 
-  ArrowLeft, Dog, Cat, Scale, Calendar, User, Activity, Edit, 
-  Syringe, FileText, FileSearch, CalendarDays, Plus
+  ArrowLeft, Dog, Cat, User, 
+  Syringe, FileText, FileSearch, CalendarDays, Plus, Clock
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -57,6 +61,8 @@ const updatePetSchema = z.object({
   birthDate: z.string().optional().or(z.literal("")),
   weightKg: z.coerce.number().optional().or(z.literal("")),
   neutered: z.boolean().default(false),
+  isCritical: z.boolean().default(false),
+  continuousMedications: z.string().optional().or(z.literal("")),
   allergies: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -98,6 +104,10 @@ export default function PetDetail() {
     query: { enabled: !!petId, queryKey: getListMedicalRecordsQueryKey(petId) }
   });
 
+  const { data: timeline } = useGetPetTimeline(petId, {
+    query: { enabled: !!petId, queryKey: getGetPetTimelineQueryKey(petId) }
+  });
+
   const updatePet = useUpdatePet();
   const createVaccine = useCreateVaccine();
   const createRecord = useCreateMedicalRecord();
@@ -115,6 +125,8 @@ export default function PetDetail() {
       birthDate: "",
       weightKg: undefined,
       neutered: false,
+      isCritical: false,
+      continuousMedications: "",
       allergies: "",
       notes: "",
     },
@@ -130,6 +142,8 @@ export default function PetDetail() {
         birthDate: petDetail.birthDate ? format(parseISO(petDetail.birthDate), "yyyy-MM-dd") : "",
         weightKg: petDetail.weightKg || undefined,
         neutered: petDetail.neutered || false,
+        isCritical: petDetail.isCritical || false,
+        continuousMedications: petDetail.continuousMedications || "",
         allergies: petDetail.allergies || "",
         notes: petDetail.notes || "",
       });
@@ -166,6 +180,8 @@ export default function PetDetail() {
           birthDate: values.birthDate ? new Date(values.birthDate).toISOString() : null,
           weightKg: values.weightKg ? Number(values.weightKg) : null,
           neutered: values.neutered,
+          isCritical: values.isCritical,
+          continuousMedications: values.continuousMedications || null,
           allergies: values.allergies || null,
           notes: values.notes || null,
         }
@@ -194,6 +210,8 @@ export default function PetDetail() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPetVaccinesQueryKey(petId) });
+          queryClient.invalidateQueries({ queryKey: getGetPetTimelineQueryKey(petId) });
+          queryClient.invalidateQueries({ queryKey: getGetPetQueryKey(petId) });
           toast.success("Vacina registrada");
           setIsVaccineOpen(false);
           vaccineForm.reset();
@@ -215,6 +233,8 @@ export default function PetDetail() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey(petId) });
+          queryClient.invalidateQueries({ queryKey: getGetPetTimelineQueryKey(petId) });
+          queryClient.invalidateQueries({ queryKey: getGetPetQueryKey(petId) });
           toast.success("Prontuário registrado");
           setIsRecordOpen(false);
           recordForm.reset();
@@ -262,6 +282,8 @@ export default function PetDetail() {
         </div>
       </div>
 
+      <ClinicalAlerts pet={petDetail} compact />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-secondary/30">
           <CardContent className="p-4 flex flex-col justify-center items-center text-center">
@@ -292,14 +314,27 @@ export default function PetDetail() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto p-1 mb-6 bg-card border border-border">
+        <TabsList className="grid grid-cols-4 md:grid-cols-7 h-auto p-1 mb-6 bg-card border border-border">
           <TabsTrigger value="overview" className="py-2">Visão Geral</TabsTrigger>
+          <TabsTrigger value="timeline" className="py-2"><Clock className="w-4 h-4 mr-1 hidden md:inline" />Timeline</TabsTrigger>
           <TabsTrigger value="consultations" className="py-2">Consultas</TabsTrigger>
           <TabsTrigger value="exams" className="py-2">Exames</TabsTrigger>
           <TabsTrigger value="vaccines" className="py-2">Vacinas</TabsTrigger>
           <TabsTrigger value="records" className="py-2">Prontuário</TabsTrigger>
           <TabsTrigger value="edit" className="py-2">Editar</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="timeline" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Linha do tempo clínica</CardTitle>
+              <CardDescription>Consultas, exames, vacinas e prontuário em ordem cronológica.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicalTimeline events={timeline ?? []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6 mt-0">
           <Card>
@@ -692,20 +727,47 @@ export default function PetDetail() {
                       />
                     </div>
                     
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={editForm.control}
+                        name="neutered"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Castrado</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={editForm.control}
+                        name="isCritical"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-red-500/30 p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Paciente crítico</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={editForm.control}
-                      name="neutered"
+                      name="continuousMedications"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Castrado</FormLabel>
-                          </div>
+                        <FormItem>
+                          <FormLabel>Medicações contínuas</FormLabel>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Textarea placeholder="Ex.: Insulina, anti-hipertensivo..." {...field} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />

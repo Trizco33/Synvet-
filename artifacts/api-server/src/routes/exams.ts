@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { db, examsTable, petsTable, tutorsTable } from "@workspace/db";
+import { db, examsTable, petsTable, tutorsTable, consultationsTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 import { toDateString } from "../lib/dates";
 
 const router: IRouter = Router();
@@ -21,14 +21,17 @@ router.get("/exams", async (req, res): Promise<void> => {
     .select({
       id: examsTable.id,
       petId: examsTable.petId,
+      consultationId: examsTable.consultationId,
       title: examsTable.title,
       category: examsTable.category,
       status: examsTable.status,
       fileUrl: examsTable.fileUrl,
       fileType: examsTable.fileType,
+      fileSize: examsTable.fileSize,
       notes: examsTable.notes,
       performedAt: examsTable.performedAt,
       createdAt: examsTable.createdAt,
+      updatedAt: examsTable.updatedAt,
       petName: petsTable.name,
       tutorName: tutorsTable.name,
     })
@@ -40,7 +43,7 @@ router.get("/exams", async (req, res): Promise<void> => {
   res.json(schemas.ListExamsResponse.parse(rows));
 });
 
-router.post("/exams", async (req, res): Promise<void> => {
+router.post("/exams", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const parsed = schemas.CreateExamBody.safeParse(req.body);
   if (!parsed.success) {
@@ -57,18 +60,34 @@ router.post("/exams", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Pet not found in clinic" });
     return;
   }
+  if (parsed.data.consultationId) {
+    const [c] = await db
+      .select({ id: consultationsTable.id })
+      .from(consultationsTable)
+      .where(
+        and(
+          eq(consultationsTable.id, parsed.data.consultationId),
+          eq(consultationsTable.clinicId, user.clinicId),
+        ),
+      );
+    if (!c) {
+      res.status(400).json({ error: "Consultation not found in clinic" });
+      return;
+    }
+  }
   const [exam] = await db
     .insert(examsTable)
     .values({
       ...parsed.data,
       performedAt: toDateString(parsed.data.performedAt)!,
       clinicId: user.clinicId,
+      createdBy: user.id,
     })
     .returning();
   res.status(201).json(exam);
 });
 
-router.delete("/exams/:examId", async (req, res): Promise<void> => {
+router.delete("/exams/:examId", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.DeleteExamParams.safeParse(req.params);
   if (!params.success) {

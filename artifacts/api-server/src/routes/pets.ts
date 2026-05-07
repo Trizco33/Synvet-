@@ -10,7 +10,7 @@ import {
   medicalRecordsTable,
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 import { toDateString } from "../lib/dates";
 
 const router: IRouter = Router();
@@ -47,9 +47,12 @@ router.get("/pets", async (req, res): Promise<void> => {
       weightKg: petsTable.weightKg,
       neutered: petsTable.neutered,
       allergies: petsTable.allergies,
+      continuousMedications: petsTable.continuousMedications,
+      isCritical: petsTable.isCritical,
       notes: petsTable.notes,
       photoUrl: petsTable.photoUrl,
       createdAt: petsTable.createdAt,
+      updatedAt: petsTable.updatedAt,
       tutorName: tutorsTable.name,
     })
     .from(petsTable)
@@ -59,7 +62,7 @@ router.get("/pets", async (req, res): Promise<void> => {
   res.json(schemas.ListPetsResponse.parse(rows));
 });
 
-router.post("/pets", async (req, res): Promise<void> => {
+router.post("/pets", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const parsed = schemas.CreatePetBody.safeParse(req.body);
   if (!parsed.success) {
@@ -85,6 +88,7 @@ router.post("/pets", async (req, res): Promise<void> => {
       ...parsed.data,
       birthDate: toDateString(parsed.data.birthDate) ?? null,
       clinicId: user.clinicId,
+      createdBy: user.id,
     })
     .returning();
   res.status(201).json(pet);
@@ -113,9 +117,9 @@ router.get("/pets/:petId", async (req, res): Promise<void> => {
     .where(eq(tutorsTable.id, pet.tutorId));
   const [stats] = await db
     .select({
-      consultationsCount: sql<number>`(select count(*) from ${consultationsTable} where ${consultationsTable.petId} = ${pet.id})`,
-      examsCount: sql<number>`(select count(*) from ${examsTable} where ${examsTable.petId} = ${pet.id})`,
-      vaccinesCount: sql<number>`(select count(*) from ${vaccinesTable} where ${vaccinesTable.petId} = ${pet.id})`,
+      consultationsCount: sql<number>`(select count(*)::int from ${consultationsTable} where ${consultationsTable.petId} = ${pet.id})`,
+      examsCount: sql<number>`(select count(*)::int from ${examsTable} where ${examsTable.petId} = ${pet.id})`,
+      vaccinesCount: sql<number>`(select count(*)::int from ${vaccinesTable} where ${vaccinesTable.petId} = ${pet.id})`,
       lastVisit: sql<Date | null>`(select max(${consultationsTable.scheduledAt}) from ${consultationsTable} where ${consultationsTable.petId} = ${pet.id})`,
     })
     .from(petsTable)
@@ -123,7 +127,7 @@ router.get("/pets/:petId", async (req, res): Promise<void> => {
   res.json(schemas.GetPetResponse.parse({ ...pet, tutor, stats }));
 });
 
-router.patch("/pets/:petId", async (req, res): Promise<void> => {
+router.patch("/pets/:petId", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.UpdatePetParams.safeParse(req.params);
   const body = schemas.UpdatePetBody.safeParse(req.body);
@@ -133,7 +137,11 @@ router.patch("/pets/:petId", async (req, res): Promise<void> => {
   }
   const [pet] = await db
     .update(petsTable)
-    .set({ ...body.data, birthDate: toDateString(body.data.birthDate) })
+    .set({
+      ...body.data,
+      birthDate: toDateString(body.data.birthDate),
+      updatedAt: new Date(),
+    })
     .where(
       and(eq(petsTable.id, params.data.petId), eq(petsTable.clinicId, user.clinicId)),
     )
@@ -145,7 +153,7 @@ router.patch("/pets/:petId", async (req, res): Promise<void> => {
   res.json(schemas.UpdatePetResponse.parse(pet));
 });
 
-router.delete("/pets/:petId", async (req, res): Promise<void> => {
+router.delete("/pets/:petId", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.DeletePetParams.safeParse(req.params);
   if (!params.success) {
@@ -225,7 +233,7 @@ router.get("/pets/:petId/vaccines", async (req, res): Promise<void> => {
   res.json(schemas.ListPetVaccinesResponse.parse(rows));
 });
 
-router.post("/pets/:petId/vaccines", async (req, res): Promise<void> => {
+router.post("/pets/:petId/vaccines", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.CreateVaccineParams.safeParse(req.params);
   const body = schemas.CreateVaccineBody.safeParse(req.body);
@@ -251,6 +259,7 @@ router.post("/pets/:petId/vaccines", async (req, res): Promise<void> => {
       nextDueAt: toDateString(body.data.nextDueAt) ?? null,
       petId: pet.id,
       clinicId: user.clinicId,
+      createdBy: user.id,
     })
     .returning();
   res.status(201).json(vaccine);
@@ -276,7 +285,7 @@ router.get("/pets/:petId/medical-records", async (req, res): Promise<void> => {
   res.json(schemas.ListMedicalRecordsResponse.parse(rows));
 });
 
-router.post("/pets/:petId/medical-records", async (req, res): Promise<void> => {
+router.post("/pets/:petId/medical-records", requireRole("admin", "vet"), async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.CreateMedicalRecordParams.safeParse(req.params);
   const body = schemas.CreateMedicalRecordBody.safeParse(req.body);
@@ -300,6 +309,7 @@ router.post("/pets/:petId/medical-records", async (req, res): Promise<void> => {
       ...body.data,
       petId: pet.id,
       clinicId: user.clinicId,
+      createdBy: user.id,
     })
     .returning();
   res.status(201).json(record);

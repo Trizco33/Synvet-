@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type MeResponseRole =
-  (typeof MeResponseRole)[keyof typeof MeResponseRole];
+export type TeamMemberRole =
+  (typeof TeamMemberRole)[keyof typeof TeamMemberRole];
 
-export const MeResponseRole = {
+export const TeamMemberRole = {
   vet: "vet",
   admin: "admin",
   assistant: "assistant",

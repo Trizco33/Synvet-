@@ -5,11 +5,15 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { MedicalRecordSourceType } from "./medicalRecordSourceType";
 
 export interface MedicalRecord {
   id: string;
   petId: string;
   title: string;
   content: string;
+  sourceType: MedicalRecordSourceType;
+  sourceId?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

@@ -6,6 +6,9 @@ import petsRouter from "./pets";
 import consultationsRouter from "./consultations";
 import examsRouter from "./exams";
 import dashboardRouter from "./dashboard";
+import timelineRouter from "./timeline";
+import teamRouter from "./team";
+import storageRouter from "./storage";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -16,8 +19,11 @@ router.use(authMiddleware);
 router.use(meRouter);
 router.use(tutorsRouter);
 router.use(petsRouter);
+router.use(timelineRouter);
 router.use(consultationsRouter);
 router.use(examsRouter);
 router.use(dashboardRouter);
+router.use(teamRouter);
+router.use(storageRouter);
 
 export default router;

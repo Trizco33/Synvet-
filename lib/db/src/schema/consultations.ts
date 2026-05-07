@@ -2,6 +2,7 @@ import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { clinicsTable } from "./clinics";
 import { petsTable } from "./pets";
+import { usersTable } from "./users";
 
 export const consultationsTable = pgTable(
   "consultations",
@@ -24,12 +25,16 @@ export const consultationsTable = pgTable(
     observations: text("observations"),
     evolution: text("evolution"),
     medications: text("medications"),
+    createdBy: uuid("created_by").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index("consultations_clinic_idx").on(t.clinicId),
     index("consultations_pet_idx").on(t.petId),
-    index("consultations_scheduled_idx").on(t.scheduledAt),
+    index("consultations_scheduled_idx").on(t.clinicId, t.scheduledAt),
   ],
 );
 

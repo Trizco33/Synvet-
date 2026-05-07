@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { clinicsTable } from "./clinics";
 import { consultationsTable } from "./consultations";
+import { usersTable } from "./users";
 
 export const anamnesesTable = pgTable("anamneses", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -16,6 +17,10 @@ export const anamnesesTable = pgTable("anamneses", {
   respiratory: text("respiratory"),
   dermatological: text("dermatological"),
   general: text("general"),
+  createdBy: uuid("created_by").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -5,10 +5,13 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateMedicalRecordBodySourceType } from "./createMedicalRecordBodySourceType";
 
 export interface CreateMedicalRecordBody {
   /** @minLength 1 */
   title: string;
   /** @minLength 1 */
   content: string;
+  sourceType?: CreateMedicalRecordBodySourceType;
+  sourceId?: string | null;
 }

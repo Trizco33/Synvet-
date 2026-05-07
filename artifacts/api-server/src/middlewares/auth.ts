@@ -140,3 +140,18 @@ export function requireAuth(req: Request): User {
   if (!req.auth) throw new Error("Auth context missing");
   return req.auth.user;
 }
+
+export function requireRole(...roles: Array<User["role"]>) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = req.auth?.user;
+    if (!user) {
+      res.status(401).json({ error: "Unauthenticated" });
+      return;
+    }
+    if (!roles.includes(user.role)) {
+      res.status(403).json({ error: "Forbidden: requires role " + roles.join("|") });
+      return;
+    }
+    next();
+  };
+}

@@ -13,4 +13,5 @@ export interface Clinic {
   phone?: string | null;
   address?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

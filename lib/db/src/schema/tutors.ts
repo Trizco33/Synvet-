@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
 import { clinicsTable } from "./clinics";
+import { usersTable } from "./users";
 
 export const tutorsTable = pgTable(
   "tutors",
@@ -13,7 +14,11 @@ export const tutorsTable = pgTable(
     phone: text("phone"),
     whatsapp: text("whatsapp"),
     address: text("address"),
+    createdBy: uuid("created_by").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("tutors_clinic_idx").on(t.clinicId)],
 );

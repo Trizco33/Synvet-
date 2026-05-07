@@ -43,11 +43,16 @@ import type {
   PetDetail,
   PetWithTutor,
   ScheduledConsultation,
+  SignedUploadBody,
+  SignedUploadResponse,
+  TeamMember,
+  TimelineEvent,
   Tutor,
   TutorWithPets,
   UpdateClinicBody,
   UpdateConsultationBody,
   UpdatePetBody,
+  UpdateTeamMemberBody,
   UpdateTutorBody,
   UpsertAnamnesisBody,
   Vaccine,
@@ -1723,6 +1728,93 @@ export const useCreateVaccine = <
   return useMutation(getCreateVaccineMutationOptions(options));
 };
 
+/**
+ * @summary Linha do tempo unificada do paciente
+ */
+export const getGetPetTimelineUrl = (petId: string) => {
+  return `/api/pets/${petId}/timeline`;
+};
+
+export const getPetTimeline = async (
+  petId: string,
+  options?: RequestInit,
+): Promise<TimelineEvent[]> => {
+  return customFetch<TimelineEvent[]>(getGetPetTimelineUrl(petId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPetTimelineQueryKey = (petId: string) => {
+  return [`/api/pets/${petId}/timeline`] as const;
+};
+
+export const getGetPetTimelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPetTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPetTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPetTimelineQueryKey(petId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPetTimeline>>> = ({
+    signal,
+  }) => getPetTimeline(petId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!petId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPetTimeline>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPetTimelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPetTimeline>>
+>;
+export type GetPetTimelineQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Linha do tempo unificada do paciente
+ */
+
+export function useGetPetTimeline<
+  TData = Awaited<ReturnType<typeof getPetTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPetTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPetTimelineQueryOptions(petId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export const getListMedicalRecordsUrl = (petId: string) => {
   return `/api/pets/${petId}/medical-records`;
 };
@@ -2703,4 +2795,244 @@ export const useDeleteExam = <
   TContext
 > => {
   return useMutation(getDeleteExamMutationOptions(options));
+};
+
+/**
+ * @summary Listar membros da clínica
+ */
+export const getListTeamUrl = () => {
+  return `/api/clinic/team`;
+};
+
+export const listTeam = async (
+  options?: RequestInit,
+): Promise<TeamMember[]> => {
+  return customFetch<TeamMember[]>(getListTeamUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTeamQueryKey = () => {
+  return [`/api/clinic/team`] as const;
+};
+
+export const getListTeamQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTeam>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listTeam>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListTeamQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeam>>> = ({
+    signal,
+  }) => listTeam({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTeam>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTeamQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTeam>>
+>;
+export type ListTeamQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Listar membros da clínica
+ */
+
+export function useListTeam<
+  TData = Awaited<ReturnType<typeof listTeam>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listTeam>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTeamQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Atualizar role/nome de membro (admin only)
+ */
+export const getUpdateTeamMemberUrl = (memberId: string) => {
+  return `/api/clinic/team/${memberId}`;
+};
+
+export const updateTeamMember = async (
+  memberId: string,
+  updateTeamMemberBody: UpdateTeamMemberBody,
+  options?: RequestInit,
+): Promise<TeamMember> => {
+  return customFetch<TeamMember>(getUpdateTeamMemberUrl(memberId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateTeamMemberBody),
+  });
+};
+
+export const getUpdateTeamMemberMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTeamMember>>,
+    TError,
+    { memberId: string; data: BodyType<UpdateTeamMemberBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTeamMember>>,
+  TError,
+  { memberId: string; data: BodyType<UpdateTeamMemberBody> },
+  TContext
+> => {
+  const mutationKey = ["updateTeamMember"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTeamMember>>,
+    { memberId: string; data: BodyType<UpdateTeamMemberBody> }
+  > = (props) => {
+    const { memberId, data } = props ?? {};
+
+    return updateTeamMember(memberId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTeamMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTeamMember>>
+>;
+export type UpdateTeamMemberMutationBody = BodyType<UpdateTeamMemberBody>;
+export type UpdateTeamMemberMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Atualizar role/nome de membro (admin only)
+ */
+export const useUpdateTeamMember = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTeamMember>>,
+    TError,
+    { memberId: string; data: BodyType<UpdateTeamMemberBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTeamMember>>,
+  TError,
+  { memberId: string; data: BodyType<UpdateTeamMemberBody> },
+  TContext
+> => {
+  return useMutation(getUpdateTeamMemberMutationOptions(options));
+};
+
+/**
+ * @summary Criar URL assinada para upload de laudo (com progresso)
+ */
+export const getCreateExamSignedUploadUrl = () => {
+  return `/api/storage/exams/signed-upload`;
+};
+
+export const createExamSignedUpload = async (
+  signedUploadBody: SignedUploadBody,
+  options?: RequestInit,
+): Promise<SignedUploadResponse> => {
+  return customFetch<SignedUploadResponse>(getCreateExamSignedUploadUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(signedUploadBody),
+  });
+};
+
+export const getCreateExamSignedUploadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamSignedUpload>>,
+    TError,
+    { data: BodyType<SignedUploadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createExamSignedUpload>>,
+  TError,
+  { data: BodyType<SignedUploadBody> },
+  TContext
+> => {
+  const mutationKey = ["createExamSignedUpload"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createExamSignedUpload>>,
+    { data: BodyType<SignedUploadBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createExamSignedUpload(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateExamSignedUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createExamSignedUpload>>
+>;
+export type CreateExamSignedUploadMutationBody = BodyType<SignedUploadBody>;
+export type CreateExamSignedUploadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Criar URL assinada para upload de laudo (com progresso)
+ */
+export const useCreateExamSignedUpload = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamSignedUpload>>,
+    TError,
+    { data: BodyType<SignedUploadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createExamSignedUpload>>,
+  TError,
+  { data: BodyType<SignedUploadBody> },
+  TContext
+> => {
+  return useMutation(getCreateExamSignedUploadMutationOptions(options));
 };

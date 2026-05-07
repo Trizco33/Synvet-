@@ -4,18 +4,17 @@ import {
   getListExamsQueryKey,
   useCreateExam,
   useListPets,
-  useGetMe,
 } from "@workspace/api-client-react";
-import { uploadExamFile } from "@/lib/storage";
+import { FileUploader } from "@/components/clinical/file-uploader";
+import { type UploadedFile } from "@/lib/storage";
 import { supabaseConfigured } from "@/lib/supabase";
-import { Upload, FileText, ImageIcon } from "lucide-react";
+import { FileText, ImageIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Plus, TestTube } from "lucide-react";
-import { useRef } from "react";
 import { format, parseISO } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -71,13 +70,10 @@ const newExamSchema = z.object({
 
 export default function Exames() {
   const [isOpen, setIsOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<{ url: string; type: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const queryClient = useQueryClient();
   const { data: exams, isLoading } = useListExams({});
   const { data: pets } = useListPets({});
-  const { data: me } = useGetMe();
   const createExam = useCreateExam();
 
   const form = useForm<z.infer<typeof newExamSchema>>({
@@ -93,22 +89,6 @@ export default function Exames() {
     },
   });
 
-  const handleFile = async (file: File | undefined) => {
-    if (!file || !me?.clinicId) return;
-    setUploading(true);
-    try {
-      const result = await uploadExamFile(file, me.clinicId);
-      setUploadedFile(result);
-      form.setValue("fileUrl", result.url);
-      toast.success("Arquivo enviado");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha no upload";
-      toast.error(message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const onSubmit = (values: z.infer<typeof newExamSchema>) => {
     createExam.mutate(
       {
@@ -120,6 +100,7 @@ export default function Exames() {
           performedAt: new Date(values.performedAt).toISOString(),
           fileUrl: uploadedFile?.url || values.fileUrl || null,
           fileType: uploadedFile?.type || null,
+          fileSize: uploadedFile?.size != null ? String(uploadedFile.size) : null,
           notes: values.notes || null,
         },
       },
@@ -137,7 +118,6 @@ export default function Exames() {
             notes: "",
           });
           setUploadedFile(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
           setIsOpen(false);
         },
         onError: () => toast.error("Erro ao registrar exame"),
@@ -269,55 +249,33 @@ export default function Exames() {
                 </div>
                 <div className="space-y-2">
                   <FormLabel>Laudo (PDF ou imagem)</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="hidden"
-                      onChange={(e) => handleFile(e.target.files?.[0])}
-                      data-testid="input-exam-file"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      data-testid="button-upload-exam-file"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? "Enviando..." : uploadedFile ? "Trocar arquivo" : "Enviar arquivo"}
-                    </Button>
-                    {uploadedFile && (
-                      <a
-                        href={uploadedFile.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-primary hover:underline truncate"
-                      >
-                        Ver arquivo enviado
-                      </a>
-                    )}
-                  </div>
-                  {!supabaseConfigured && (
-                    <p className="text-xs text-muted-foreground">
-                      Em modo demo o upload é desabilitado — informe uma URL pública abaixo.
-                    </p>
-                  )}
+                  <FileUploader
+                    current={uploadedFile}
+                    onUploaded={(f) => {
+                      setUploadedFile(f);
+                      form.setValue("fileUrl", f.url);
+                    }}
+                    onCleared={() => {
+                      setUploadedFile(null);
+                      form.setValue("fileUrl", "");
+                    }}
+                  />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="fileUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ou URL pública do laudo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!supabaseConfigured && (
+                  <FormField
+                    control={form.control}
+                    name="fileUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ou URL pública do laudo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="notes"

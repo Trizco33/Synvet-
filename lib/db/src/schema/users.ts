@@ -2,6 +2,9 @@ import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { clinicsTable } from "./clinics";
 
+export const USER_ROLES = ["admin", "vet", "assistant"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
 export const usersTable = pgTable(
   "users",
   {
@@ -12,8 +15,9 @@ export const usersTable = pgTable(
       .references(() => clinicsTable.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
     name: text("name"),
-    role: text("role", { enum: ["vet", "admin"] }).notNull().default("vet"),
+    role: text("role", { enum: USER_ROLES }).notNull().default("vet"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("users_clinic_idx").on(t.clinicId)],
 );

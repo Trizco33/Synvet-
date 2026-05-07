@@ -18,4 +18,5 @@ export interface Consultation {
   evolution?: string | null;
   medications?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

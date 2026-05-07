@@ -26,6 +26,10 @@ tags:
     description: Vacinas
   - name: clinic
     description: Clínica e configurações
+  - name: team
+    description: Equipe e permissões
+  - name: storage
+    description: Upload e armazenamento de arquivos
 paths:
   /healthz:
     get:
@@ -330,6 +334,25 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Vaccine" }
 
+  /pets/{petId}/timeline:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getPetTimeline
+      tags: [pets]
+      summary: Linha do tempo unificada do paciente
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TimelineEvent" }
+
   /pets/{petId}/medical-records:
     parameters:
       - in: path
@@ -509,6 +532,59 @@ paths:
         "204":
           description: No Content
 
+  /clinic/team:
+    get:
+      operationId: listTeam
+      tags: [team]
+      summary: Listar membros da clínica
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TeamMember" }
+
+  /clinic/team/{memberId}:
+    parameters:
+      - in: path
+        name: memberId
+        required: true
+        schema: { type: string }
+    patch:
+      operationId: updateTeamMember
+      tags: [team]
+      summary: Atualizar role/nome de membro (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateTeamMemberBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeamMember" }
+
+  /storage/exams/signed-upload:
+    post:
+      operationId: createExamSignedUpload
+      tags: [storage]
+      summary: Criar URL assinada para upload de laudo (com progresso)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SignedUploadBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignedUploadResponse" }
+
 components:
   schemas:
     HealthStatus:
@@ -524,7 +600,7 @@ components:
         email: { type: string }
         name: { type: string, nullable: true }
         clinicId: { type: string }
-        role: { type: string, enum: [vet, admin] }
+        role: { type: string, enum: [vet, admin, assistant] }
       required: [userId, email, clinicId, role]
 
     Clinic:
@@ -536,7 +612,8 @@ components:
         phone: { type: string, nullable: true }
         address: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, name, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, createdAt, updatedAt]
 
     UpdateClinicBody:
       type: object
@@ -590,7 +667,8 @@ components:
         whatsapp: { type: string, nullable: true }
         address: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, name, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, createdAt, updatedAt]
 
     TutorWithPets:
       allOf:
@@ -634,10 +712,13 @@ components:
         weightKg: { type: number, nullable: true }
         neutered: { type: boolean }
         allergies: { type: string, nullable: true }
+        continuousMedications: { type: string, nullable: true }
+        isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, tutorId, name, species, sex, neutered, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, tutorId, name, species, sex, neutered, isCritical, createdAt, updatedAt]
 
     PetWithTutor:
       allOf:
@@ -675,6 +756,8 @@ components:
         weightKg: { type: number, nullable: true }
         neutered: { type: boolean }
         allergies: { type: string, nullable: true }
+        continuousMedications: { type: string, nullable: true }
+        isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
       required: [tutorId, name, species, sex, neutered]
@@ -691,6 +774,8 @@ components:
         weightKg: { type: number, nullable: true }
         neutered: { type: boolean }
         allergies: { type: string, nullable: true }
+        continuousMedications: { type: string, nullable: true }
+        isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
 
@@ -707,7 +792,8 @@ components:
         evolution: { type: string, nullable: true }
         medications: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, petId, scheduledAt, status, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, petId, scheduledAt, status, createdAt, updatedAt]
 
     ConsultationWithPet:
       allOf:
@@ -763,8 +849,9 @@ components:
         respiratory: { type: string, nullable: true }
         dermatological: { type: string, nullable: true }
         general: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, consultationId, updatedAt]
+      required: [id, consultationId, createdAt, updatedAt]
 
     UpsertAnamnesisBody:
       type: object
@@ -780,15 +867,18 @@ components:
       properties:
         id: { type: string }
         petId: { type: string }
+        consultationId: { type: string, nullable: true }
         title: { type: string }
         category: { type: string }
         status: { type: string, enum: [pending, completed] }
         fileUrl: { type: string, nullable: true }
         fileType: { type: string, nullable: true }
+        fileSize: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         performedAt: { type: string, format: date }
         createdAt: { type: string, format: date-time }
-      required: [id, petId, title, category, status, performedAt, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, petId, title, category, status, performedAt, createdAt, updatedAt]
 
     ExamWithPet:
       allOf:
@@ -803,11 +893,13 @@ components:
       type: object
       properties:
         petId: { type: string }
+        consultationId: { type: string, nullable: true }
         title: { type: string, minLength: 1 }
         category: { type: string }
         status: { type: string, enum: [pending, completed] }
         fileUrl: { type: string, nullable: true }
         fileType: { type: string, nullable: true }
+        fileSize: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         performedAt: { type: string, format: date }
       required: [petId, title, category, status, performedAt]
@@ -822,7 +914,8 @@ components:
         nextDueAt: { type: string, format: date, nullable: true }
         notes: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, petId, name, appliedAt, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, petId, name, appliedAt, createdAt, updatedAt]
 
     CreateVaccineBody:
       type: object
@@ -840,12 +933,64 @@ components:
         petId: { type: string }
         title: { type: string }
         content: { type: string }
+        sourceType: { type: string, enum: [manual, consultation, exam] }
+        sourceId: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, petId, title, content, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, petId, title, content, sourceType, createdAt, updatedAt]
 
     CreateMedicalRecordBody:
       type: object
       properties:
         title: { type: string, minLength: 1 }
         content: { type: string, minLength: 1 }
+        sourceType: { type: string, enum: [manual, consultation, exam] }
+        sourceId: { type: string, nullable: true }
       required: [title, content]
+
+    TimelineEvent:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [consultation, exam, vaccine, record] }
+        date: { type: string, format: date-time }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        severity: { type: string, enum: [info, warning, critical], nullable: true }
+        sourceUrl: { type: string, nullable: true }
+      required: [id, type, date, title]
+
+    TeamMember:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string, nullable: true }
+        role: { type: string, enum: [vet, admin, assistant] }
+        createdAt: { type: string, format: date-time }
+      required: [id, email, role, createdAt]
+
+    UpdateTeamMemberBody:
+      type: object
+      properties:
+        role: { type: string, enum: [vet, admin, assistant] }
+        name: { type: string, nullable: true }
+
+    SignedUploadResponse:
+      type: object
+      properties:
+        url: { type: string }
+        token: { type: string }
+        path: { type: string }
+        publicUrl: { type: string }
+        bucket: { type: string }
+      required: [url, token, path, publicUrl, bucket]
+
+    SignedUploadBody:
+      type: object
+      properties:
+        filename: { type: string, minLength: 1 }
+        contentType: { type: string, minLength: 1 }
+      required: [filename, contentType]

@@ -31,20 +31,39 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
 });
 
+const signUpSchema = z.object({
+  name: z.string().min(2, { message: "Informe seu nome completo" }),
+  clinicName: z.string().min(2, { message: "Informe o nome da clínica" }),
+  email: z.string().email({ message: "E-mail inválido" }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
+  passwordConfirm: z.string().min(6, { message: "Confirme a senha" }),
+}).refine((d) => d.password === d.passwordConfirm, {
+  message: "As senhas não coincidem",
+  path: ["passwordConfirm"],
+});
+
 const recoverSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }),
 });
 
+type Tab = "login" | "signup";
+
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { signInWithPassword, resetPassword, configured } = useAuth();
+  const { signInWithPassword, signUp, resetPassword, configured } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [recoverOpen, setRecoverOpen] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [tab, setTab] = useState<Tab>("login");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
+  });
+
+  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { name: "", clinicName: "", email: "", password: "", passwordConfirm: "" },
   });
 
   const recoverForm = useForm<z.infer<typeof recoverSchema>>({
@@ -61,6 +80,21 @@ export default function Login() {
     } else {
       toast.success("Login realizado com sucesso");
       setLocation("/");
+    }
+  };
+
+  const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
+    setIsLoading(true);
+    const { error } = await signUp(values.email, values.password, values.name, values.clinicName);
+    setIsLoading(false);
+    if (error) {
+      toast.error("Erro ao criar conta", { description: error });
+    } else {
+      toast.success("Conta criada com sucesso", {
+        description: "Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+      });
+      setTab("login");
+      form.setValue("email", values.email);
     }
   };
 
@@ -85,7 +119,7 @@ export default function Login() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
       <Card className="w-full max-w-md border-border/50 shadow-2xl bg-card/80 backdrop-blur-sm z-10">
-        <CardHeader className="space-y-3 text-center pb-8 pt-10">
+        <CardHeader className="space-y-3 text-center pb-6 pt-10">
           <img src={logoUrl} alt="Synvet" className="mx-auto h-16 w-auto mb-2" />
           <CardDescription className="text-base">
             O sistema operacional da sua clínica veterinária.
@@ -109,54 +143,162 @@ export default function Login() {
             </div>
           )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu@email.com" {...field} data-testid="input-email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Senha</FormLabel>
-                      <button
-                        type="button"
-                        onClick={() => setRecoverOpen(true)}
-                        className="text-xs text-primary hover:underline"
-                        data-testid="button-forgot-password"
-                      >
-                        Esqueci minha senha
-                      </button>
-                    </div>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full h-11 text-base font-medium"
-                disabled={isLoading}
-                data-testid="button-submit-login"
+          {configured && (
+            <div className="flex rounded-lg border border-border/50 p-1 mb-6 bg-muted/30">
+              <button
+                type="button"
+                onClick={() => setTab("login")}
+                className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors ${
+                  tab === "login"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {isLoading ? "Entrando..." : "Entrar na Clínica"}
-              </Button>
-            </form>
-          </Form>
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("signup")}
+                className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors ${
+                  tab === "signup"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
+
+          {tab === "login" && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com" {...field} data-testid="input-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Senha</FormLabel>
+                        <button
+                          type="button"
+                          onClick={() => setRecoverOpen(true)}
+                          className="text-xs text-primary hover:underline"
+                          data-testid="button-forgot-password"
+                        >
+                          Esqueci minha senha
+                        </button>
+                      </div>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-base font-medium"
+                  disabled={isLoading}
+                  data-testid="button-submit-login"
+                >
+                  {isLoading ? "Entrando..." : "Entrar na Clínica"}
+                </Button>
+              </form>
+            </Form>
+          )}
+
+          {tab === "signup" && (
+            <Form {...signUpForm}>
+              <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+                <FormField
+                  control={signUpForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seu nome completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Dr. João Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={signUpForm.control}
+                  name="clinicName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da clínica</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Clínica Veterinária Exemplo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={signUpForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={signUpForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={signUpForm.control}
+                  name="passwordConfirm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-base font-medium"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Criando conta..." : "Criar conta"}
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
 

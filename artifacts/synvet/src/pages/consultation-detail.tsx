@@ -17,6 +17,7 @@ import {
   ArrowLeft, CalendarDays, Clock, User, Dog, Cat, FileText, Activity, Sparkles, Loader2
 } from "lucide-react";
 import { AIAssistantDrawer, AITriggerButton } from "@/components/ai/ai-assistant-drawer";
+import { useSetCopilotContext } from "@/components/ai/copilot/copilot-provider";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,6 +39,12 @@ export default function ConsultationDetail() {
   const { data: anamnesis, isLoading: isLoadingAnamnesis } = useGetAnamnesis(consultationId, {
     query: { enabled: !!consultationId, queryKey: getGetAnamnesisQueryKey(consultationId) }
   });
+
+  useSetCopilotContext(
+    consultation?.petId
+      ? { petId: consultation.petId, consultationId, label: "Consulta" }
+      : null,
+  );
 
   const updateConsultation = useUpdateConsultation();
   const upsertAnamnesis = useUpsertAnamnesis();

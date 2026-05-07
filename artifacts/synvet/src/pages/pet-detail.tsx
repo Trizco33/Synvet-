@@ -19,6 +19,7 @@ import {
   aiDetectClinicalPatterns,
 } from "@workspace/api-client-react";
 import { AIAssistantDrawer, AITriggerButton } from "@/components/ai/ai-assistant-drawer";
+import { useSetCopilotContext } from "@/components/ai/copilot/copilot-provider";
 import { ClinicalAlerts } from "@/components/clinical/clinical-alerts";
 import { ClinicalTimeline } from "@/components/clinical/clinical-timeline";
 import { useQueryClient } from "@tanstack/react-query";
@@ -86,6 +87,8 @@ export default function PetDetail() {
   const [, params] = useRoute("/pacientes/:petId");
   const petId = params?.petId || "";
   const queryClient = useQueryClient();
+
+  useSetCopilotContext(petId ? { petId, consultationId: null, label: "Paciente" } : null);
 
   const { data: petDetail, isLoading } = useGetPet(petId, {
     query: { enabled: !!petId, queryKey: getGetPetQueryKey(petId) }

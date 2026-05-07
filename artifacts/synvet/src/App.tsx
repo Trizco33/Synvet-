@@ -6,6 +6,9 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect, type ComponentType } from "react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { CopilotProvider } from "@/components/ai/copilot/copilot-provider";
+import { CopilotFab } from "@/components/ai/copilot/copilot-fab";
+import { CopilotDrawer } from "@/components/ai/copilot/copilot-drawer";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Tutores from "@/pages/tutores";
@@ -46,6 +49,8 @@ function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   return (
     <AppLayout>
       <Component />
+      <CopilotFab />
+      <CopilotDrawer />
     </AppLayout>
   );
 }
@@ -93,9 +98,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
+          <CopilotProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </CopilotProvider>
         </AuthProvider>
         <Toaster />
       </TooltipProvider>

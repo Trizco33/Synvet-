@@ -11,6 +11,7 @@ import timelineRouter from "./timeline";
 import teamRouter from "./team";
 import storageRouter from "./storage";
 import aiRouter from "./ai";
+import copilotRouter from "./copilot";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -29,5 +30,6 @@ router.use(dashboardRouter);
 router.use(teamRouter);
 router.use(storageRouter);
 router.use(aiRouter);
+router.use(copilotRouter);
 
 export default router;

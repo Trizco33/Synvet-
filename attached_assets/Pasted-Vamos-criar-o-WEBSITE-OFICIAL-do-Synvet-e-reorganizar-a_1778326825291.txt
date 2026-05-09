@@ -1,0 +1,417 @@
+Vamos criar o WEBSITE OFICIAL do Synvet e reorganizar a arquitetura pública/autenticada da plataforma de forma profissional e escalável.
+
+IMPORTANTE:
+Hoje o Synvet é:
+
+um Web App/PWA
+
+e isso deve continuar.
+
+NÃO criar aplicativo nativo agora.
+NÃO criar React Native.
+NÃO criar Flutter.
+
+Quero:
+
+arquitetura web-first premium
+
+preparada para expansão futura.
+
+==================================================
+
+OBJETIVO
+
+==================================================
+
+Transformar:
+
+synvet.app.br
+
+em:
+
+- site institucional premium
+- landing page SaaS moderna
+- portal comercial do Synvet
+- entrada principal da plataforma
+
+Separando claramente:
+
+- experiência pública
+- experiência autenticada
+
+==================================================
+
+ARQUITETURA DE ROTAS
+
+==================================================
+
+Estruturar assim:
+
+SITE / LANDING:
+
+synvet.app.br
+
+LOGIN:
+
+synvet.app.br/login
+
+APP AUTENTICADO:
+
+synvet.app.br/app
+
+ou:
+
+synvet.app.br/dashboard
+
+ADMIN INTERNO:
+
+synvet.app.br/admin
+
+Preparar arquitetura para futuramente:
+
+- subdomínios
+- microsserviços
+- apps móveis
+- APIs públicas
+- portal tutor
+
+SEM implementar ainda.
+
+==================================================
+
+VISÃO DE PRODUTO
+
+==================================================
+
+O Synvet NÃO deve parecer:
+
+- ERP antigo
+- sistema veterinário genérico
+- software ultrapassado
+
+Quero sensação de:
+
+startup healthtech premium.
+
+Inspirado visualmente em:
+
+- Vercel
+- Linear
+- Lovable
+- Notion
+- Raycast
+
+==================================================
+
+DESIGN / EXPERIÊNCIA
+
+==================================================
+
+Quero:
+
+- dark mode premium
+- visual extremamente moderno
+- muito respiro visual
+- tipografia sofisticada
+- gradientes suaves
+- glow sutil
+- animações elegantes
+- microinterações
+- UX extremamente fluida
+
+O site deve transmitir:
+
+- inovação
+- confiança
+- inteligência
+- simplicidade
+- velocidade
+- tecnologia premium
+
+==================================================
+
+IDENTIDADE VISUAL
+
+==================================================
+
+Usar branding oficial:
+
+- “Syn” branco
+- “vet” roxo com degradê
+- estética tecnológica premium
+
+Paleta:
+
+- preto profundo
+- roxo elegante
+- branco suave
+- detalhes glow discretos
+
+==================================================
+
+HERO SECTION
+
+==================================================
+
+Criar hero extremamente forte.
+
+Headline moderna e impactante.
+
+Direção:
+
+- “A nova geração de software veterinário.”
+- “Menos burocracia. Mais medicina.”
+- “O sistema veterinário inteligente para clínicas modernas.”
+
+Subheadline:
+mostrar:
+
+- IA assistiva
+- prontuários inteligentes
+- timeline clínica
+- automações
+- experiência mobile
+- WhatsApp integrado
+- organização clínica moderna
+
+Adicionar:
+
+- CTA principal
+- botão “Solicitar acesso”
+- botão “Ver demonstração”
+
+==================================================
+
+MOSTRAR O PRODUTO REAL
+
+==================================================
+
+NÃO usar:
+
+- mockups falsos
+- imagens genéricas
+- stock exagerado
+
+Usar:
+
+- screenshots reais do Synvet
+- telas reais
+- dashboard real
+- timeline real
+- IA Copilot real
+- mobile real
+
+==================================================
+
+SEÇÕES DO SITE
+
+==================================================
+
+1. HERO
+
+2. BENEFÍCIOS
+
+- economia de tempo
+- organização clínica
+- IA assistiva
+- automação
+- experiência premium
+
+3. IA COPILOT
+
+Mostrar:
+
+- pesquisa veterinária
+- copiloto contextual
+- organização inteligente
+- resumo clínico
+
+4. TIMELINE CLÍNICA
+
+Mostrar diferencial da timeline integrada.
+
+5. MOBILE EXPERIENCE
+
+Mostrar:
+
+- PWA instalável
+- uso em celular/tablet
+- experiência fluida
+
+6. AGENDAMENTO + WHATSAPP
+
+Mostrar:
+
+- lembretes automáticos
+- confirmação de consultas
+- automações
+- comunicação com tutores
+
+7. SEGURANÇA
+
+Mostrar:
+
+- isolamento por clínica
+- auditoria
+- armazenamento seguro
+- multi-tenancy
+
+8. PLANOS
+
+Estruturar:
+
+- Starter
+- Pro
+- Clinic
+
+Preparar arquitetura para billing futuro.
+
+9. CTA FINAL
+
+Muito forte emocionalmente e profissionalmente.
+
+==================================================
+
+RESPONSIVIDADE
+
+==================================================
+
+Experiência impecável:
+
+- desktop
+- tablet
+- mobile
+
+Mobile-first real.
+
+==================================================
+
+PERFORMANCE
+
+==================================================
+
+Quero:
+
+- carregamento extremamente rápido
+- SEO forte
+- Lighthouse alto
+- otimização agressiva
+- imagens otimizadas
+- animações leves
+
+==================================================
+
+TECNOLOGIA
+
+==================================================
+
+Frontend:
+
+- React
+- Tailwind
+- Framer Motion
+- design system consistente
+
+Estruturar para:
+
+- expansão futura
+- páginas futuras
+- portal tutor
+- billing
+- onboarding
+- documentação
+- central de ajuda
+
+==================================================
+
+CONVERSÃO
+
+==================================================
+
+Adicionar:
+
+- formulário de interesse
+- onboarding beta
+- CTA recorrente
+- captura de leads
+
+Preparar:
+
+- integração futura com pagamentos
+- criação automática de clínica
+- assinatura SaaS
+- trial
+
+==================================================
+
+IMPORTANTE
+
+==================================================
+
+Hoje:
+o Synvet é Web App/PWA.
+
+A arquitetura deve ficar pronta para futuramente:
+
+- empacotamento mobile
+- Capacitor
+- apps nativos
+- publicação em lojas
+
+SEM necessidade de reescrever tudo.
+
+==================================================
+
+COPYWRITING
+
+==================================================
+
+A copy deve:
+
+- vender transformação
+- vender tempo
+- vender organização
+- vender inteligência
+- vender modernidade
+
+Tom:
+
+- sofisticado
+- tecnológico
+- elegante
+- profissional
+
+NÃO parecer:
+
+- marketing exagerado
+- promessa milagrosa
+- propaganda barata
+
+==================================================
+
+QUALIDADE ESPERADA
+
+==================================================
+
+Quero:
+
+- nível visual Vercel/Linear/Lovable
+- sensação wow
+- branding forte
+- UX impecável
+- percepção premium real
+- aparência de startup milionária
+
+==================================================
+
+ENTREGA
+
+==================================================
+
+Ao finalizar:
+
+1. explicar arquitetura pública/autenticada
+2. mostrar estratégia de conversão
+3. mostrar estrutura futura escalável
+4. explicar preparação para expansão mobile
+5. mostrar responsividade e performance

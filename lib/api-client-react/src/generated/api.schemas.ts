@@ -622,6 +622,245 @@ export interface AiOrganizeTextBody {
   petContext?: AiOrganizeTextBodyPetContext;
 }
 
+export type CommsChannelKind =
+  (typeof CommsChannelKind)[keyof typeof CommsChannelKind];
+
+export const CommsChannelKind = {
+  whatsapp_qr: "whatsapp_qr",
+  whatsapp_official: "whatsapp_official",
+  email: "email",
+  sms: "sms",
+  push: "push",
+} as const;
+
+export type CommsChannelStatus =
+  (typeof CommsChannelStatus)[keyof typeof CommsChannelStatus];
+
+export const CommsChannelStatus = {
+  disconnected: "disconnected",
+  connecting: "connecting",
+  connected: "connected",
+  error: "error",
+} as const;
+
+export type CommsChannelMeta = { [key: string]: unknown };
+
+export interface CommsChannel {
+  id: string;
+  clinicId: string;
+  kind: CommsChannelKind;
+  provider: string;
+  status: CommsChannelStatus;
+  phoneNumber?: string | null;
+  displayName?: string | null;
+  externalId?: string | null;
+  lastConnectedAt?: string | null;
+  lastError?: string | null;
+  meta: CommsChannelMeta;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListCommsChannelsResponse {
+  items: CommsChannel[];
+}
+
+export type CreateCommsChannelBodyKind =
+  (typeof CreateCommsChannelBodyKind)[keyof typeof CreateCommsChannelBodyKind];
+
+export const CreateCommsChannelBodyKind = {
+  whatsapp_qr: "whatsapp_qr",
+  whatsapp_official: "whatsapp_official",
+  email: "email",
+  sms: "sms",
+  push: "push",
+} as const;
+
+export interface CreateCommsChannelBody {
+  kind: CreateCommsChannelBodyKind;
+  provider?: string;
+  displayName?: string | null;
+  phoneNumber?: string | null;
+}
+
+export interface UpdateCommsChannelBody {
+  displayName?: string | null;
+  phoneNumber?: string | null;
+  provider?: string;
+}
+
+export interface CommsChannelQrResponse {
+  channel: CommsChannel;
+  qrString?: string | null;
+  expiresAt?: string | null;
+  message?: string | null;
+}
+
+export interface CommsTemplate {
+  id: string;
+  clinicId: string;
+  slug: string;
+  name: string;
+  channel: string;
+  category: string;
+  body: string;
+  variables: string[];
+  isSystem: boolean;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListCommsTemplatesResponse {
+  items: CommsTemplate[];
+}
+
+export interface CreateCommsTemplateBody {
+  /**
+   * @minLength 2
+   * @maxLength 64
+   */
+  slug: string;
+  /**
+   * @minLength 2
+   * @maxLength 120
+   */
+  name: string;
+  channel?: string;
+  category?: string;
+  /**
+   * @minLength 2
+   * @maxLength 4000
+   */
+  body: string;
+  variables?: string[];
+  enabled?: boolean;
+}
+
+export interface UpdateCommsTemplateBody {
+  name?: string;
+  channel?: string;
+  category?: string;
+  body?: string;
+  variables?: string[];
+  enabled?: boolean;
+}
+
+export type CommsAutomationConfig = { [key: string]: unknown };
+
+export interface CommsAutomation {
+  id: string;
+  clinicId: string;
+  name: string;
+  trigger: string;
+  templateId: string;
+  channelId?: string | null;
+  offsetMinutes: number;
+  config: CommsAutomationConfig;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListCommsAutomationsResponse {
+  items: CommsAutomation[];
+}
+
+export type CreateCommsAutomationBodyConfig = { [key: string]: unknown };
+
+export interface CreateCommsAutomationBody {
+  /**
+   * @minLength 2
+   * @maxLength 120
+   */
+  name: string;
+  trigger: string;
+  templateId: string;
+  channelId?: string | null;
+  offsetMinutes?: number;
+  config?: CreateCommsAutomationBodyConfig;
+  enabled?: boolean;
+}
+
+export type UpdateCommsAutomationBodyConfig = { [key: string]: unknown };
+
+export interface UpdateCommsAutomationBody {
+  name?: string;
+  trigger?: string;
+  templateId?: string;
+  channelId?: string | null;
+  offsetMinutes?: number;
+  config?: UpdateCommsAutomationBodyConfig;
+  enabled?: boolean;
+}
+
+export interface CommsMessage {
+  id: string;
+  clinicId: string;
+  channelId: string;
+  automationId?: string | null;
+  templateId?: string | null;
+  tutorId?: string | null;
+  petId?: string | null;
+  consultationId?: string | null;
+  direction: string;
+  toAddress: string;
+  body: string;
+  status: string;
+  errorMessage?: string | null;
+  providerMessageId?: string | null;
+  scheduledFor?: string | null;
+  sentAt?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListCommsMessagesResponse {
+  items: CommsMessage[];
+}
+
+export interface CommsTestSendBody {
+  channelId: string;
+  /** @minLength 5 */
+  toAddress: string;
+  /**
+   * @minLength 1
+   * @maxLength 4000
+   */
+  body: string;
+}
+
+export type CommsDashboardResponseChannels = {
+  total: number;
+  connected: number;
+};
+
+export type CommsDashboardResponseTemplates = {
+  total: number;
+};
+
+export type CommsDashboardResponseAutomations = {
+  total: number;
+  enabled: number;
+};
+
+export type CommsDashboardResponseMessages = {
+  last30d: number;
+  sent: number;
+  failed: number;
+  queued: number;
+};
+
+export interface CommsDashboardResponse {
+  channels: CommsDashboardResponseChannels;
+  templates: CommsDashboardResponseTemplates;
+  automations: CommsDashboardResponseAutomations;
+  messages: CommsDashboardResponseMessages;
+  recent: CommsMessage[];
+}
+
 export type ListTutorsParams = {
   q?: string;
 };
@@ -647,6 +886,17 @@ export type ListCopilotConversationsParams = {
   /**
    * @minimum 1
    * @maximum 50
+   */
+  limit?: number;
+};
+
+export type ListCommsMessagesParams = {
+  status?: string;
+  tutorId?: string;
+  petId?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
    */
   limit?: number;
 };

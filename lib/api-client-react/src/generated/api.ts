@@ -22,10 +22,20 @@ import type {
   AiResult,
   Anamnesis,
   Clinic,
+  CommsAutomation,
+  CommsChannel,
+  CommsChannelQrResponse,
+  CommsDashboardResponse,
+  CommsMessage,
+  CommsTemplate,
+  CommsTestSendBody,
   Consultation,
   ConsultationDetail,
   ConsultationWithPet,
   CopilotConversationDetail,
+  CreateCommsAutomationBody,
+  CreateCommsChannelBody,
+  CreateCommsTemplateBody,
   CreateConsultationBody,
   CreateExamBody,
   CreateLeadBody,
@@ -38,6 +48,11 @@ import type {
   Exam,
   ExamWithPet,
   HealthStatus,
+  ListCommsAutomationsResponse,
+  ListCommsChannelsResponse,
+  ListCommsMessagesParams,
+  ListCommsMessagesResponse,
+  ListCommsTemplatesResponse,
   ListConsultationsParams,
   ListCopilotConversationsParams,
   ListCopilotConversationsResponse,
@@ -61,6 +76,9 @@ import type {
   Tutor,
   TutorWithPets,
   UpdateClinicBody,
+  UpdateCommsAutomationBody,
+  UpdateCommsChannelBody,
+  UpdateCommsTemplateBody,
   UpdateConsultationBody,
   UpdatePetBody,
   UpdateTeamMemberBody,
@@ -3927,4 +3945,1345 @@ export const useCreateExamSignedDownload = <
   TContext
 > => {
   return useMutation(getCreateExamSignedDownloadMutationOptions(options));
+};
+
+export const getCommsDashboardUrl = () => {
+  return `/api/comms/dashboard`;
+};
+
+export const commsDashboard = async (
+  options?: RequestInit,
+): Promise<CommsDashboardResponse> => {
+  return customFetch<CommsDashboardResponse>(getCommsDashboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getCommsDashboardQueryKey = () => {
+  return [`/api/comms/dashboard`] as const;
+};
+
+export const getCommsDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof commsDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof commsDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCommsDashboardQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof commsDashboard>>> = ({
+    signal,
+  }) => commsDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof commsDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type CommsDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof commsDashboard>>
+>;
+export type CommsDashboardQueryError = ErrorType<unknown>;
+
+export function useCommsDashboard<
+  TData = Awaited<ReturnType<typeof commsDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof commsDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getCommsDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getListCommsChannelsUrl = () => {
+  return `/api/comms/channels`;
+};
+
+export const listCommsChannels = async (
+  options?: RequestInit,
+): Promise<ListCommsChannelsResponse> => {
+  return customFetch<ListCommsChannelsResponse>(getListCommsChannelsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCommsChannelsQueryKey = () => {
+  return [`/api/comms/channels`] as const;
+};
+
+export const getListCommsChannelsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCommsChannels>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsChannels>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCommsChannelsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCommsChannels>>
+  > = ({ signal }) => listCommsChannels({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsChannels>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCommsChannelsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCommsChannels>>
+>;
+export type ListCommsChannelsQueryError = ErrorType<unknown>;
+
+export function useListCommsChannels<
+  TData = Awaited<ReturnType<typeof listCommsChannels>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsChannels>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCommsChannelsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateCommsChannelUrl = () => {
+  return `/api/comms/channels`;
+};
+
+export const createCommsChannel = async (
+  createCommsChannelBody: CreateCommsChannelBody,
+  options?: RequestInit,
+): Promise<CommsChannel> => {
+  return customFetch<CommsChannel>(getCreateCommsChannelUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCommsChannelBody),
+  });
+};
+
+export const getCreateCommsChannelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsChannel>>,
+    TError,
+    { data: BodyType<CreateCommsChannelBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCommsChannel>>,
+  TError,
+  { data: BodyType<CreateCommsChannelBody> },
+  TContext
+> => {
+  const mutationKey = ["createCommsChannel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCommsChannel>>,
+    { data: BodyType<CreateCommsChannelBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCommsChannel(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCommsChannelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCommsChannel>>
+>;
+export type CreateCommsChannelMutationBody = BodyType<CreateCommsChannelBody>;
+export type CreateCommsChannelMutationError = ErrorType<unknown>;
+
+export const useCreateCommsChannel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsChannel>>,
+    TError,
+    { data: BodyType<CreateCommsChannelBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCommsChannel>>,
+  TError,
+  { data: BodyType<CreateCommsChannelBody> },
+  TContext
+> => {
+  return useMutation(getCreateCommsChannelMutationOptions(options));
+};
+
+export const getUpdateCommsChannelUrl = (channelId: string) => {
+  return `/api/comms/channels/${channelId}`;
+};
+
+export const updateCommsChannel = async (
+  channelId: string,
+  updateCommsChannelBody: UpdateCommsChannelBody,
+  options?: RequestInit,
+): Promise<CommsChannel> => {
+  return customFetch<CommsChannel>(getUpdateCommsChannelUrl(channelId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCommsChannelBody),
+  });
+};
+
+export const getUpdateCommsChannelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsChannel>>,
+    TError,
+    { channelId: string; data: BodyType<UpdateCommsChannelBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCommsChannel>>,
+  TError,
+  { channelId: string; data: BodyType<UpdateCommsChannelBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCommsChannel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCommsChannel>>,
+    { channelId: string; data: BodyType<UpdateCommsChannelBody> }
+  > = (props) => {
+    const { channelId, data } = props ?? {};
+
+    return updateCommsChannel(channelId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCommsChannelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCommsChannel>>
+>;
+export type UpdateCommsChannelMutationBody = BodyType<UpdateCommsChannelBody>;
+export type UpdateCommsChannelMutationError = ErrorType<unknown>;
+
+export const useUpdateCommsChannel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsChannel>>,
+    TError,
+    { channelId: string; data: BodyType<UpdateCommsChannelBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCommsChannel>>,
+  TError,
+  { channelId: string; data: BodyType<UpdateCommsChannelBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCommsChannelMutationOptions(options));
+};
+
+export const getDeleteCommsChannelUrl = (channelId: string) => {
+  return `/api/comms/channels/${channelId}`;
+};
+
+export const deleteCommsChannel = async (
+  channelId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCommsChannelUrl(channelId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCommsChannelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteCommsChannel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCommsChannel>>,
+    { channelId: string }
+  > = (props) => {
+    const { channelId } = props ?? {};
+
+    return deleteCommsChannel(channelId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCommsChannelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCommsChannel>>
+>;
+
+export type DeleteCommsChannelMutationError = ErrorType<unknown>;
+
+export const useDeleteCommsChannel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  return useMutation(getDeleteCommsChannelMutationOptions(options));
+};
+
+/**
+ * @summary Inicia conexão e devolve payload do QR (mock retorna string fictícia)
+ */
+export const getConnectCommsChannelUrl = (channelId: string) => {
+  return `/api/comms/channels/${channelId}/connect`;
+};
+
+export const connectCommsChannel = async (
+  channelId: string,
+  options?: RequestInit,
+): Promise<CommsChannelQrResponse> => {
+  return customFetch<CommsChannelQrResponse>(
+    getConnectCommsChannelUrl(channelId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getConnectCommsChannelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof connectCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof connectCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  const mutationKey = ["connectCommsChannel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof connectCommsChannel>>,
+    { channelId: string }
+  > = (props) => {
+    const { channelId } = props ?? {};
+
+    return connectCommsChannel(channelId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConnectCommsChannelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof connectCommsChannel>>
+>;
+
+export type ConnectCommsChannelMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Inicia conexão e devolve payload do QR (mock retorna string fictícia)
+ */
+export const useConnectCommsChannel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof connectCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof connectCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  return useMutation(getConnectCommsChannelMutationOptions(options));
+};
+
+export const getDisconnectCommsChannelUrl = (channelId: string) => {
+  return `/api/comms/channels/${channelId}/disconnect`;
+};
+
+export const disconnectCommsChannel = async (
+  channelId: string,
+  options?: RequestInit,
+): Promise<CommsChannel> => {
+  return customFetch<CommsChannel>(getDisconnectCommsChannelUrl(channelId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getDisconnectCommsChannelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disconnectCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof disconnectCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  const mutationKey = ["disconnectCommsChannel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof disconnectCommsChannel>>,
+    { channelId: string }
+  > = (props) => {
+    const { channelId } = props ?? {};
+
+    return disconnectCommsChannel(channelId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DisconnectCommsChannelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof disconnectCommsChannel>>
+>;
+
+export type DisconnectCommsChannelMutationError = ErrorType<unknown>;
+
+export const useDisconnectCommsChannel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disconnectCommsChannel>>,
+    TError,
+    { channelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof disconnectCommsChannel>>,
+  TError,
+  { channelId: string },
+  TContext
+> => {
+  return useMutation(getDisconnectCommsChannelMutationOptions(options));
+};
+
+export const getListCommsTemplatesUrl = () => {
+  return `/api/comms/templates`;
+};
+
+export const listCommsTemplates = async (
+  options?: RequestInit,
+): Promise<ListCommsTemplatesResponse> => {
+  return customFetch<ListCommsTemplatesResponse>(getListCommsTemplatesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCommsTemplatesQueryKey = () => {
+  return [`/api/comms/templates`] as const;
+};
+
+export const getListCommsTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCommsTemplates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCommsTemplatesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCommsTemplates>>
+  > = ({ signal }) => listCommsTemplates({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsTemplates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCommsTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCommsTemplates>>
+>;
+export type ListCommsTemplatesQueryError = ErrorType<unknown>;
+
+export function useListCommsTemplates<
+  TData = Awaited<ReturnType<typeof listCommsTemplates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCommsTemplatesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateCommsTemplateUrl = () => {
+  return `/api/comms/templates`;
+};
+
+export const createCommsTemplate = async (
+  createCommsTemplateBody: CreateCommsTemplateBody,
+  options?: RequestInit,
+): Promise<CommsTemplate> => {
+  return customFetch<CommsTemplate>(getCreateCommsTemplateUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCommsTemplateBody),
+  });
+};
+
+export const getCreateCommsTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsTemplate>>,
+    TError,
+    { data: BodyType<CreateCommsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCommsTemplate>>,
+  TError,
+  { data: BodyType<CreateCommsTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["createCommsTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCommsTemplate>>,
+    { data: BodyType<CreateCommsTemplateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCommsTemplate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCommsTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCommsTemplate>>
+>;
+export type CreateCommsTemplateMutationBody = BodyType<CreateCommsTemplateBody>;
+export type CreateCommsTemplateMutationError = ErrorType<unknown>;
+
+export const useCreateCommsTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsTemplate>>,
+    TError,
+    { data: BodyType<CreateCommsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCommsTemplate>>,
+  TError,
+  { data: BodyType<CreateCommsTemplateBody> },
+  TContext
+> => {
+  return useMutation(getCreateCommsTemplateMutationOptions(options));
+};
+
+export const getUpdateCommsTemplateUrl = (templateId: string) => {
+  return `/api/comms/templates/${templateId}`;
+};
+
+export const updateCommsTemplate = async (
+  templateId: string,
+  updateCommsTemplateBody: UpdateCommsTemplateBody,
+  options?: RequestInit,
+): Promise<CommsTemplate> => {
+  return customFetch<CommsTemplate>(getUpdateCommsTemplateUrl(templateId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCommsTemplateBody),
+  });
+};
+
+export const getUpdateCommsTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsTemplate>>,
+    TError,
+    { templateId: string; data: BodyType<UpdateCommsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCommsTemplate>>,
+  TError,
+  { templateId: string; data: BodyType<UpdateCommsTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCommsTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCommsTemplate>>,
+    { templateId: string; data: BodyType<UpdateCommsTemplateBody> }
+  > = (props) => {
+    const { templateId, data } = props ?? {};
+
+    return updateCommsTemplate(templateId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCommsTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCommsTemplate>>
+>;
+export type UpdateCommsTemplateMutationBody = BodyType<UpdateCommsTemplateBody>;
+export type UpdateCommsTemplateMutationError = ErrorType<unknown>;
+
+export const useUpdateCommsTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsTemplate>>,
+    TError,
+    { templateId: string; data: BodyType<UpdateCommsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCommsTemplate>>,
+  TError,
+  { templateId: string; data: BodyType<UpdateCommsTemplateBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCommsTemplateMutationOptions(options));
+};
+
+export const getDeleteCommsTemplateUrl = (templateId: string) => {
+  return `/api/comms/templates/${templateId}`;
+};
+
+export const deleteCommsTemplate = async (
+  templateId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCommsTemplateUrl(templateId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCommsTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsTemplate>>,
+    TError,
+    { templateId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCommsTemplate>>,
+  TError,
+  { templateId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteCommsTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCommsTemplate>>,
+    { templateId: string }
+  > = (props) => {
+    const { templateId } = props ?? {};
+
+    return deleteCommsTemplate(templateId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCommsTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCommsTemplate>>
+>;
+
+export type DeleteCommsTemplateMutationError = ErrorType<unknown>;
+
+export const useDeleteCommsTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsTemplate>>,
+    TError,
+    { templateId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCommsTemplate>>,
+  TError,
+  { templateId: string },
+  TContext
+> => {
+  return useMutation(getDeleteCommsTemplateMutationOptions(options));
+};
+
+export const getListCommsAutomationsUrl = () => {
+  return `/api/comms/automations`;
+};
+
+export const listCommsAutomations = async (
+  options?: RequestInit,
+): Promise<ListCommsAutomationsResponse> => {
+  return customFetch<ListCommsAutomationsResponse>(
+    getListCommsAutomationsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCommsAutomationsQueryKey = () => {
+  return [`/api/comms/automations`] as const;
+};
+
+export const getListCommsAutomationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCommsAutomations>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsAutomations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCommsAutomationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCommsAutomations>>
+  > = ({ signal }) => listCommsAutomations({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsAutomations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCommsAutomationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCommsAutomations>>
+>;
+export type ListCommsAutomationsQueryError = ErrorType<unknown>;
+
+export function useListCommsAutomations<
+  TData = Awaited<ReturnType<typeof listCommsAutomations>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsAutomations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCommsAutomationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateCommsAutomationUrl = () => {
+  return `/api/comms/automations`;
+};
+
+export const createCommsAutomation = async (
+  createCommsAutomationBody: CreateCommsAutomationBody,
+  options?: RequestInit,
+): Promise<CommsAutomation> => {
+  return customFetch<CommsAutomation>(getCreateCommsAutomationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCommsAutomationBody),
+  });
+};
+
+export const getCreateCommsAutomationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsAutomation>>,
+    TError,
+    { data: BodyType<CreateCommsAutomationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCommsAutomation>>,
+  TError,
+  { data: BodyType<CreateCommsAutomationBody> },
+  TContext
+> => {
+  const mutationKey = ["createCommsAutomation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCommsAutomation>>,
+    { data: BodyType<CreateCommsAutomationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCommsAutomation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCommsAutomationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCommsAutomation>>
+>;
+export type CreateCommsAutomationMutationBody =
+  BodyType<CreateCommsAutomationBody>;
+export type CreateCommsAutomationMutationError = ErrorType<unknown>;
+
+export const useCreateCommsAutomation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommsAutomation>>,
+    TError,
+    { data: BodyType<CreateCommsAutomationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCommsAutomation>>,
+  TError,
+  { data: BodyType<CreateCommsAutomationBody> },
+  TContext
+> => {
+  return useMutation(getCreateCommsAutomationMutationOptions(options));
+};
+
+export const getUpdateCommsAutomationUrl = (automationId: string) => {
+  return `/api/comms/automations/${automationId}`;
+};
+
+export const updateCommsAutomation = async (
+  automationId: string,
+  updateCommsAutomationBody: UpdateCommsAutomationBody,
+  options?: RequestInit,
+): Promise<CommsAutomation> => {
+  return customFetch<CommsAutomation>(
+    getUpdateCommsAutomationUrl(automationId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateCommsAutomationBody),
+    },
+  );
+};
+
+export const getUpdateCommsAutomationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsAutomation>>,
+    TError,
+    { automationId: string; data: BodyType<UpdateCommsAutomationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCommsAutomation>>,
+  TError,
+  { automationId: string; data: BodyType<UpdateCommsAutomationBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCommsAutomation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCommsAutomation>>,
+    { automationId: string; data: BodyType<UpdateCommsAutomationBody> }
+  > = (props) => {
+    const { automationId, data } = props ?? {};
+
+    return updateCommsAutomation(automationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCommsAutomationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCommsAutomation>>
+>;
+export type UpdateCommsAutomationMutationBody =
+  BodyType<UpdateCommsAutomationBody>;
+export type UpdateCommsAutomationMutationError = ErrorType<unknown>;
+
+export const useUpdateCommsAutomation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsAutomation>>,
+    TError,
+    { automationId: string; data: BodyType<UpdateCommsAutomationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCommsAutomation>>,
+  TError,
+  { automationId: string; data: BodyType<UpdateCommsAutomationBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCommsAutomationMutationOptions(options));
+};
+
+export const getDeleteCommsAutomationUrl = (automationId: string) => {
+  return `/api/comms/automations/${automationId}`;
+};
+
+export const deleteCommsAutomation = async (
+  automationId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCommsAutomationUrl(automationId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCommsAutomationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsAutomation>>,
+    TError,
+    { automationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCommsAutomation>>,
+  TError,
+  { automationId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteCommsAutomation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCommsAutomation>>,
+    { automationId: string }
+  > = (props) => {
+    const { automationId } = props ?? {};
+
+    return deleteCommsAutomation(automationId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCommsAutomationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCommsAutomation>>
+>;
+
+export type DeleteCommsAutomationMutationError = ErrorType<unknown>;
+
+export const useDeleteCommsAutomation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommsAutomation>>,
+    TError,
+    { automationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCommsAutomation>>,
+  TError,
+  { automationId: string },
+  TContext
+> => {
+  return useMutation(getDeleteCommsAutomationMutationOptions(options));
+};
+
+export const getListCommsMessagesUrl = (params?: ListCommsMessagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/comms/messages?${stringifiedParams}`
+    : `/api/comms/messages`;
+};
+
+export const listCommsMessages = async (
+  params?: ListCommsMessagesParams,
+  options?: RequestInit,
+): Promise<ListCommsMessagesResponse> => {
+  return customFetch<ListCommsMessagesResponse>(
+    getListCommsMessagesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCommsMessagesQueryKey = (
+  params?: ListCommsMessagesParams,
+) => {
+  return [`/api/comms/messages`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCommsMessagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCommsMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCommsMessagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCommsMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCommsMessagesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCommsMessages>>
+  > = ({ signal }) => listCommsMessages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCommsMessages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCommsMessagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCommsMessages>>
+>;
+export type ListCommsMessagesQueryError = ErrorType<unknown>;
+
+export function useListCommsMessages<
+  TData = Awaited<ReturnType<typeof listCommsMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCommsMessagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCommsMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCommsMessagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Envia mensagem de teste (admin/vet) — usa o provider configurado
+ */
+export const getCommsTestSendUrl = () => {
+  return `/api/comms/test-send`;
+};
+
+export const commsTestSend = async (
+  commsTestSendBody: CommsTestSendBody,
+  options?: RequestInit,
+): Promise<CommsMessage> => {
+  return customFetch<CommsMessage>(getCommsTestSendUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commsTestSendBody),
+  });
+};
+
+export const getCommsTestSendMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commsTestSend>>,
+    TError,
+    { data: BodyType<CommsTestSendBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commsTestSend>>,
+  TError,
+  { data: BodyType<CommsTestSendBody> },
+  TContext
+> => {
+  const mutationKey = ["commsTestSend"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commsTestSend>>,
+    { data: BodyType<CommsTestSendBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return commsTestSend(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommsTestSendMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commsTestSend>>
+>;
+export type CommsTestSendMutationBody = BodyType<CommsTestSendBody>;
+export type CommsTestSendMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Envia mensagem de teste (admin/vet) — usa o provider configurado
+ */
+export const useCommsTestSend = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commsTestSend>>,
+    TError,
+    { data: BodyType<CommsTestSendBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commsTestSend>>,
+  TError,
+  { data: BodyType<CommsTestSendBody> },
+  TContext
+> => {
+  return useMutation(getCommsTestSendMutationOptions(options));
 };

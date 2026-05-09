@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { commsBus } from "../comms";
 
 const router: IRouter = Router();
 
@@ -72,6 +73,13 @@ router.post("/consultations", requireRole("admin", "vet"), async (req, res): Pro
     .insert(consultationsTable)
     .values({ ...parsed.data, clinicId: user.clinicId, createdBy: user.id })
     .returning();
+  commsBus.emitEvent({
+    type: "consultation.created",
+    clinicId: user.clinicId,
+    consultationId: c.id,
+    petId: c.petId,
+    scheduledAt: c.scheduledAt,
+  });
   res.status(201).json(c);
 });
 
@@ -125,6 +133,15 @@ router.patch("/consultations/:consultationId", requireRole("admin", "vet"), asyn
     res.status(400).json({ error: "Invalid request" });
     return;
   }
+  const [prev] = await db
+    .select({ status: consultationsTable.status })
+    .from(consultationsTable)
+    .where(
+      and(
+        eq(consultationsTable.id, params.data.consultationId),
+        eq(consultationsTable.clinicId, user.clinicId),
+      ),
+    );
   const [c] = await db
     .update(consultationsTable)
     .set({ ...body.data, updatedAt: new Date() })
@@ -138,6 +155,14 @@ router.patch("/consultations/:consultationId", requireRole("admin", "vet"), asyn
   if (!c) {
     res.status(404).json({ error: "Consultation not found" });
     return;
+  }
+  if (body.data.status === "cancelled" && prev?.status !== "cancelled") {
+    commsBus.emitEvent({
+      type: "consultation.cancelled",
+      clinicId: user.clinicId,
+      consultationId: c.id,
+      petId: c.petId,
+    });
   }
   res.json(schemas.UpdateConsultationResponse.parse(c));
 });
@@ -161,6 +186,14 @@ router.delete("/consultations/:consultationId", requireRole("admin", "vet"), asy
   if (!c) {
     res.status(404).json({ error: "Consultation not found" });
     return;
+  }
+  if (c.status !== "cancelled") {
+    commsBus.emitEvent({
+      type: "consultation.cancelled",
+      clinicId: user.clinicId,
+      consultationId: c.id,
+      petId: c.petId,
+    });
   }
   res.sendStatus(204);
 });

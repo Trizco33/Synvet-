@@ -20,6 +20,7 @@ import Consultas from "@/pages/consultas";
 import ConsultationDetail from "@/pages/consultation-detail";
 import Exames from "@/pages/exames";
 import Configuracoes from "@/pages/configuracoes";
+import Comunicacao from "@/pages/comunicacao";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/app/consultas">{() => <ProtectedRoute component={Consultas} />}</Route>
       <Route path="/app/consultas/:consultationId">{() => <ProtectedRoute component={ConsultationDetail} />}</Route>
       <Route path="/app/exames">{() => <ProtectedRoute component={Exames} />}</Route>
+      <Route path="/app/comunicacao">{() => <ProtectedRoute component={Comunicacao} />}</Route>
       <Route path="/app/configuracoes">{() => <ProtectedRoute component={Configuracoes} />}</Route>
 
       <Route component={NotFound} />

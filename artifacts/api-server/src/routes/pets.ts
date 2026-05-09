@@ -13,6 +13,7 @@ import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { toDateString } from "../lib/dates";
 import { signExamPaths } from "../lib/exam-files";
+import { commsBus } from "../comms";
 
 const router: IRouter = Router();
 
@@ -268,6 +269,14 @@ router.post("/pets/:petId/vaccines", requireRole("admin", "vet"), async (req, re
       createdBy: user.id,
     })
     .returning();
+  commsBus.emitEvent({
+    type: "vaccine.created",
+    clinicId: user.clinicId,
+    petId: pet.id,
+    vaccineId: vaccine.id,
+    vaccineName: vaccine.name,
+    nextDueAt: vaccine.nextDueAt ? new Date(vaccine.nextDueAt) : null,
+  });
   res.status(201).json(vaccine);
 });
 

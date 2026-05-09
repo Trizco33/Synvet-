@@ -6,6 +6,7 @@ import {
   Dog, 
   CalendarDays, 
   Stethoscope, 
+  MessageCircle,
   Settings, 
   LogOut, 
   Menu,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/app/tutores", label: "Tutores", icon: Users },
   { href: "/app/consultas", label: "Consultas", icon: CalendarDays },
   { href: "/app/exames", label: "Exames", icon: Stethoscope },
+  { href: "/app/comunicacao", label: "Comunicação", icon: MessageCircle },
   { href: "/app/configuracoes", label: "Configurações", icon: Settings },
 ];
 

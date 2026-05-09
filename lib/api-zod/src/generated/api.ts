@@ -963,3 +963,374 @@ export const CreateExamSignedDownloadResponse = zod.object({
   path: zod.string(),
   expiresIn: zod.number(),
 });
+
+export const CommsDashboardResponse = zod.object({
+  channels: zod.object({
+    total: zod.number(),
+    connected: zod.number(),
+  }),
+  templates: zod.object({
+    total: zod.number(),
+  }),
+  automations: zod.object({
+    total: zod.number(),
+    enabled: zod.number(),
+  }),
+  messages: zod.object({
+    last30d: zod.number(),
+    sent: zod.number(),
+    failed: zod.number(),
+    queued: zod.number(),
+  }),
+  recent: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      clinicId: zod.string().uuid(),
+      channelId: zod.string().uuid(),
+      automationId: zod.string().uuid().nullish(),
+      templateId: zod.string().uuid().nullish(),
+      tutorId: zod.string().uuid().nullish(),
+      petId: zod.string().uuid().nullish(),
+      consultationId: zod.string().uuid().nullish(),
+      direction: zod.string(),
+      toAddress: zod.string(),
+      body: zod.string(),
+      status: zod.string(),
+      errorMessage: zod.string().nullish(),
+      providerMessageId: zod.string().nullish(),
+      scheduledFor: zod.coerce.date().nullish(),
+      sentAt: zod.coerce.date().nullish(),
+      deliveredAt: zod.coerce.date().nullish(),
+      readAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const ListCommsChannelsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      clinicId: zod.string().uuid(),
+      kind: zod.enum([
+        "whatsapp_qr",
+        "whatsapp_official",
+        "email",
+        "sms",
+        "push",
+      ]),
+      provider: zod.string(),
+      status: zod.enum(["disconnected", "connecting", "connected", "error"]),
+      phoneNumber: zod.string().nullish(),
+      displayName: zod.string().nullish(),
+      externalId: zod.string().nullish(),
+      lastConnectedAt: zod.coerce.date().nullish(),
+      lastError: zod.string().nullish(),
+      meta: zod.record(zod.string(), zod.unknown()),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const createCommsChannelBodyProviderDefault = `mock`;
+
+export const CreateCommsChannelBody = zod.object({
+  kind: zod.enum(["whatsapp_qr", "whatsapp_official", "email", "sms", "push"]),
+  provider: zod.string().default(createCommsChannelBodyProviderDefault),
+  displayName: zod.string().nullish(),
+  phoneNumber: zod.string().nullish(),
+});
+
+export const UpdateCommsChannelParams = zod.object({
+  channelId: zod.coerce.string().uuid(),
+});
+
+export const UpdateCommsChannelBody = zod.object({
+  displayName: zod.string().nullish(),
+  phoneNumber: zod.string().nullish(),
+  provider: zod.string().optional(),
+});
+
+export const UpdateCommsChannelResponse = zod.object({
+  id: zod.string().uuid(),
+  clinicId: zod.string().uuid(),
+  kind: zod.enum(["whatsapp_qr", "whatsapp_official", "email", "sms", "push"]),
+  provider: zod.string(),
+  status: zod.enum(["disconnected", "connecting", "connected", "error"]),
+  phoneNumber: zod.string().nullish(),
+  displayName: zod.string().nullish(),
+  externalId: zod.string().nullish(),
+  lastConnectedAt: zod.coerce.date().nullish(),
+  lastError: zod.string().nullish(),
+  meta: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const DeleteCommsChannelParams = zod.object({
+  channelId: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Inicia conexão e devolve payload do QR (mock retorna string fictícia)
+ */
+export const ConnectCommsChannelParams = zod.object({
+  channelId: zod.coerce.string().uuid(),
+});
+
+export const ConnectCommsChannelResponse = zod.object({
+  channel: zod.object({
+    id: zod.string().uuid(),
+    clinicId: zod.string().uuid(),
+    kind: zod.enum([
+      "whatsapp_qr",
+      "whatsapp_official",
+      "email",
+      "sms",
+      "push",
+    ]),
+    provider: zod.string(),
+    status: zod.enum(["disconnected", "connecting", "connected", "error"]),
+    phoneNumber: zod.string().nullish(),
+    displayName: zod.string().nullish(),
+    externalId: zod.string().nullish(),
+    lastConnectedAt: zod.coerce.date().nullish(),
+    lastError: zod.string().nullish(),
+    meta: zod.record(zod.string(), zod.unknown()),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  qrString: zod.string().nullish(),
+  expiresAt: zod.coerce.date().nullish(),
+  message: zod.string().nullish(),
+});
+
+export const DisconnectCommsChannelParams = zod.object({
+  channelId: zod.coerce.string().uuid(),
+});
+
+export const DisconnectCommsChannelResponse = zod.object({
+  id: zod.string().uuid(),
+  clinicId: zod.string().uuid(),
+  kind: zod.enum(["whatsapp_qr", "whatsapp_official", "email", "sms", "push"]),
+  provider: zod.string(),
+  status: zod.enum(["disconnected", "connecting", "connected", "error"]),
+  phoneNumber: zod.string().nullish(),
+  displayName: zod.string().nullish(),
+  externalId: zod.string().nullish(),
+  lastConnectedAt: zod.coerce.date().nullish(),
+  lastError: zod.string().nullish(),
+  meta: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const ListCommsTemplatesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      clinicId: zod.string().uuid(),
+      slug: zod.string(),
+      name: zod.string(),
+      channel: zod.string(),
+      category: zod.string(),
+      body: zod.string(),
+      variables: zod.array(zod.string()),
+      isSystem: zod.boolean(),
+      enabled: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const createCommsTemplateBodySlugMin = 2;
+export const createCommsTemplateBodySlugMax = 64;
+
+export const createCommsTemplateBodyNameMin = 2;
+export const createCommsTemplateBodyNameMax = 120;
+
+export const createCommsTemplateBodyChannelDefault = `whatsapp`;
+export const createCommsTemplateBodyCategoryDefault = `transactional`;
+export const createCommsTemplateBodyBodyMin = 2;
+export const createCommsTemplateBodyBodyMax = 4000;
+
+export const createCommsTemplateBodyEnabledDefault = true;
+
+export const CreateCommsTemplateBody = zod.object({
+  slug: zod
+    .string()
+    .min(createCommsTemplateBodySlugMin)
+    .max(createCommsTemplateBodySlugMax),
+  name: zod
+    .string()
+    .min(createCommsTemplateBodyNameMin)
+    .max(createCommsTemplateBodyNameMax),
+  channel: zod.string().default(createCommsTemplateBodyChannelDefault),
+  category: zod.string().default(createCommsTemplateBodyCategoryDefault),
+  body: zod
+    .string()
+    .min(createCommsTemplateBodyBodyMin)
+    .max(createCommsTemplateBodyBodyMax),
+  variables: zod.array(zod.string()).optional(),
+  enabled: zod.boolean().default(createCommsTemplateBodyEnabledDefault),
+});
+
+export const UpdateCommsTemplateParams = zod.object({
+  templateId: zod.coerce.string().uuid(),
+});
+
+export const UpdateCommsTemplateBody = zod.object({
+  name: zod.string().optional(),
+  channel: zod.string().optional(),
+  category: zod.string().optional(),
+  body: zod.string().optional(),
+  variables: zod.array(zod.string()).optional(),
+  enabled: zod.boolean().optional(),
+});
+
+export const UpdateCommsTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  clinicId: zod.string().uuid(),
+  slug: zod.string(),
+  name: zod.string(),
+  channel: zod.string(),
+  category: zod.string(),
+  body: zod.string(),
+  variables: zod.array(zod.string()),
+  isSystem: zod.boolean(),
+  enabled: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const DeleteCommsTemplateParams = zod.object({
+  templateId: zod.coerce.string().uuid(),
+});
+
+export const ListCommsAutomationsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      clinicId: zod.string().uuid(),
+      name: zod.string(),
+      trigger: zod.string(),
+      templateId: zod.string().uuid(),
+      channelId: zod.string().uuid().nullish(),
+      offsetMinutes: zod.number(),
+      config: zod.record(zod.string(), zod.unknown()),
+      enabled: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const createCommsAutomationBodyNameMin = 2;
+export const createCommsAutomationBodyNameMax = 120;
+
+export const createCommsAutomationBodyOffsetMinutesDefault = 0;
+export const createCommsAutomationBodyEnabledDefault = true;
+
+export const CreateCommsAutomationBody = zod.object({
+  name: zod
+    .string()
+    .min(createCommsAutomationBodyNameMin)
+    .max(createCommsAutomationBodyNameMax),
+  trigger: zod.string(),
+  templateId: zod.string().uuid(),
+  channelId: zod.string().uuid().nullish(),
+  offsetMinutes: zod
+    .number()
+    .default(createCommsAutomationBodyOffsetMinutesDefault),
+  config: zod.record(zod.string(), zod.unknown()).optional(),
+  enabled: zod.boolean().default(createCommsAutomationBodyEnabledDefault),
+});
+
+export const UpdateCommsAutomationParams = zod.object({
+  automationId: zod.coerce.string().uuid(),
+});
+
+export const UpdateCommsAutomationBody = zod.object({
+  name: zod.string().optional(),
+  trigger: zod.string().optional(),
+  templateId: zod.string().uuid().optional(),
+  channelId: zod.string().uuid().nullish(),
+  offsetMinutes: zod.number().optional(),
+  config: zod.record(zod.string(), zod.unknown()).optional(),
+  enabled: zod.boolean().optional(),
+});
+
+export const UpdateCommsAutomationResponse = zod.object({
+  id: zod.string().uuid(),
+  clinicId: zod.string().uuid(),
+  name: zod.string(),
+  trigger: zod.string(),
+  templateId: zod.string().uuid(),
+  channelId: zod.string().uuid().nullish(),
+  offsetMinutes: zod.number(),
+  config: zod.record(zod.string(), zod.unknown()),
+  enabled: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const DeleteCommsAutomationParams = zod.object({
+  automationId: zod.coerce.string().uuid(),
+});
+
+export const listCommsMessagesQueryLimitDefault = 50;
+export const listCommsMessagesQueryLimitMax = 200;
+
+export const ListCommsMessagesQueryParams = zod.object({
+  status: zod.coerce.string().optional(),
+  tutorId: zod.coerce.string().uuid().optional(),
+  petId: zod.coerce.string().uuid().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listCommsMessagesQueryLimitMax)
+    .default(listCommsMessagesQueryLimitDefault),
+});
+
+export const ListCommsMessagesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      clinicId: zod.string().uuid(),
+      channelId: zod.string().uuid(),
+      automationId: zod.string().uuid().nullish(),
+      templateId: zod.string().uuid().nullish(),
+      tutorId: zod.string().uuid().nullish(),
+      petId: zod.string().uuid().nullish(),
+      consultationId: zod.string().uuid().nullish(),
+      direction: zod.string(),
+      toAddress: zod.string(),
+      body: zod.string(),
+      status: zod.string(),
+      errorMessage: zod.string().nullish(),
+      providerMessageId: zod.string().nullish(),
+      scheduledFor: zod.coerce.date().nullish(),
+      sentAt: zod.coerce.date().nullish(),
+      deliveredAt: zod.coerce.date().nullish(),
+      readAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Envia mensagem de teste (admin/vet) — usa o provider configurado
+ */
+export const commsTestSendBodyToAddressMin = 5;
+
+export const commsTestSendBodyBodyMax = 4000;
+
+export const CommsTestSendBody = zod.object({
+  channelId: zod.string().uuid(),
+  toAddress: zod.string().min(commsTestSendBodyToAddressMin),
+  body: zod.string().min(1).max(commsTestSendBodyBodyMax),
+});

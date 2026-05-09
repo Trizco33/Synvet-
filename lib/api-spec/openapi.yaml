@@ -757,6 +757,227 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SignedDownloadResponse" }
 
+  /comms/dashboard:
+    get:
+      operationId: commsDashboard
+      tags: [comms]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsDashboardResponse" }
+
+  /comms/channels:
+    get:
+      operationId: listCommsChannels
+      tags: [comms]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListCommsChannelsResponse" }
+    post:
+      operationId: createCommsChannel
+      tags: [comms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCommsChannelBody" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsChannel" }
+
+  /comms/channels/{channelId}:
+    patch:
+      operationId: updateCommsChannel
+      tags: [comms]
+      parameters:
+        - { in: path, name: channelId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCommsChannelBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsChannel" }
+    delete:
+      operationId: deleteCommsChannel
+      tags: [comms]
+      parameters:
+        - { in: path, name: channelId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Apagado }
+
+  /comms/channels/{channelId}/connect:
+    post:
+      operationId: connectCommsChannel
+      tags: [comms]
+      summary: Inicia conexão e devolve payload do QR (mock retorna string fictícia)
+      parameters:
+        - { in: path, name: channelId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsChannelQrResponse" }
+
+  /comms/channels/{channelId}/disconnect:
+    post:
+      operationId: disconnectCommsChannel
+      tags: [comms]
+      parameters:
+        - { in: path, name: channelId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsChannel" }
+
+  /comms/templates:
+    get:
+      operationId: listCommsTemplates
+      tags: [comms]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListCommsTemplatesResponse" }
+    post:
+      operationId: createCommsTemplate
+      tags: [comms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCommsTemplateBody" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsTemplate" }
+
+  /comms/templates/{templateId}:
+    patch:
+      operationId: updateCommsTemplate
+      tags: [comms]
+      parameters:
+        - { in: path, name: templateId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCommsTemplateBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsTemplate" }
+    delete:
+      operationId: deleteCommsTemplate
+      tags: [comms]
+      parameters:
+        - { in: path, name: templateId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Apagado }
+
+  /comms/automations:
+    get:
+      operationId: listCommsAutomations
+      tags: [comms]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListCommsAutomationsResponse" }
+    post:
+      operationId: createCommsAutomation
+      tags: [comms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCommsAutomationBody" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsAutomation" }
+
+  /comms/automations/{automationId}:
+    patch:
+      operationId: updateCommsAutomation
+      tags: [comms]
+      parameters:
+        - { in: path, name: automationId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCommsAutomationBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsAutomation" }
+    delete:
+      operationId: deleteCommsAutomation
+      tags: [comms]
+      parameters:
+        - { in: path, name: automationId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Apagado }
+
+  /comms/messages:
+    get:
+      operationId: listCommsMessages
+      tags: [comms]
+      parameters:
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: tutorId, schema: { type: string, format: uuid } }
+        - { in: query, name: petId, schema: { type: string, format: uuid } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListCommsMessagesResponse" }
+
+  /comms/test-send:
+    post:
+      operationId: commsTestSend
+      tags: [comms]
+      summary: Envia mensagem de teste (admin/vet) — usa o provider configurado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommsTestSendBody" }
+      responses:
+        "201":
+          description: Enfileirado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommsMessage" }
+
 components:
   schemas:
     HealthStatus:
@@ -1305,3 +1526,228 @@ components:
             ageYears: { type: number, nullable: true }
           required: [species]
       required: [rawText]
+
+    CommsChannel:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clinicId: { type: string, format: uuid }
+        kind: { type: string, enum: [whatsapp_qr, whatsapp_official, email, sms, push] }
+        provider: { type: string }
+        status: { type: string, enum: [disconnected, connecting, connected, error] }
+        phoneNumber: { type: string, nullable: true }
+        displayName: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
+        lastConnectedAt: { type: string, format: date-time, nullable: true }
+        lastError: { type: string, nullable: true }
+        meta: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, clinicId, kind, provider, status, meta, createdAt, updatedAt]
+
+    ListCommsChannelsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CommsChannel" }
+      required: [items]
+
+    CreateCommsChannelBody:
+      type: object
+      properties:
+        kind: { type: string, enum: [whatsapp_qr, whatsapp_official, email, sms, push] }
+        provider: { type: string, default: mock }
+        displayName: { type: string, nullable: true }
+        phoneNumber: { type: string, nullable: true }
+      required: [kind]
+
+    UpdateCommsChannelBody:
+      type: object
+      properties:
+        displayName: { type: string, nullable: true }
+        phoneNumber: { type: string, nullable: true }
+        provider: { type: string }
+
+    CommsChannelQrResponse:
+      type: object
+      properties:
+        channel: { $ref: "#/components/schemas/CommsChannel" }
+        qrString: { type: string, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        message: { type: string, nullable: true }
+      required: [channel]
+
+    CommsTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clinicId: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        channel: { type: string }
+        category: { type: string }
+        body: { type: string }
+        variables:
+          type: array
+          items: { type: string }
+        isSystem: { type: boolean }
+        enabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, clinicId, slug, name, channel, category, body, variables, isSystem, enabled, createdAt, updatedAt]
+
+    ListCommsTemplatesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CommsTemplate" }
+      required: [items]
+
+    CreateCommsTemplateBody:
+      type: object
+      properties:
+        slug: { type: string, minLength: 2, maxLength: 64 }
+        name: { type: string, minLength: 2, maxLength: 120 }
+        channel: { type: string, default: whatsapp }
+        category: { type: string, default: transactional }
+        body: { type: string, minLength: 2, maxLength: 4000 }
+        variables:
+          type: array
+          items: { type: string }
+        enabled: { type: boolean, default: true }
+      required: [slug, name, body]
+
+    UpdateCommsTemplateBody:
+      type: object
+      properties:
+        name: { type: string }
+        channel: { type: string }
+        category: { type: string }
+        body: { type: string }
+        variables:
+          type: array
+          items: { type: string }
+        enabled: { type: boolean }
+
+    CommsAutomation:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clinicId: { type: string, format: uuid }
+        name: { type: string }
+        trigger: { type: string }
+        templateId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid, nullable: true }
+        offsetMinutes: { type: integer }
+        config: { type: object, additionalProperties: true }
+        enabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, clinicId, name, trigger, templateId, offsetMinutes, config, enabled, createdAt, updatedAt]
+
+    ListCommsAutomationsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CommsAutomation" }
+      required: [items]
+
+    CreateCommsAutomationBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        trigger: { type: string }
+        templateId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid, nullable: true }
+        offsetMinutes: { type: integer, default: 0 }
+        config: { type: object, additionalProperties: true }
+        enabled: { type: boolean, default: true }
+      required: [name, trigger, templateId]
+
+    UpdateCommsAutomationBody:
+      type: object
+      properties:
+        name: { type: string }
+        trigger: { type: string }
+        templateId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid, nullable: true }
+        offsetMinutes: { type: integer }
+        config: { type: object, additionalProperties: true }
+        enabled: { type: boolean }
+
+    CommsMessage:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clinicId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid }
+        automationId: { type: string, format: uuid, nullable: true }
+        templateId: { type: string, format: uuid, nullable: true }
+        tutorId: { type: string, format: uuid, nullable: true }
+        petId: { type: string, format: uuid, nullable: true }
+        consultationId: { type: string, format: uuid, nullable: true }
+        direction: { type: string }
+        toAddress: { type: string }
+        body: { type: string }
+        status: { type: string }
+        errorMessage: { type: string, nullable: true }
+        providerMessageId: { type: string, nullable: true }
+        scheduledFor: { type: string, format: date-time, nullable: true }
+        sentAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        readAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, clinicId, channelId, direction, toAddress, body, status, createdAt, updatedAt]
+
+    ListCommsMessagesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CommsMessage" }
+      required: [items]
+
+    CommsTestSendBody:
+      type: object
+      properties:
+        channelId: { type: string, format: uuid }
+        toAddress: { type: string, minLength: 5 }
+        body: { type: string, minLength: 1, maxLength: 4000 }
+      required: [channelId, toAddress, body]
+
+    CommsDashboardResponse:
+      type: object
+      properties:
+        channels:
+          type: object
+          properties:
+            total: { type: integer }
+            connected: { type: integer }
+          required: [total, connected]
+        templates:
+          type: object
+          properties:
+            total: { type: integer }
+          required: [total]
+        automations:
+          type: object
+          properties:
+            total: { type: integer }
+            enabled: { type: integer }
+          required: [total, enabled]
+        messages:
+          type: object
+          properties:
+            last30d: { type: integer }
+            sent: { type: integer }
+            failed: { type: integer }
+            queued: { type: integer }
+          required: [last30d, sent, failed, queued]
+        recent:
+          type: array
+          items: { $ref: "#/components/schemas/CommsMessage" }
+      required: [channels, templates, automations, messages, recent]

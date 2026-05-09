@@ -13,6 +13,7 @@ import teamRouter from "./team";
 import storageRouter from "./storage";
 import aiRouter from "./ai";
 import copilotRouter from "./copilot";
+import commsRouter from "./comms";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -33,5 +34,6 @@ router.use(teamRouter);
 router.use(storageRouter);
 router.use(aiRouter);
 router.use(copilotRouter);
+router.use(commsRouter);
 
 export default router;

@@ -846,6 +846,76 @@ export const AiDetectClinicalPatternsResponse = zod.object({
 });
 
 /**
+ * @summary Listar conversas salvas do Copilot por paciente (escopo do usuário logado)
+ */
+export const listCopilotConversationsQueryLimitDefault = 20;
+export const listCopilotConversationsQueryLimitMax = 50;
+
+export const ListCopilotConversationsQueryParams = zod.object({
+  petId: zod.coerce.string(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listCopilotConversationsQueryLimitMax)
+    .default(listCopilotConversationsQueryLimitDefault),
+});
+
+export const ListCopilotConversationsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      petId: zod.string(),
+      consultationId: zod.string().nullish(),
+      title: zod.string(),
+      model: zod.string(),
+      promptVersion: zod.string(),
+      messageCount: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Carregar conversa do Copilot com mensagens
+ */
+export const GetCopilotConversationParams = zod.object({
+  conversationId: zod.coerce.string(),
+});
+
+export const GetCopilotConversationResponse = zod
+  .object({
+    id: zod.string(),
+    petId: zod.string(),
+    consultationId: zod.string().nullish(),
+    title: zod.string(),
+    model: zod.string(),
+    promptVersion: zod.string(),
+    messageCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      messages: zod.array(
+        zod.object({
+          id: zod.string(),
+          role: zod.enum(["user", "assistant"]),
+          content: zod.string(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Apagar conversa do Copilot
+ */
+export const DeleteCopilotConversationParams = zod.object({
+  conversationId: zod.coerce.string(),
+});
+
+/**
  * @summary Gerar URL assinada de download para um laudo já enviado
  */
 

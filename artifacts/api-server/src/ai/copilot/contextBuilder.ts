@@ -9,6 +9,12 @@ import {
   medicalRecordsTable,
 } from "@workspace/db";
 import { sanitize, clip } from "../sanitize";
+import {
+  parseExamValues,
+  formatParsedValues,
+  speciesKey,
+  type ParsedExamValue,
+} from "./examParser";
 
 export interface CopilotPetContext {
   pet: {
@@ -36,6 +42,8 @@ export interface CopilotPetContext {
     category: string;
     status: string;
     summary: string | null;
+    parsedValues: ParsedExamValue[];
+    abnormalFlags: number;
   }>;
   recentVaccines: Array<{
     date: string;
@@ -221,13 +229,24 @@ export async function buildCopilotContext(
           ? clip(sanitize(c.symptoms), 300)
           : null,
     })),
-    recentExams: exams.map((e) => ({
-      date: fmtDate(e.performedAt),
-      title: clip(sanitize(e.title), 200),
-      category: e.category,
-      status: e.status,
-      summary: e.notes ? clip(sanitize(e.notes), 300) : null,
-    })),
+    recentExams: exams.map((e) => {
+      const sk = speciesKey(pet.species);
+      // Look for numeric values both in title and in notes.
+      const haystack = [e.title, e.notes].filter(Boolean).join(" \n ");
+      const parsedValues = parseExamValues(haystack, sk, 6);
+      const abnormalFlags = parsedValues.filter(
+        (v) => v.flag === "low" || v.flag === "high",
+      ).length;
+      return {
+        date: fmtDate(e.performedAt),
+        title: clip(sanitize(e.title), 200),
+        category: e.category,
+        status: e.status,
+        summary: e.notes ? clip(sanitize(e.notes), 300) : null,
+        parsedValues,
+        abnormalFlags,
+      };
+    }),
     recentVaccines: vaccines.map((v) => {
       const due = v.nextDueAt ? new Date(v.nextDueAt) : null;
       return {
@@ -308,6 +327,8 @@ export function renderContextForPrompt(ctx: CopilotPetContext): string {
       lines.push(
         `- ${e.date} [${e.category}/${e.status}] ${e.title}${e.summary ? ` — ${e.summary}` : ""}`,
       );
+      const fmt = formatParsedValues(e.parsedValues);
+      if (fmt) lines.push(`    valores: ${fmt}`);
     }
   }
   if (ctx.recentVaccines.length > 0) {

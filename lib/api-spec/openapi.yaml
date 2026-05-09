@@ -673,6 +673,55 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AiResult" }
 
+  /ai/copilot/conversations:
+    get:
+      operationId: listCopilotConversations
+      tags: [ai]
+      summary: Listar conversas salvas do Copilot por paciente (escopo do usuário logado)
+      parameters:
+        - in: query
+          name: petId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, default: 20, minimum: 1, maximum: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListCopilotConversationsResponse" }
+
+  /ai/copilot/conversations/{conversationId}:
+    get:
+      operationId: getCopilotConversation
+      tags: [ai]
+      summary: Carregar conversa do Copilot com mensagens
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CopilotConversationDetail" }
+    delete:
+      operationId: deleteCopilotConversation
+      tags: [ai]
+      summary: Apagar conversa do Copilot
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Apagada }
+
   /storage/exams/signed-download:
     post:
       operationId: createExamSignedDownload
@@ -1164,6 +1213,47 @@ components:
       properties:
         petId: { type: string, minLength: 1 }
       required: [petId]
+
+    CopilotConversation:
+      type: object
+      properties:
+        id: { type: string }
+        petId: { type: string }
+        consultationId: { type: string, nullable: true }
+        title: { type: string }
+        model: { type: string }
+        promptVersion: { type: string }
+        messageCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, petId, title, model, promptVersion, messageCount, createdAt, updatedAt]
+
+    CopilotConversationMessage:
+      type: object
+      properties:
+        id: { type: string }
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, role, content, createdAt]
+
+    CopilotConversationDetail:
+      allOf:
+        - $ref: "#/components/schemas/CopilotConversation"
+        - type: object
+          properties:
+            messages:
+              type: array
+              items: { $ref: "#/components/schemas/CopilotConversationMessage" }
+          required: [messages]
+
+    ListCopilotConversationsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CopilotConversation" }
+      required: [items]
 
     AiOrganizeTextBody:
       type: object

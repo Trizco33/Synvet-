@@ -547,6 +547,41 @@ export interface AiPetParams {
   petId: string;
 }
 
+export interface CopilotConversation {
+  id: string;
+  petId: string;
+  consultationId?: string | null;
+  title: string;
+  model: string;
+  promptVersion: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CopilotConversationMessageRole =
+  (typeof CopilotConversationMessageRole)[keyof typeof CopilotConversationMessageRole];
+
+export const CopilotConversationMessageRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export interface CopilotConversationMessage {
+  id: string;
+  role: CopilotConversationMessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export type CopilotConversationDetail = CopilotConversation & {
+  messages: CopilotConversationMessage[];
+};
+
+export interface ListCopilotConversationsResponse {
+  items: CopilotConversation[];
+}
+
 export type AiOrganizeTextBodyPetContext = {
   species: string;
   breed?: string | null;
@@ -580,4 +615,13 @@ export type ListConsultationsParams = {
 export type ListExamsParams = {
   petId?: string;
   category?: string;
+};
+
+export type ListCopilotConversationsParams = {
+  petId: string;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
 };

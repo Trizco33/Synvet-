@@ -32,6 +32,8 @@ tags:
     description: Upload e armazenamento de arquivos
   - name: ai
     description: IA assistiva clínica (resumos, organização de texto, padrões)
+  - name: admin
+    description: Back-office Synvet (apenas superadmins da plataforma)
 paths:
   /healthz:
     get:
@@ -159,6 +161,82 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CreateLeadResponse" }
+
+  /admin/me:
+    get:
+      operationId: getAdminMe
+      tags: [admin]
+      summary: Verifica se o usuário autenticado é superadmin da plataforma
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMeResponse" }
+        "403":
+          description: Forbidden
+
+  /admin/clinics:
+    get:
+      operationId: listAdminClinics
+      tags: [admin]
+      summary: Lista todas as clínicas da plataforma
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminClinicSummary" }
+
+  /admin/leads:
+    get:
+      operationId: listAdminLeads
+      tags: [admin]
+      summary: Lista leads capturados no site
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminLead" }
+
+  /admin/leads/{leadId}:
+    patch:
+      operationId: updateAdminLead
+      tags: [admin]
+      summary: Atualizar status do lead
+      parameters:
+        - in: path
+          name: leadId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateAdminLeadBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminLead" }
+
+  /admin/metrics:
+    get:
+      operationId: getAdminMetrics
+      tags: [admin]
+      summary: Métricas globais da plataforma
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMetrics" }
 
   /tutors:
     get:
@@ -994,7 +1072,19 @@ components:
         name: { type: string, nullable: true }
         clinicId: { type: string }
         role: { type: string, enum: [vet, admin, assistant] }
-      required: [userId, email, clinicId, role]
+        billing: { $ref: "#/components/schemas/BillingStatus" }
+        isSuperAdmin: { type: boolean }
+      required: [userId, email, clinicId, role, billing, isSuperAdmin]
+
+    BillingStatus:
+      type: object
+      properties:
+        plan: { type: string, enum: [trial, essencial, pro, clinic_plus] }
+        status: { type: string, enum: [trialing, active, past_due, canceled, suspended] }
+        trialEndsAt: { type: string, format: date-time, nullable: true }
+        currentPeriodEnd: { type: string, format: date-time, nullable: true }
+        daysLeft: { type: integer, nullable: true }
+      required: [plan, status, trialEndsAt, currentPeriodEnd, daysLeft]
 
     Clinic:
       type: object
@@ -1004,9 +1094,13 @@ components:
         cnpj: { type: string, nullable: true }
         phone: { type: string, nullable: true }
         address: { type: string, nullable: true }
+        plan: { type: string, enum: [trial, essencial, pro, clinic_plus] }
+        status: { type: string, enum: [trialing, active, past_due, canceled, suspended] }
+        trialEndsAt: { type: string, format: date-time, nullable: true }
+        currentPeriodEnd: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, name, createdAt, updatedAt]
+      required: [id, name, plan, status, createdAt, updatedAt]
 
     UpdateClinicBody:
       type: object
@@ -1084,6 +1178,63 @@ components:
         ok: { type: boolean }
         id: { type: string }
       required: [ok, id]
+
+    AdminMeResponse:
+      type: object
+      properties:
+        authId: { type: string }
+        email: { type: string }
+        name: { type: string, nullable: true }
+      required: [authId, email]
+
+    AdminClinicSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        plan: { type: string, enum: [trial, essencial, pro, clinic_plus] }
+        status: { type: string, enum: [trialing, active, past_due, canceled, suspended] }
+        trialEndsAt: { type: string, format: date-time, nullable: true }
+        currentPeriodEnd: { type: string, format: date-time, nullable: true }
+        usersCount: { type: integer }
+        petsCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, plan, status, usersCount, petsCount, createdAt]
+
+    AdminLead:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string, nullable: true }
+        clinicName: { type: string, nullable: true }
+        role: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+        source: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, email, source, status, createdAt]
+
+    UpdateAdminLeadBody:
+      type: object
+      properties:
+        status: { type: string, enum: [new, contacted, converted, lost] }
+      required: [status]
+
+    AdminMetrics:
+      type: object
+      properties:
+        totalClinics: { type: integer }
+        trialingClinics: { type: integer }
+        activeClinics: { type: integer }
+        pastDueClinics: { type: integer }
+        suspendedClinics: { type: integer }
+        totalUsers: { type: integer }
+        totalLeads: { type: integer }
+        leadsThisWeek: { type: integer }
+        signupsThisWeek: { type: integer }
+      required: [totalClinics, trialingClinics, activeClinics, pastDueClinics, suspendedClinics, totalUsers, totalLeads, leadsThisWeek, signupsThisWeek]
 
     Tutor:
       type: object

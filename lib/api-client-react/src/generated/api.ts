@@ -18,6 +18,10 @@ import type {
 
 import type {
   ActivityItem,
+  AdminClinicSummary,
+  AdminLead,
+  AdminMeResponse,
+  AdminMetrics,
   AiOrganizeTextBody,
   AiResult,
   Anamnesis,
@@ -75,6 +79,7 @@ import type {
   TimelineEvent,
   Tutor,
   TutorWithPets,
+  UpdateAdminLeadBody,
   UpdateClinicBody,
   UpdateCommsAutomationBody,
   UpdateCommsChannelBody,
@@ -781,6 +786,393 @@ export const useCreateLead = <
 > => {
   return useMutation(getCreateLeadMutationOptions(options));
 };
+
+/**
+ * @summary Verifica se o usuário autenticado é superadmin da plataforma
+ */
+export const getGetAdminMeUrl = () => {
+  return `/api/admin/me`;
+};
+
+export const getAdminMe = async (
+  options?: RequestInit,
+): Promise<AdminMeResponse> => {
+  return customFetch<AdminMeResponse>(getGetAdminMeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminMeQueryKey = () => {
+  return [`/api/admin/me`] as const;
+};
+
+export const getGetAdminMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminMe>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminMeQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminMe>>> = ({
+    signal,
+  }) => getAdminMe({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminMeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminMe>>
+>;
+export type GetAdminMeQueryError = ErrorType<void>;
+
+/**
+ * @summary Verifica se o usuário autenticado é superadmin da plataforma
+ */
+
+export function useGetAdminMe<
+  TData = Awaited<ReturnType<typeof getAdminMe>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminMeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Lista todas as clínicas da plataforma
+ */
+export const getListAdminClinicsUrl = () => {
+  return `/api/admin/clinics`;
+};
+
+export const listAdminClinics = async (
+  options?: RequestInit,
+): Promise<AdminClinicSummary[]> => {
+  return customFetch<AdminClinicSummary[]>(getListAdminClinicsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdminClinicsQueryKey = () => {
+  return [`/api/admin/clinics`] as const;
+};
+
+export const getListAdminClinicsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdminClinics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminClinics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdminClinicsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAdminClinics>>
+  > = ({ signal }) => listAdminClinics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminClinics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdminClinicsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdminClinics>>
+>;
+export type ListAdminClinicsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Lista todas as clínicas da plataforma
+ */
+
+export function useListAdminClinics<
+  TData = Awaited<ReturnType<typeof listAdminClinics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminClinics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminClinicsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Lista leads capturados no site
+ */
+export const getListAdminLeadsUrl = () => {
+  return `/api/admin/leads`;
+};
+
+export const listAdminLeads = async (
+  options?: RequestInit,
+): Promise<AdminLead[]> => {
+  return customFetch<AdminLead[]>(getListAdminLeadsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdminLeadsQueryKey = () => {
+  return [`/api/admin/leads`] as const;
+};
+
+export const getListAdminLeadsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdminLeads>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminLeads>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdminLeadsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminLeads>>> = ({
+    signal,
+  }) => listAdminLeads({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminLeads>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdminLeadsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdminLeads>>
+>;
+export type ListAdminLeadsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Lista leads capturados no site
+ */
+
+export function useListAdminLeads<
+  TData = Awaited<ReturnType<typeof listAdminLeads>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminLeads>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminLeadsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Atualizar status do lead
+ */
+export const getUpdateAdminLeadUrl = (leadId: string) => {
+  return `/api/admin/leads/${leadId}`;
+};
+
+export const updateAdminLead = async (
+  leadId: string,
+  updateAdminLeadBody: UpdateAdminLeadBody,
+  options?: RequestInit,
+): Promise<AdminLead> => {
+  return customFetch<AdminLead>(getUpdateAdminLeadUrl(leadId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAdminLeadBody),
+  });
+};
+
+export const getUpdateAdminLeadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAdminLead>>,
+    TError,
+    { leadId: string; data: BodyType<UpdateAdminLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAdminLead>>,
+  TError,
+  { leadId: string; data: BodyType<UpdateAdminLeadBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAdminLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAdminLead>>,
+    { leadId: string; data: BodyType<UpdateAdminLeadBody> }
+  > = (props) => {
+    const { leadId, data } = props ?? {};
+
+    return updateAdminLead(leadId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAdminLeadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAdminLead>>
+>;
+export type UpdateAdminLeadMutationBody = BodyType<UpdateAdminLeadBody>;
+export type UpdateAdminLeadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Atualizar status do lead
+ */
+export const useUpdateAdminLead = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAdminLead>>,
+    TError,
+    { leadId: string; data: BodyType<UpdateAdminLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAdminLead>>,
+  TError,
+  { leadId: string; data: BodyType<UpdateAdminLeadBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAdminLeadMutationOptions(options));
+};
+
+/**
+ * @summary Métricas globais da plataforma
+ */
+export const getGetAdminMetricsUrl = () => {
+  return `/api/admin/metrics`;
+};
+
+export const getAdminMetrics = async (
+  options?: RequestInit,
+): Promise<AdminMetrics> => {
+  return customFetch<AdminMetrics>(getGetAdminMetricsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminMetricsQueryKey = () => {
+  return [`/api/admin/metrics`] as const;
+};
+
+export const getGetAdminMetricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminMetricsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminMetrics>>> = ({
+    signal,
+  }) => getAdminMetrics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminMetricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminMetrics>>
+>;
+export type GetAdminMetricsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Métricas globais da plataforma
+ */
+
+export function useGetAdminMetrics<
+  TData = Awaited<ReturnType<typeof getAdminMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminMetricsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Listar tutores

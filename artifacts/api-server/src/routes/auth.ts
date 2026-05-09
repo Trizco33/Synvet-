@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db, clinicsTable, usersTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { getSupabaseAdmin } from "../lib/supabase";
+import { trialEndsAtFromNow } from "../lib/billing";
 
 const router: IRouter = Router();
 
@@ -55,7 +56,12 @@ router.post("/auth/signup", signupLimiter, async (req, res): Promise<void> => {
         await db.transaction(async (tx) => {
           const [clinic] = await tx
             .insert(clinicsTable)
-            .values({ name: clinicName.trim() })
+            .values({
+              name: clinicName.trim(),
+              plan: "trial",
+              status: "trialing",
+              trialEndsAt: trialEndsAtFromNow(),
+            })
             .returning();
           await tx.insert(usersTable).values({
             authId,

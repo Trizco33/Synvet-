@@ -18,6 +18,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useGetMe } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { TrialBanner } from "@/components/layout/TrialBanner";
 
 const NAV_ITEMS = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard },
@@ -133,9 +134,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 w-full max-w-7xl mx-auto pb-24 md:pb-8">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        <TrialBanner />
+        <main className="flex-1 p-4 md:p-8 w-full max-w-7xl mx-auto pb-24 md:pb-8">
+          {children}
+        </main>
+      </div>
       <BottomNav />
     </div>
   );

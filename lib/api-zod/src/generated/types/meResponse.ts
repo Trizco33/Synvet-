@@ -5,6 +5,7 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { BillingStatus } from "./billingStatus";
 import type { MeResponseRole } from "./meResponseRole";
 
 export interface MeResponse {
@@ -13,4 +14,6 @@ export interface MeResponse {
   name?: string | null;
   clinicId: string;
   role: MeResponseRole;
+  billing: BillingStatus;
+  isSuperAdmin: boolean;
 }

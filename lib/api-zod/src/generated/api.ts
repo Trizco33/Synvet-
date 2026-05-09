@@ -23,6 +23,20 @@ export const GetMeResponse = zod.object({
   name: zod.string().nullish(),
   clinicId: zod.string(),
   role: zod.enum(["vet", "admin", "assistant"]),
+  billing: zod.object({
+    plan: zod.enum(["trial", "essencial", "pro", "clinic_plus"]),
+    status: zod.enum([
+      "trialing",
+      "active",
+      "past_due",
+      "canceled",
+      "suspended",
+    ]),
+    trialEndsAt: zod.coerce.date().nullable(),
+    currentPeriodEnd: zod.coerce.date().nullable(),
+    daysLeft: zod.number().nullable(),
+  }),
+  isSuperAdmin: zod.boolean(),
 });
 
 /**
@@ -34,6 +48,10 @@ export const GetClinicResponse = zod.object({
   cnpj: zod.string().nullish(),
   phone: zod.string().nullish(),
   address: zod.string().nullish(),
+  plan: zod.enum(["trial", "essencial", "pro", "clinic_plus"]),
+  status: zod.enum(["trialing", "active", "past_due", "canceled", "suspended"]),
+  trialEndsAt: zod.coerce.date().nullish(),
+  currentPeriodEnd: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -54,6 +72,10 @@ export const UpdateClinicResponse = zod.object({
   cnpj: zod.string().nullish(),
   phone: zod.string().nullish(),
   address: zod.string().nullish(),
+  plan: zod.enum(["trial", "essencial", "pro", "clinic_plus"]),
+  status: zod.enum(["trialing", "active", "past_due", "canceled", "suspended"]),
+  trialEndsAt: zod.coerce.date().nullish(),
+  currentPeriodEnd: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -137,6 +159,87 @@ export const CreateLeadBody = zod.object({
   role: zod.string().max(createLeadBodyRoleMax).nullish(),
   message: zod.string().max(createLeadBodyMessageMax).nullish(),
   source: zod.string().max(createLeadBodySourceMax).nullish(),
+});
+
+/**
+ * @summary Verifica se o usuário autenticado é superadmin da plataforma
+ */
+export const GetAdminMeResponse = zod.object({
+  authId: zod.string(),
+  email: zod.string(),
+  name: zod.string().nullish(),
+});
+
+/**
+ * @summary Lista todas as clínicas da plataforma
+ */
+export const ListAdminClinicsResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  plan: zod.enum(["trial", "essencial", "pro", "clinic_plus"]),
+  status: zod.enum(["trialing", "active", "past_due", "canceled", "suspended"]),
+  trialEndsAt: zod.coerce.date().nullish(),
+  currentPeriodEnd: zod.coerce.date().nullish(),
+  usersCount: zod.number(),
+  petsCount: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAdminClinicsResponse = zod.array(ListAdminClinicsResponseItem);
+
+/**
+ * @summary Lista leads capturados no site
+ */
+export const ListAdminLeadsResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  clinicName: zod.string().nullish(),
+  role: zod.string().nullish(),
+  message: zod.string().nullish(),
+  source: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAdminLeadsResponse = zod.array(ListAdminLeadsResponseItem);
+
+/**
+ * @summary Atualizar status do lead
+ */
+export const UpdateAdminLeadParams = zod.object({
+  leadId: zod.coerce.string(),
+});
+
+export const UpdateAdminLeadBody = zod.object({
+  status: zod.enum(["new", "contacted", "converted", "lost"]),
+});
+
+export const UpdateAdminLeadResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  clinicName: zod.string().nullish(),
+  role: zod.string().nullish(),
+  message: zod.string().nullish(),
+  source: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Métricas globais da plataforma
+ */
+export const GetAdminMetricsResponse = zod.object({
+  totalClinics: zod.number(),
+  trialingClinics: zod.number(),
+  activeClinics: zod.number(),
+  pastDueClinics: zod.number(),
+  suspendedClinics: zod.number(),
+  totalUsers: zod.number(),
+  totalLeads: zod.number(),
+  leadsThisWeek: zod.number(),
+  signupsThisWeek: zod.number(),
 });
 
 /**

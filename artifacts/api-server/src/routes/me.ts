@@ -3,11 +3,22 @@ import { eq } from "drizzle-orm";
 import { db, clinicsTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { isSuperAdmin } from "../middlewares/super-admin";
+import { buildBillingStatus } from "../lib/billing";
 
 const router: IRouter = Router();
 
 router.get("/me", async (req, res): Promise<void> => {
   const user = requireAuth(req);
+  const [clinic] = await db
+    .select()
+    .from(clinicsTable)
+    .where(eq(clinicsTable.id, user.clinicId));
+  if (!clinic) {
+    res.status(404).json({ error: "Clinic not found" });
+    return;
+  }
+  const superAdmin = await isSuperAdmin(user.authId).catch(() => null);
   res.json(
     schemas.GetMeResponse.parse({
       userId: user.id,
@@ -15,6 +26,8 @@ router.get("/me", async (req, res): Promise<void> => {
       name: user.name,
       clinicId: user.clinicId,
       role: user.role,
+      billing: buildBillingStatus(clinic),
+      isSuperAdmin: Boolean(superAdmin),
     }),
   );
 });

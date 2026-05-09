@@ -5,6 +5,8 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { ClinicPlan } from "./clinicPlan";
+import type { ClinicStatus } from "./clinicStatus";
 
 export interface Clinic {
   id: string;
@@ -12,6 +14,10 @@ export interface Clinic {
   cnpj?: string | null;
   phone?: string | null;
   address?: string | null;
+  plan: ClinicPlan;
+  status: ClinicStatus;
+  trialEndsAt?: Date | null;
+  currentPeriodEnd?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

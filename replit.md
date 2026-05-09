@@ -17,6 +17,7 @@ Vars:
 - Auth Supabase real (opcional): `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (server, bypass RLS); `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (client).
 - Sem essas vars → backend cria automaticamente clínica/usuário **demo** (apenas dev; `NODE_ENV=production` bloqueia, reativar com `ALLOW_DEMO_AUTH=true`).
 - Comunicação: `COMMS_PROVIDER=mock` (default) | `evolution` (stub — ver docs).
+- Back-office: `SUPERADMIN_EMAIL` (CSV opcional) — e-mails promovidos a superadmin no boot. Sem isso, ninguém vê `/admin`.
 
 ## Stack
 
@@ -32,7 +33,9 @@ Vars:
 
 - **Site institucional** (público): `/` → `pages/site/landing.tsx` (hero, features, copilot, timeline, mobile, automações, segurança, planos, CTA com lead form)
 - **Login**: `/login`
+- **Signup público**: `/signup` → `pages/signup.tsx` (cria clínica em trial 14d)
 - **App autenticado**: `/app/*` (Dashboard `/app`, pacientes `/app/pacientes/...`, comunicação `/app/comunicacao`, etc.) — `ProtectedRoute` redireciona p/ `/login` quando deslogado
+- **Back-office Synvet** (superadmins): `/admin/*` → `pages/admin/{clinicas,leads,metricas}.tsx` — `ProtectedAdminRoute` checa `useSuperAdmin()` (403 → /app)
 - **PWA**: `manifest.start_url = "/app"` (instalada abre o app); `scope = "/"` permite navegar para o site também
 - **Domínio**: produção em `synvet.app.br`
 
@@ -40,10 +43,15 @@ Vars:
 
 - Contrato API: `lib/api-spec/openapi.yaml`
 - Hooks/schemas gerados: `lib/api-client-react/src/generated`, `lib/api-zod/src/generated` (importar via `schemas.*`)
-- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, **comms**)
-- Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms}.ts` (auth/leads são públicos, montados ANTES do `authMiddleware`)
+- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**)
+- Catálogo de planos: `lib/db/src/billing.ts` (server) + `artifacts/synvet/src/lib/plans.ts` (cliente, manter em sincronia)
+- Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms,admin}.ts` (auth/leads/**admin** são públicos no roteador raiz, montados ANTES do `authMiddleware` tenant — admin tem `superAdminMiddleware` próprio)
 - Site institucional: `artifacts/synvet/src/pages/site/landing.tsx` + `components/site/{site-nav,site-footer,lead-form}.tsx`
-- Middleware de auth: `artifacts/api-server/src/middlewares/auth.ts`
+- Middleware de auth: `artifacts/api-server/src/middlewares/{auth,super-admin}.ts`
+- Billing helpers (server): `artifacts/api-server/src/lib/billing.ts` (trial dates + buildBillingStatus)
+- Seed superadmins: `artifacts/api-server/src/lib/seed-platform-admins.ts` (lê `SUPERADMIN_EMAIL`)
+- Banner de trial / aba Assinatura: `components/layout/TrialBanner.tsx`, `components/billing/SubscriptionCard.tsx`
+- Back-office shell + páginas: `components/admin/AdminLayout.tsx`, `pages/admin/*`
 - Theme/CSS: `artifacts/synvet/src/index.css` (paleta premium escura)
 - Páginas: `artifacts/synvet/src/pages/*` (login, dashboard, pacientes, tutores, consultas, exames, **comunicação**, configurações + detalhes)
 - Componentes clínicos: `artifacts/synvet/src/components/clinical/{clinical-alerts,clinical-timeline,file-uploader}.tsx`
@@ -90,6 +98,8 @@ Vars:
 - `docs/architecture/copilot.md` — Synvet Copilot (chat clínico SSE)
 - `docs/architecture/ai-assist.md` — IA assistiva (4 funções)
 - `docs/architecture/leads-and-signup.md` — leads do site + signup público
+- `docs/architecture/billing.md` — trial automático + catálogo de planos (Fase A)
+- `docs/architecture/back-office.md` — `/admin/*`, role superadmin e `platform_admins`
 
 ## Gotchas críticos
 

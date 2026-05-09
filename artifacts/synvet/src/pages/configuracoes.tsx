@@ -25,10 +25,22 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { useEffect } from "react";
-import { Building, MapPin, Phone, FileText, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Building, MapPin, Phone, FileText, Users, Sparkles, UserCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SubscriptionCard } from "@/components/billing/SubscriptionCard";
+import { useLocation } from "wouter";
+
+const VALID_TABS = ["geral", "equipe", "assinatura"] as const;
+type ConfigTab = (typeof VALID_TABS)[number];
+
+function readTabFromUrl(): ConfigTab {
+  if (typeof window === "undefined") return "geral";
+  const t = new URL(window.location.href).searchParams.get("tab");
+  return (VALID_TABS as readonly string[]).includes(t ?? "") ? (t as ConfigTab) : "geral";
+}
 
 const ROLE_LABEL: Record<TeamMember["role"], string> = {
   admin: "Administrador",
@@ -87,6 +99,29 @@ export default function Configuracoes() {
     );
   };
 
+  const [, setLocation] = useLocation();
+  const [tab, setTab] = useState<ConfigTab>(readTabFromUrl);
+
+  useEffect(() => {
+    const onPop = () => setTab(readTabFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const handleTabChange = (value: string) => {
+    const next = (VALID_TABS as readonly string[]).includes(value)
+      ? (value as ConfigTab)
+      : "geral";
+    setTab(next);
+    const url = new URL(window.location.href);
+    if (next === "geral") {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", next);
+    }
+    setLocation(url.pathname + (url.search ? url.search : ""));
+  };
+
   if (clinicLoading || meLoading) {
     return <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>;
   }
@@ -98,6 +133,20 @@ export default function Configuracoes() {
         <p className="text-muted-foreground">Gerencie as informações da clínica e seu perfil.</p>
       </div>
 
+      <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsTrigger value="geral" data-testid="tab-geral">
+            <Building className="w-4 h-4 mr-1.5" /> Geral
+          </TabsTrigger>
+          <TabsTrigger value="equipe" data-testid="tab-equipe">
+            <Users className="w-4 h-4 mr-1.5" /> Equipe
+          </TabsTrigger>
+          <TabsTrigger value="assinatura" data-testid="tab-assinatura">
+            <Sparkles className="w-4 h-4 mr-1.5" /> Assinatura
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="geral" className="space-y-6 mt-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -184,11 +233,12 @@ export default function Configuracoes() {
         </CardContent>
       </Card>
 
-      <TeamSection canManage={isAdmin} currentUserId={me?.userId} />
-
       <Card>
         <CardHeader>
-          <CardTitle>Meu Perfil</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <UserCircle className="w-5 h-5 text-primary" />
+            Meu Perfil
+          </CardTitle>
           <CardDescription>Informações do seu usuário.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -208,6 +258,16 @@ export default function Configuracoes() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="equipe" className="space-y-6 mt-6">
+          <TeamSection canManage={isAdmin} currentUserId={me?.userId} />
+        </TabsContent>
+
+        <TabsContent value="assinatura" className="space-y-6 mt-6">
+          <SubscriptionCard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

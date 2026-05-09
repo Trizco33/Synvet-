@@ -14,6 +14,7 @@ import storageRouter from "./storage";
 import aiRouter from "./ai";
 import copilotRouter from "./copilot";
 import commsRouter from "./comms";
+import adminRouter from "./admin";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -21,6 +22,10 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use(authRouter);
 router.use(leadsRouter);
+
+// Back-office Synvet — usa superAdminMiddleware próprio (não requer clinicId).
+// Montado ANTES do authMiddleware tenant para não tentar resolver clínica.
+router.use(adminRouter);
 
 router.use(authMiddleware);
 router.use(meRouter);

@@ -129,22 +129,22 @@ function Hero() {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="#solicitar-acesso">
+            <a href="/signup">
               <Button
                 size="lg"
                 className="h-12 px-7 text-base bg-gradient-to-r from-[#7A5CFF] to-[#5B8CFF] text-white hover:opacity-95 shadow-[0_0_40px_-8px_rgba(122,92,255,0.7)]"
                 data-testid="hero-cta"
               >
-                Solicitar acesso <ArrowRight className="w-4 h-4 ml-1" />
+                Começar trial grátis <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </a>
-            <a href="#produto">
+            <a href="#solicitar-acesso">
               <Button
                 size="lg"
                 variant="outline"
                 className="h-12 px-7 text-base border-white/15 text-white/90 hover:bg-white/5 hover:text-white"
               >
-                Ver demonstração
+                Falar com vendas
               </Button>
             </a>
           </div>
@@ -579,11 +579,31 @@ function FinalCTA() {
       <PulseGlow className="left-1/2 -translate-x-1/2 top-0" size={700} color="#7A5CFF" intensity={0.18} />
       <PawTrail count={4} color="#5B8CFF" />
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="mb-10 rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1240] via-[#0e1130] to-[#06070d] p-8 md:p-12 text-center">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#B6A6FF]/80">Comece em 2 minutos</p>
+          <h3 className="mt-3 text-3xl md:text-4xl font-semibold text-white">
+            14 dias grátis. Sem cartão. Cancele quando quiser.
+          </h3>
+          <p className="mt-3 text-white/60 max-w-xl mx-auto">
+            Crie sua conta agora e tenha acesso completo à Synvet. Onboarding e migração assistida inclusos.
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/signup">
+              <Button
+                size="lg"
+                className="h-12 px-8 text-base bg-gradient-to-r from-[#7A5CFF] to-[#5B8CFF] text-white hover:opacity-95 shadow-[0_0_40px_-8px_rgba(122,92,255,0.7)]"
+                data-testid="cta-start-trial"
+              >
+                Começar trial grátis <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </a>
+          </div>
+        </div>
         <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#0a0c14] to-[#06070d] p-8 md:p-14 grid lg:grid-cols-2 gap-10">
           <div>
             <SectionTitle
-              eyebrow="Vamos começar"
-              title="Mostre ao seu time como uma clínica moderna funciona."
+              eyebrow="Prefere falar com a gente?"
+              title="Onboarding assistido para clínicas que querem migrar com calma."
               description="Conte sua realidade e nossa equipe libera o acesso, faz o onboarding e migra seus dados sem dor."
               align="left"
             />

@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db, clinicsTable, usersTable, type User } from "@workspace/db";
 import { getSupabaseAdmin } from "../lib/supabase";
+import { trialEndsAtFromNow } from "../lib/billing";
+import { promoteIfPendingSuperAdmin } from "../lib/seed-platform-admins";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -55,7 +57,12 @@ async function ensureUser(params: {
   if (existing) return existing;
   const [clinic] = await db
     .insert(clinicsTable)
-    .values({ name: params.clinicName?.trim() || `Clínica de ${params.name ?? params.email}` })
+    .values({
+      name: params.clinicName?.trim() || `Clínica de ${params.name ?? params.email}`,
+      plan: "trial",
+      status: "trialing",
+      trialEndsAt: trialEndsAtFromNow(),
+    })
     .returning();
   const [user] = await db
     .insert(usersTable)
@@ -128,6 +135,9 @@ export async function authMiddleware(
       name: meta.name ?? null,
       clinicName: meta.clinic_name ?? null,
     });
+    // Promove para superadmin se o e-mail está em SUPERADMIN_EMAIL e a entrada
+    // ainda é placeholder (pending:email).
+    promoteIfPendingSuperAdmin(data.user.id, user.email).catch(() => {});
     req.auth = { user };
     next();
   } catch (err) {

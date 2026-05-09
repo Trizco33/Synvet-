@@ -18,13 +18,63 @@ export const MeResponseRole = {
   assistant: "assistant",
 } as const;
 
+export type BillingStatusPlan =
+  (typeof BillingStatusPlan)[keyof typeof BillingStatusPlan];
+
+export const BillingStatusPlan = {
+  trial: "trial",
+  essencial: "essencial",
+  pro: "pro",
+  clinic_plus: "clinic_plus",
+} as const;
+
+export type BillingStatusStatus =
+  (typeof BillingStatusStatus)[keyof typeof BillingStatusStatus];
+
+export const BillingStatusStatus = {
+  trialing: "trialing",
+  active: "active",
+  past_due: "past_due",
+  canceled: "canceled",
+  suspended: "suspended",
+} as const;
+
+export interface BillingStatus {
+  plan: BillingStatusPlan;
+  status: BillingStatusStatus;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  daysLeft: number | null;
+}
+
 export interface MeResponse {
   userId: string;
   email: string;
   name?: string | null;
   clinicId: string;
   role: MeResponseRole;
+  billing: BillingStatus;
+  isSuperAdmin: boolean;
 }
+
+export type ClinicPlan = (typeof ClinicPlan)[keyof typeof ClinicPlan];
+
+export const ClinicPlan = {
+  trial: "trial",
+  essencial: "essencial",
+  pro: "pro",
+  clinic_plus: "clinic_plus",
+} as const;
+
+export type ClinicStatus = (typeof ClinicStatus)[keyof typeof ClinicStatus];
+
+export const ClinicStatus = {
+  trialing: "trialing",
+  active: "active",
+  past_due: "past_due",
+  canceled: "canceled",
+  suspended: "suspended",
+} as const;
 
 export interface Clinic {
   id: string;
@@ -32,6 +82,10 @@ export interface Clinic {
   cnpj?: string | null;
   phone?: string | null;
   address?: string | null;
+  plan: ClinicPlan;
+  status: ClinicStatus;
+  trialEndsAt?: string | null;
+  currentPeriodEnd?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -119,6 +173,84 @@ export interface CreateLeadBody {
 export interface CreateLeadResponse {
   ok: boolean;
   id: string;
+}
+
+export interface AdminMeResponse {
+  authId: string;
+  email: string;
+  name?: string | null;
+}
+
+export type AdminClinicSummaryPlan =
+  (typeof AdminClinicSummaryPlan)[keyof typeof AdminClinicSummaryPlan];
+
+export const AdminClinicSummaryPlan = {
+  trial: "trial",
+  essencial: "essencial",
+  pro: "pro",
+  clinic_plus: "clinic_plus",
+} as const;
+
+export type AdminClinicSummaryStatus =
+  (typeof AdminClinicSummaryStatus)[keyof typeof AdminClinicSummaryStatus];
+
+export const AdminClinicSummaryStatus = {
+  trialing: "trialing",
+  active: "active",
+  past_due: "past_due",
+  canceled: "canceled",
+  suspended: "suspended",
+} as const;
+
+export interface AdminClinicSummary {
+  id: string;
+  name: string;
+  plan: AdminClinicSummaryPlan;
+  status: AdminClinicSummaryStatus;
+  trialEndsAt?: string | null;
+  currentPeriodEnd?: string | null;
+  usersCount: number;
+  petsCount: number;
+  createdAt: string;
+}
+
+export interface AdminLead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  clinicName?: string | null;
+  role?: string | null;
+  message?: string | null;
+  source: string;
+  status: string;
+  createdAt: string;
+}
+
+export type UpdateAdminLeadBodyStatus =
+  (typeof UpdateAdminLeadBodyStatus)[keyof typeof UpdateAdminLeadBodyStatus];
+
+export const UpdateAdminLeadBodyStatus = {
+  new: "new",
+  contacted: "contacted",
+  converted: "converted",
+  lost: "lost",
+} as const;
+
+export interface UpdateAdminLeadBody {
+  status: UpdateAdminLeadBodyStatus;
+}
+
+export interface AdminMetrics {
+  totalClinics: number;
+  trialingClinics: number;
+  activeClinics: number;
+  pastDueClinics: number;
+  suspendedClinics: number;
+  totalUsers: number;
+  totalLeads: number;
+  leadsThisWeek: number;
+  signupsThisWeek: number;
 }
 
 export interface Tutor {

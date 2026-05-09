@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { ensureExamsBucket } from "./lib/exam-files";
 import { startCommsModule } from "./comms";
+import { seedPlatformAdmins } from "./lib/seed-platform-admins";
 
 const EXAM_MAX_BYTES = 15 * 1024 * 1024; // 15 MB — alinhado ao limite client-side
 
@@ -10,6 +11,10 @@ ensureExamsBucket(EXAM_MAX_BYTES).catch((err) => {
 });
 
 startCommsModule();
+
+seedPlatformAdmins().catch((err) => {
+  logger.warn({ err }, "Falha ao seed de platform_admins (segue sem bloquear)");
+});
 
 const rawPort = process.env["PORT"];
 

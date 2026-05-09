@@ -10,3 +10,4 @@ export * from "./medical-records";
 export * from "./copilot";
 export * from "./leads";
 export * from "./comms";
+export * from "./platform-admins";

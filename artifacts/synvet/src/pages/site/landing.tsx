@@ -23,6 +23,21 @@ import {
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 import { LeadForm } from "@/components/site/lead-form";
+import {
+  EcgLine,
+  PulseGlow,
+  PawTrail,
+  StethoscopeConnection,
+  HeartbeatDot,
+  GridFloor,
+  SectionDivider,
+} from "@/components/site/motion-fx";
+import { SmoothScroll } from "@/components/site/smooth-scroll";
+import { ShineCard } from "@/components/site/shine-card";
+import { WorkflowFlow } from "@/components/site/workflow-flow";
+import { StickyFeatures } from "@/components/site/sticky-features";
+import { SocialProof } from "@/components/site/social-proof";
+import { AIInsights } from "@/components/site/ai-insights";
 import { Button } from "@/components/ui/button";
 
 const fadeUp = {
@@ -75,8 +90,10 @@ function SectionTitle({
 function Hero() {
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden">
-      <Glow className="bg-[#7A5CFF]/30 w-[700px] h-[700px] -top-40 -left-40" />
-      <Glow className="bg-[#5B8CFF]/20 w-[600px] h-[600px] -top-32 right-0" />
+      <PulseGlow className="-top-40 -left-40" size={700} color="#7A5CFF" intensity={0.22} />
+      <PulseGlow className="-top-32 right-0" size={600} color="#5B8CFF" intensity={0.16} />
+      <GridFloor opacity={0.05} />
+      <PawTrail count={6} color="#7A5CFF" />
       <div
         aria-hidden
         className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(122,92,255,0.15),transparent_60%)]"
@@ -89,7 +106,7 @@ function Hero() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp} className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs text-white/70 bg-white/5 border border-white/10 mb-6 backdrop-blur">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <HeartbeatDot color="#34d399" size={8} />
             Beta privado aberto para clínicas selecionadas
           </div>
 
@@ -101,7 +118,11 @@ function Hero() {
             </span>
           </h1>
 
-          <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+          <div className="relative mt-8 mx-auto max-w-3xl h-10">
+            <EcgLine className="absolute inset-0 w-full h-full" color="#7A5CFF" duration={3.4} opacity={0.5} />
+          </div>
+
+          <p className="mt-4 text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
             Menos burocracia, mais medicina. Prontuários inteligentes, IA
             assistiva contextual, agenda integrada e a experiência mobile que sua
             clínica merece.
@@ -230,57 +251,29 @@ function FeatureCard({
   children: React.ReactNode;
 }) {
   return (
-    <motion.div {...fadeUp} className="group relative">
-      <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="relative rounded-2xl border border-white/5 bg-white/[0.02] p-6 h-full hover:bg-white/[0.04] transition-colors">
+    <motion.div {...fadeUp}>
+      <ShineCard className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 h-full hover:bg-white/[0.04] transition-colors">
         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7A5CFF]/30 to-[#5B8CFF]/20 border border-[#7A5CFF]/30 flex items-center justify-center mb-4">
           <Icon className="w-5 h-5 text-[#B6A6FF]" />
         </div>
         <h3 className="text-lg font-medium text-white mb-1.5">{title}</h3>
         <p className="text-sm text-white/55 leading-relaxed">{children}</p>
-      </div>
+      </ShineCard>
     </motion.div>
   );
 }
 
-function Features() {
-  return (
-    <section id="produto" className="relative py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <SectionTitle
-          eyebrow="O sistema"
-          title="Tudo que sua clínica precisa, sem o peso dos ERPs antigos."
-          description="Construído de zero para veterinários modernos. Rápido, organizado, inteligente e bonito de usar."
-        />
-        <div className="mt-16 grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <FeatureCard icon={Brain} title="IA assistiva contextual">
-            Resumo de consultas, organização de texto livre, detecção de padrões clínicos e copiloto que conhece o paciente.
-          </FeatureCard>
-          <FeatureCard icon={Activity} title="Timeline clínica integrada">
-            Toda a história do paciente em uma linha do tempo: consultas, exames, vacinas e prontuário, com alertas de criticidade.
-          </FeatureCard>
-          <FeatureCard icon={ClipboardList} title="Anamnese por sistemas">
-            Estrutura clínica padronizada — neuro, digestivo, respiratório, dermato e geral — para registros completos em minutos.
-          </FeatureCard>
-          <FeatureCard icon={CalendarCheck2} title="Agenda inteligente">
-            Calendário visual, confirmação por WhatsApp, lembretes automáticos e agendamento online para tutores.
-          </FeatureCard>
-          <FeatureCard icon={FileText} title="Prontuário e laudos">
-            Upload de exames com barra de progresso, links assinados que nunca quebram, busca rápida e versionamento de documentos.
-          </FeatureCard>
-          <FeatureCard icon={Workflow} title="Multi-clínica com RBAC">
-            Veterinários, assistentes e administradores em equipe — cada clínica isolada por padrão, com auditoria completa.
-          </FeatureCard>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function CopilotShowcase() {
   return (
     <section id="copilot" className="relative py-24 md:py-32 overflow-hidden">
-      <Glow className="bg-[#7A5CFF]/20 w-[600px] h-[600px] left-1/2 -translate-x-1/2 top-10" />
+      <PulseGlow className="left-1/2 -translate-x-1/2 top-10" size={600} color="#7A5CFF" intensity={0.14} />
+      <StethoscopeConnection
+        className="absolute left-0 right-0 top-1/2 -translate-y-1/2 hidden lg:block w-full h-40"
+        color="#5B8CFF"
+        opacity={0.32}
+        duration={3.2}
+      />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
         <motion.div {...fadeUp}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs text-[#B6A6FF] bg-[#7A5CFF]/10 border border-[#7A5CFF]/20 mb-4">
@@ -323,7 +316,8 @@ function CopilotShowcase() {
                   <div className="text-[11px] text-white/40">Felina · 8 anos · Persa</div>
                 </div>
               </div>
-              <span className="text-[10px] uppercase tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <HeartbeatDot color="#34d399" size={6} />
                 Ao vivo
               </span>
             </div>
@@ -346,8 +340,8 @@ function CopilotShowcase() {
               <div className="flex">
                 <div className="bg-gradient-to-br from-[#7A5CFF]/15 to-[#5B8CFF]/10 border border-[#7A5CFF]/20 rounded-xl rounded-tl-sm px-3.5 py-2.5 max-w-[88%] text-white/85">
                   Sugiro avaliar SDMA, urinálise (DU) e relação UPC para confirmar.
-                  <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-white/40">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] text-white/40">
+                    <HeartbeatDot color="#34d399" size={6} />
                     digitando...
                   </div>
                 </div>
@@ -368,69 +362,10 @@ function CopilotShowcase() {
   );
 }
 
-function TimelineSection() {
-  const events = [
-    { i: Stethoscope, t: "Consulta de retorno", d: "12/05/2026", desc: "Apetite normalizado. Continuar dieta renal.", sev: "info" },
-    { i: FileText, t: "Bioquímico completo", d: "10/05/2026", desc: "Creatinina 2,3 ↑ • ALT 145 ↑", sev: "warning" },
-    { i: Syringe, t: "Vacina V4 reforço", d: "20/02/2026", desc: "Próxima dose em fevereiro/2027", sev: "info" },
-    { i: AlertTriangle, t: "Alergia identificada", d: "08/01/2026", desc: "Reação a frango — registrada no prontuário", sev: "critical" },
-  ];
-  const sevColor = (s: string) =>
-    s === "critical"
-      ? "border-rose-500/30 text-rose-300 bg-rose-500/10"
-      : s === "warning"
-        ? "border-amber-500/30 text-amber-300 bg-amber-500/10"
-        : "border-[#7A5CFF]/30 text-[#B6A6FF] bg-[#7A5CFF]/10";
-  return (
-    <section className="relative py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-        <motion.div {...fadeUp} className="lg:order-2">
-          <SectionTitle
-            eyebrow="Timeline clínica"
-            title="A história completa do paciente em uma linha do tempo."
-            description="Consultas, exames, vacinas e prontuário em uma única timeline cronológica, com alertas automáticos de criticidade."
-            align="left"
-          />
-        </motion.div>
-        <motion.div {...fadeUp} className="lg:order-1 relative">
-          <div className="absolute -inset-4 bg-gradient-to-br from-[#5B8CFF]/20 to-[#7A5CFF]/15 blur-3xl opacity-50 rounded-[3rem]" />
-          <div className="relative rounded-2xl border border-white/10 bg-[#0a0c14] p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <div className="text-sm font-medium text-white">Luna · Felina</div>
-                <div className="text-xs text-white/40">8 anos · Persa</div>
-              </div>
-              <span className="text-[10px] uppercase tracking-wide text-rose-300 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-full">
-                Crítico
-              </span>
-            </div>
-            <div className="relative space-y-4 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-white/5">
-              {events.map((e) => (
-                <div key={e.t} className="relative flex gap-3">
-                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${sevColor(e.sev)}`}>
-                    <e.i className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm font-medium text-white truncate">{e.t}</span>
-                      <span className="text-[11px] text-white/40 shrink-0">{e.d}</span>
-                    </div>
-                    <p className="text-xs text-white/55 mt-0.5">{e.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
 function MobileSection() {
   return (
     <section id="mobile" className="relative py-24 md:py-32 overflow-hidden">
-      <Glow className="bg-[#5B8CFF]/15 w-[500px] h-[500px] -right-40 top-10" />
+      <PulseGlow className="-right-40 top-10" size={500} color="#5B8CFF" intensity={0.12} />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
         <motion.div {...fadeUp}>
           <SectionTitle
@@ -446,11 +381,11 @@ function MobileSection() {
               { i: Activity, t: "Modo offline", d: "Continua funcionando" },
               { i: ShieldCheck, t: "Dados criptografados", d: "Em trânsito e em repouso" },
             ].map((c) => (
-              <div key={c.t} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+              <ShineCard key={c.t} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
                 <c.i className="w-5 h-5 text-[#B6A6FF] mb-2" />
                 <div className="text-sm text-white font-medium">{c.t}</div>
                 <div className="text-xs text-white/50 mt-0.5">{c.d}</div>
-              </div>
+              </ShineCard>
             ))}
           </div>
         </motion.div>
@@ -495,35 +430,6 @@ function MobileSection() {
             </div>
           </div>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function AutomationsSection() {
-  return (
-    <section className="relative py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <SectionTitle
-          eyebrow="Agenda + WhatsApp"
-          title="Sua clínica conversa com os tutores. Sem você precisar lembrar."
-          description="Confirmações automáticas, lembretes de vacinas, retornos e exames. O Synvet cuida da rotina de comunicação para você focar no atendimento."
-        />
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
-          {[
-            { i: MessageSquareText, t: "Confirmação de consulta", d: "Tutor recebe WhatsApp 24h antes e confirma com 1 toque." },
-            { i: CalendarCheck2, t: "Lembrete de vacina", d: "Calendário vacinal por espécie envia avisos no momento certo." },
-            { i: FileText, t: "Exame pronto", d: "Quando o laudo chega, o tutor é notificado automaticamente." },
-          ].map((c) => (
-            <motion.div key={c.t} {...fadeUp} className="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 flex items-center justify-center mb-4">
-                <c.i className="w-5 h-5 text-emerald-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white mb-1.5">{c.t}</h3>
-              <p className="text-sm text-white/55">{c.d}</p>
-            </motion.div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -670,7 +576,8 @@ function PricingSection() {
 function FinalCTA() {
   return (
     <section id="solicitar-acesso" className="relative py-24 md:py-32 overflow-hidden">
-      <Glow className="bg-[#7A5CFF]/25 w-[700px] h-[700px] left-1/2 -translate-x-1/2 top-0" />
+      <PulseGlow className="left-1/2 -translate-x-1/2 top-0" size={700} color="#7A5CFF" intensity={0.18} />
+      <PawTrail count={4} color="#5B8CFF" />
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6">
         <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#0a0c14] to-[#06070d] p-8 md:p-14 grid lg:grid-cols-2 gap-10">
           <div>
@@ -706,14 +613,19 @@ function FinalCTA() {
 export default function Landing() {
   return (
     <div className="min-h-screen bg-[#06070d] text-white relative overflow-x-hidden">
+      <SmoothScroll />
       <SiteNav />
       <main>
         <Hero />
-        <Features />
+        <WorkflowFlow />
+        <SectionDivider />
+        <div id="produto">
+          <StickyFeatures />
+        </div>
+        <AIInsights />
         <CopilotShowcase />
-        <TimelineSection />
         <MobileSection />
-        <AutomationsSection />
+        <SocialProof />
         <SecuritySection />
         <PricingSection />
         <FinalCTA />

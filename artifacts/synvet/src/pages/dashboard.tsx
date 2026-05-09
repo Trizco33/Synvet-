@@ -138,7 +138,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Link href="/consultas">
+            <Link href="/app/consultas">
               <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-summarize">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" />
@@ -148,7 +148,7 @@ export default function Dashboard() {
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
             </Link>
-            <Link href="/consultas">
+            <Link href="/app/consultas">
               <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-organize">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" />
@@ -158,7 +158,7 @@ export default function Dashboard() {
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
             </Link>
-            <Link href="/pacientes">
+            <Link href="/app/pacientes">
               <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-timeline">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" />
@@ -168,7 +168,7 @@ export default function Dashboard() {
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
             </Link>
-            <Link href="/pacientes">
+            <Link href="/app/pacientes">
               <div className="group flex h-full flex-col gap-1 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer" data-testid="ai-shortcut-patterns">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" />

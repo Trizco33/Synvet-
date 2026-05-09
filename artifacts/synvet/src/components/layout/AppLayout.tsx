@@ -19,12 +19,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/pacientes", label: "Pacientes", icon: Dog },
-  { href: "/tutores", label: "Tutores", icon: Users },
-  { href: "/consultas", label: "Consultas", icon: CalendarDays },
-  { href: "/exames", label: "Exames", icon: Stethoscope },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
+  { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/app/pacientes", label: "Pacientes", icon: Dog },
+  { href: "/app/tutores", label: "Tutores", icon: Users },
+  { href: "/app/consultas", label: "Consultas", icon: CalendarDays },
+  { href: "/app/exames", label: "Exames", icon: Stethoscope },
+  { href: "/app/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +45,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const NavLinks = () => (
     <div className="space-y-1">
       {NAV_ITEMS.map((item) => {
-        const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+        const isActive =
+          location === item.href ||
+          (item.href !== "/app" && location.startsWith(item.href + "/")) ||
+          (item.href === "/app" && location === "/app");
         return (
           <Link key={item.href} href={item.href} data-testid={`nav-${item.label.toLowerCase()}`}>
             <div

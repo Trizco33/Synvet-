@@ -84,7 +84,7 @@ const createRecordSchema = z.object({
 });
 
 export default function PetDetail() {
-  const [, params] = useRoute("/pacientes/:petId");
+  const [, params] = useRoute("/app/pacientes/:petId");
   const petId = params?.petId || "";
   const queryClient = useQueryClient();
 
@@ -267,7 +267,7 @@ export default function PetDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/pacientes">
+          <Link href="/app/pacientes">
             <Button variant="ghost" size="icon" data-testid="btn-back-pets">
               <ArrowLeft className="w-5 h-5" />
             </Button>

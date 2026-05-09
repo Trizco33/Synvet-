@@ -80,7 +80,7 @@ export default function Login() {
       toast.error("Erro ao entrar", { description: error });
     } else {
       toast.success("Login realizado com sucesso");
-      setLocation("/");
+      setLocation("/app");
     }
   };
 
@@ -101,7 +101,7 @@ export default function Login() {
         form.setValue("email", values.email);
       } else {
         toast.success("Conta criada com sucesso");
-        setLocation("/");
+        setLocation("/app");
       }
     } catch (err: unknown) {
       setIsLoading(false);
@@ -150,7 +150,7 @@ export default function Login() {
               <Button
                 variant="default"
                 className="mt-2 w-full"
-                onClick={() => setLocation("/")}
+                onClick={() => setLocation("/app")}
                 data-testid="button-demo-login"
               >
                 Acessar Demonstração

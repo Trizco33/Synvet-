@@ -28,6 +28,8 @@ import type {
   CopilotConversationDetail,
   CreateConsultationBody,
   CreateExamBody,
+  CreateLeadBody,
+  CreateLeadResponse,
   CreateMedicalRecordBody,
   CreatePetBody,
   CreateTutorBody,
@@ -674,6 +676,92 @@ export const useSignupUser = <
   TContext
 > => {
   return useMutation(getSignupUserMutationOptions(options));
+};
+
+/**
+ * @summary Capturar lead do site institucional (público)
+ */
+export const getCreateLeadUrl = () => {
+  return `/api/leads`;
+};
+
+export const createLead = async (
+  createLeadBody: CreateLeadBody,
+  options?: RequestInit,
+): Promise<CreateLeadResponse> => {
+  return customFetch<CreateLeadResponse>(getCreateLeadUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createLeadBody),
+  });
+};
+
+export const getCreateLeadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLead>>,
+    TError,
+    { data: BodyType<CreateLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLead>>,
+  TError,
+  { data: BodyType<CreateLeadBody> },
+  TContext
+> => {
+  const mutationKey = ["createLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLead>>,
+    { data: BodyType<CreateLeadBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLead(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLeadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLead>>
+>;
+export type CreateLeadMutationBody = BodyType<CreateLeadBody>;
+export type CreateLeadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Capturar lead do site institucional (público)
+ */
+export const useCreateLead = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLead>>,
+    TError,
+    { data: BodyType<CreateLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLead>>,
+  TError,
+  { data: BodyType<CreateLeadBody> },
+  TContext
+> => {
+  return useMutation(getCreateLeadMutationOptions(options));
 };
 
 /**

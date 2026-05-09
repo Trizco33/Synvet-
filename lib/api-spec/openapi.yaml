@@ -142,6 +142,24 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SignupResponse" }
 
+  /leads:
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Capturar lead do site institucional (público)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLeadBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreateLeadResponse" }
+
   /tutors:
     get:
       operationId: listTutors
@@ -826,6 +844,25 @@ components:
         ok: { type: boolean }
         userId: { type: string }
       required: [ok, userId]
+
+    CreateLeadBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 200 }
+        phone: { type: string, maxLength: 40, nullable: true }
+        clinicName: { type: string, maxLength: 160, nullable: true }
+        role: { type: string, maxLength: 80, nullable: true }
+        message: { type: string, maxLength: 1000, nullable: true }
+        source: { type: string, maxLength: 80, nullable: true }
+      required: [name, email]
+
+    CreateLeadResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        id: { type: string }
+      required: [ok, id]
 
     Tutor:
       type: object

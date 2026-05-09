@@ -112,6 +112,34 @@ export const SignupUserBody = zod.object({
 });
 
 /**
+ * @summary Capturar lead do site institucional (público)
+ */
+export const createLeadBodyNameMin = 2;
+export const createLeadBodyNameMax = 120;
+
+export const createLeadBodyEmailMax = 200;
+
+export const createLeadBodyPhoneMax = 40;
+
+export const createLeadBodyClinicNameMax = 160;
+
+export const createLeadBodyRoleMax = 80;
+
+export const createLeadBodyMessageMax = 1000;
+
+export const createLeadBodySourceMax = 80;
+
+export const CreateLeadBody = zod.object({
+  name: zod.string().min(createLeadBodyNameMin).max(createLeadBodyNameMax),
+  email: zod.string().email().max(createLeadBodyEmailMax),
+  phone: zod.string().max(createLeadBodyPhoneMax).nullish(),
+  clinicName: zod.string().max(createLeadBodyClinicNameMax).nullish(),
+  role: zod.string().max(createLeadBodyRoleMax).nullish(),
+  message: zod.string().max(createLeadBodyMessageMax).nullish(),
+  source: zod.string().max(createLeadBodySourceMax).nullish(),
+});
+
+/**
  * @summary Listar tutores
  */
 export const ListTutorsQueryParams = zod.object({

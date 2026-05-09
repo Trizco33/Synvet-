@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { CopilotProvider } from "@/components/ai/copilot/copilot-provider";
 import { CopilotFab } from "@/components/ai/copilot/copilot-fab";
 import { CopilotDrawer } from "@/components/ai/copilot/copilot-drawer";
+import Landing from "@/pages/site/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Tutores from "@/pages/tutores";
@@ -23,7 +24,6 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
-// Protected Route Wrapper
 type ProtectedRouteProps = {
   component: ComponentType;
 };
@@ -39,7 +39,11 @@ function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   }, [loading, configured, user, setLocation]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Carregando...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">
+        Carregando...
+      </div>
+    );
   }
 
   if (configured && !user) {
@@ -58,36 +62,21 @@ function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
 function Router() {
   return (
     <Switch>
+      {/* Public site */}
+      <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
-      
-      <Route path="/">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
-      <Route path="/pacientes">
-        {() => <ProtectedRoute component={Pacientes} />}
-      </Route>
-      <Route path="/pacientes/:petId">
-        {() => <ProtectedRoute component={PetDetail} />}
-      </Route>
-      <Route path="/tutores">
-        {() => <ProtectedRoute component={Tutores} />}
-      </Route>
-      <Route path="/tutores/:tutorId">
-        {() => <ProtectedRoute component={TutorDetail} />}
-      </Route>
-      <Route path="/consultas">
-        {() => <ProtectedRoute component={Consultas} />}
-      </Route>
-      <Route path="/consultas/:consultationId">
-        {() => <ProtectedRoute component={ConsultationDetail} />}
-      </Route>
-      <Route path="/exames">
-        {() => <ProtectedRoute component={Exames} />}
-      </Route>
-      <Route path="/configuracoes">
-        {() => <ProtectedRoute component={Configuracoes} />}
-      </Route>
-      
+
+      {/* Authenticated app at /app/* */}
+      <Route path="/app">{() => <ProtectedRoute component={Dashboard} />}</Route>
+      <Route path="/app/pacientes">{() => <ProtectedRoute component={Pacientes} />}</Route>
+      <Route path="/app/pacientes/:petId">{() => <ProtectedRoute component={PetDetail} />}</Route>
+      <Route path="/app/tutores">{() => <ProtectedRoute component={Tutores} />}</Route>
+      <Route path="/app/tutores/:tutorId">{() => <ProtectedRoute component={TutorDetail} />}</Route>
+      <Route path="/app/consultas">{() => <ProtectedRoute component={Consultas} />}</Route>
+      <Route path="/app/consultas/:consultationId">{() => <ProtectedRoute component={ConsultationDetail} />}</Route>
+      <Route path="/app/exames">{() => <ProtectedRoute component={Exames} />}</Route>
+      <Route path="/app/configuracoes">{() => <ProtectedRoute component={Configuracoes} />}</Route>
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -99,12 +88,10 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <CopilotProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
+            <Router />
+            <Toaster />
           </CopilotProvider>
         </AuthProvider>
-        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
   );

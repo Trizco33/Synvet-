@@ -28,6 +28,8 @@ export * from "./createConsultationBody";
 export * from "./createConsultationBodyStatus";
 export * from "./createExamBody";
 export * from "./createExamBodyStatus";
+export * from "./createLeadBody";
+export * from "./createLeadResponse";
 export * from "./createMedicalRecordBody";
 export * from "./createMedicalRecordBodySourceType";
 export * from "./createPetBody";

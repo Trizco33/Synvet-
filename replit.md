@@ -27,12 +27,21 @@ Vars:
 - API codegen: Orval (OpenAPI → React Query hooks + Zod schemas)
 - PWA: `public/manifest.webmanifest` + `theme-color` no `index.html`
 
+## Routing
+
+- **Site institucional** (público): `/` → `pages/site/landing.tsx` (hero, features, copilot, timeline, mobile, automações, segurança, planos, CTA com lead form)
+- **Login**: `/login`
+- **App autenticado**: `/app/*` (Dashboard `/app`, pacientes `/app/pacientes/...`, etc.) — `ProtectedRoute` redireciona p/ `/login` quando deslogado
+- **PWA**: `manifest.start_url = "/app"` (instalada abre o app); `scope = "/"` permite navegar para o site também
+- **Domínio**: produção em `synvet.app.br`
+
 ## Where things live
 
 - Contrato API: `lib/api-spec/openapi.yaml`
 - Hooks/schemas gerados: `lib/api-client-react/src/generated`, `lib/api-zod/src/generated` (importar via `schemas.*`)
-- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot — todos com `clinicId`, `createdAt`, `updatedAt`, `createdBy`; `copilot_messages` é append-only)
-- Rotas da API: `artifacts/api-server/src/routes/{health,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot}.ts` (copilot = CRUD de conversas + chat SSE)
+- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads — todos com `clinicId` exceto `leads`/`clinics`; `copilot_messages` é append-only; `leads` é capturado pelo site público sem auth)
+- Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot}.ts` (auth/leads são públicos, montados ANTES do `authMiddleware`)
+- Site institucional: `artifacts/synvet/src/pages/site/landing.tsx` + `components/site/{site-nav,site-footer,lead-form}.tsx`
 - Middleware de auth: `artifacts/api-server/src/middlewares/auth.ts` (Supabase JWT → user; fallback demo; `requireRole(...)`)
 - Theme/CSS: `artifacts/synvet/src/index.css` (paleta premium escura)
 - Páginas: `artifacts/synvet/src/pages/*` (login, dashboard, pacientes, tutores, consultas, exames, configurações + detalhes)
@@ -105,6 +114,13 @@ Vars:
 - **Frontend**: `CopilotProvider` (React context com `setContext`/`open`/`setOpen`), `useSetCopilotContext({petId,consultationId,label})` (hook em render — clear on unmount), `<CopilotFab/>` (gradient, `bottom-24 md:bottom-6`, só visível com contexto), `<CopilotDrawer/>` (Sheet lateral, header com badges crítico/alergia/medicação, contadores de fontes, 6 quick prompts, composer com Enter-to-send + Shift+Enter newline, "Parar" durante stream). Renderer markdown reusa `<AIMarkdown/>`. Provider/FAB/Drawer montados em `App.tsx` dentro de `AuthProvider`. Páginas que registram contexto: `pet-detail` (qualquer aba), `consultation-detail` (passa `petId` + `consultationId`).
 - **Multi-tenancy**: `buildCopilotContext` SEMPRE recebe `clinicId` e filtra todas as queries; consulta em foco também valida `petId`.
 - **Preparação RAG** (não implementado): `contextBuilder` é a abstração natural — basta enriquecer `CopilotPetContext` com `retrievedDocs[]` e `renderContextForPrompt` os concatena. Service e prompt já tratam o contexto como bloco opaco.
+
+### Leads (site institucional)
+- `POST /leads` (público, antes do `authMiddleware`) grava em `leads` (id, name, email, phone?, clinicName?, role?, message?, source default `landing`, status default `new`).
+- Rate limit: 20 req/h por IP via `leadsLimiter`.
+- Validação Zod via `schemas.CreateLeadBody` (gerado pelo OpenAPI).
+- Notificação por email é TODO (sem SMTP/Resend agora — ler `leads.created_at` periodicamente ou plugar webhook depois).
+- Frontend: `<LeadForm/>` chama `createLead()` (função fetch gerada), Toast de sucesso/erro, source identifica origem (`landing-cta`, `landing-final-cta`, etc.).
 
 ## Auth signup
 

@@ -28,7 +28,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Label } from "@/components/ui/label";
 
 export default function ConsultationDetail() {
-  const [, params] = useRoute("/consultas/:consultationId");
+  const [, params] = useRoute("/app/consultas/:consultationId");
   const consultationId = params?.consultationId || "";
   const queryClient = useQueryClient();
 
@@ -165,7 +165,7 @@ export default function ConsultationDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/consultas">
+        <Link href="/app/consultas">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="w-5 h-5" />
           </Button>

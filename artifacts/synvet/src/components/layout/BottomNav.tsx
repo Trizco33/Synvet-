@@ -3,11 +3,11 @@ import { LayoutDashboard, Dog, CalendarDays, Stethoscope, Settings } from "lucid
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
-  { href: "/", label: "Início", icon: LayoutDashboard },
-  { href: "/pacientes", label: "Pacientes", icon: Dog },
-  { href: "/consultas", label: "Agenda", icon: CalendarDays },
-  { href: "/exames", label: "Exames", icon: Stethoscope },
-  { href: "/configuracoes", label: "Mais", icon: Settings },
+  { href: "/app", label: "Início", icon: LayoutDashboard },
+  { href: "/app/pacientes", label: "Pacientes", icon: Dog },
+  { href: "/app/consultas", label: "Agenda", icon: CalendarDays },
+  { href: "/app/exames", label: "Exames", icon: Stethoscope },
+  { href: "/app/configuracoes", label: "Mais", icon: Settings },
 ];
 
 export function BottomNav() {
@@ -21,7 +21,7 @@ export function BottomNav() {
         {ITEMS.map((item) => {
           const active =
             location === item.href ||
-            (item.href !== "/" && location.startsWith(item.href));
+            (item.href !== "/app" && location.startsWith(item.href + "/"));
           return (
             <li key={item.href}>
               <Link href={item.href} data-testid={`bottomnav-${item.label.toLowerCase()}`}>

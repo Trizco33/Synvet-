@@ -96,6 +96,31 @@ export interface SignupResponse {
   userId: string;
 }
 
+export interface CreateLeadBody {
+  /**
+   * @minLength 2
+   * @maxLength 120
+   */
+  name: string;
+  /** @maxLength 200 */
+  email: string;
+  /** @maxLength 40 */
+  phone?: string | null;
+  /** @maxLength 160 */
+  clinicName?: string | null;
+  /** @maxLength 80 */
+  role?: string | null;
+  /** @maxLength 1000 */
+  message?: string | null;
+  /** @maxLength 80 */
+  source?: string | null;
+}
+
+export interface CreateLeadResponse {
+  ok: boolean;
+  id: string;
+}
+
 export interface Tutor {
   id: string;
   name: string;

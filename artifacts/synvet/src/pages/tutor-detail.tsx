@@ -63,7 +63,7 @@ const createPetSchema = z.object({
 });
 
 export default function TutorDetail() {
-  const [, params] = useRoute("/tutores/:tutorId");
+  const [, params] = useRoute("/app/tutores/:tutorId");
   const tutorId = params?.tutorId || "";
   const queryClient = useQueryClient();
 
@@ -192,7 +192,7 @@ export default function TutorDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/tutores">
+        <Link href="/app/tutores">
           <Button variant="ghost" size="icon" data-testid="btn-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>

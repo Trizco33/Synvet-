@@ -109,9 +109,25 @@ export interface Clinic {
   updatedAt: string;
 }
 
+/**
+ * Slug do plano. O servidor resolve para o Stripe Price ID via
+STRIPE_PRICE_* (catálogo canônico em lib/db/src/billing.ts).
+
+ */
+export type BillingCheckoutBodyPlan =
+  (typeof BillingCheckoutBodyPlan)[keyof typeof BillingCheckoutBodyPlan];
+
+export const BillingCheckoutBodyPlan = {
+  essencial: "essencial",
+  pro: "pro",
+  clinic_plus: "clinic_plus",
+} as const;
+
 export interface BillingCheckoutBody {
-  /** @minLength 1 */
-  priceId: string;
+  /** Slug do plano. O servidor resolve para o Stripe Price ID via
+STRIPE_PRICE_* (catálogo canônico em lib/db/src/billing.ts).
+ */
+  plan: BillingCheckoutBodyPlan;
 }
 
 export interface BillingRedirectResponse {

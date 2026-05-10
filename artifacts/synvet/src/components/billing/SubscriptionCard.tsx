@@ -1,14 +1,37 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGetMe } from "@workspace/api-client-react";
-import { Check, Sparkles } from "lucide-react";
+import {
+  useGetMe,
+  useCreateBillingCheckout,
+  useCreateBillingPortal,
+} from "@workspace/api-client-react";
+import { Check, Sparkles, ExternalLink, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { useState } from "react";
 import { PLANS, PLAN_ORDER, STATUS_LABEL, formatBrl, type PlanId } from "@/lib/plans";
+import { usePermissions } from "@/hooks/use-permissions";
+
+type CheckoutPlan = "essencial" | "pro" | "clinic_plus";
+
+const STATUS_BADGE: Record<string, string> = {
+  trialing: "bg-primary/15 text-primary border-primary/30",
+  active: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  past_due: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+  canceled: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+  suspended: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+};
 
 export function SubscriptionCard() {
   const { data: me, isLoading } = useGetMe();
+  const { isAdmin } = usePermissions();
   const billing = me?.billing;
+  const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null);
+  const [portalPending, setPortalPending] = useState(false);
+
+  const checkout = useCreateBillingCheckout();
+  const portal = useCreateBillingPortal();
 
   if (isLoading || !billing) {
     return (
@@ -23,10 +46,88 @@ export function SubscriptionCard() {
 
   const currentPlan = PLANS[billing.plan as PlanId];
   const inTrial = billing.status === "trialing";
+  const isActive = billing.status === "active";
+  const needsAttention =
+    billing.status === "past_due" ||
+    billing.status === "suspended" ||
+    billing.status === "canceled";
   const days = billing.daysLeft ?? null;
+
+  const handleUpgrade = (planId: CheckoutPlan) => {
+    setPendingPlan(planId);
+    checkout.mutate(
+      { data: { plan: planId } },
+      {
+        onSuccess: ({ url }) => {
+          if (url) window.location.assign(url);
+          else {
+            toast.error("Não foi possível abrir o checkout. Tente novamente.");
+            setPendingPlan(null);
+          }
+        },
+        onError: (err) => {
+          const msg =
+            err instanceof Error ? err.message : "Erro ao iniciar checkout";
+          toast.error(msg);
+          setPendingPlan(null);
+        },
+      },
+    );
+  };
+
+  const handlePortal = () => {
+    setPortalPending(true);
+    portal.mutate(undefined, {
+      onSuccess: ({ url }) => {
+        setPortalPending(false);
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        else toast.error("Não foi possível abrir o portal de assinatura.");
+      },
+      onError: (err) => {
+        setPortalPending(false);
+        const msg =
+          err instanceof Error ? err.message : "Erro ao abrir portal";
+        toast.error(msg);
+      },
+    });
+  };
 
   return (
     <div className="space-y-6">
+      {needsAttention && isAdmin && (
+        <Card className="border-rose-500/40 bg-rose-500/5">
+          <CardContent className="py-4 flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-sm">
+              <p className="font-medium text-rose-200">
+                {billing.status === "past_due"
+                  ? "Pagamento pendente"
+                  : billing.status === "canceled"
+                    ? "Assinatura cancelada"
+                    : "Conta suspensa"}
+              </p>
+              <p className="text-rose-200/80 text-xs mt-0.5">
+                {billing.status === "canceled"
+                  ? "Reative sua assinatura no portal Stripe para continuar usando."
+                  : "Atualize seu meio de pagamento no portal Stripe para manter o acesso."}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handlePortal}
+              disabled={portalPending}
+              data-testid="button-resolve-payment"
+            >
+              {portalPending ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4 mr-1.5" />
+              )}
+              Atualizar pagamento
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -42,28 +143,37 @@ export function SubscriptionCard() {
         <CardContent>
           <div className="grid sm:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Plano</p>
-              <p className="text-2xl font-semibold mt-1">{currentPlan?.name ?? billing.plan}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Plano
+              </p>
+              <p className="text-2xl font-semibold mt-1">
+                {currentPlan?.name ?? billing.plan}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {currentPlan?.tagline}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
-              <p className="text-lg font-medium mt-1">
-                {STATUS_LABEL[billing.status] ?? billing.status}
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Status
               </p>
-              {days != null && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {inTrial
-                    ? `${days} ${days === 1 ? "dia restante" : "dias restantes"}`
-                    : `Renovação em ${days} dias`}
+              <span
+                className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full border ${
+                  STATUS_BADGE[billing.status] ?? STATUS_BADGE.canceled
+                }`}
+                data-testid="billing-status-badge"
+              >
+                {STATUS_LABEL[billing.status] ?? billing.status}
+              </span>
+              {days != null && inTrial && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {days} {days === 1 ? "dia restante" : "dias restantes"}
                 </p>
               )}
             </div>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                {inTrial ? "Trial até" : "Próximo ciclo"}
+                {inTrial ? "Trial até" : isActive ? "Próxima cobrança" : "Período"}
               </p>
               <p className="text-lg font-medium mt-1">
                 {inTrial && billing.trialEndsAt
@@ -71,32 +181,57 @@ export function SubscriptionCard() {
                       locale: ptBR,
                     })
                   : billing.currentPeriodEnd
-                  ? format(new Date(billing.currentPeriodEnd), "dd 'de' MMMM 'de' yyyy", {
-                      locale: ptBR,
-                    })
-                  : "—"}
+                    ? format(new Date(billing.currentPeriodEnd), "dd 'de' MMMM 'de' yyyy", {
+                        locale: ptBR,
+                      })
+                    : "—"}
               </p>
             </div>
           </div>
+
+          {isActive && isAdmin && (
+            <div className="mt-6 pt-6 border-t border-border/60 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={handlePortal}
+                disabled={portalPending}
+                data-testid="button-manage-subscription"
+              >
+                {portalPending ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-1.5" />
+                )}
+                Gerenciar assinatura
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <div>
-        <h3 className="text-lg font-semibold mb-1">Escolha o plano ideal</h3>
+        <h3 className="text-lg font-semibold mb-1">
+          {isActive ? "Mudar de plano" : "Escolha o plano ideal"}
+        </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Tudo o que você usa no trial continua disponível conforme o plano escolhido.
-          Pagamento online em breve.
+          {isAdmin
+            ? "Pagamento seguro via Stripe. Você pode cancelar a qualquer momento."
+            : "Apenas administradores podem alterar a assinatura. Fale com o admin da clínica."}
         </p>
         <div className="grid md:grid-cols-3 gap-4">
           {PLAN_ORDER.map((id) => {
             const plan = PLANS[id];
-            const isCurrent = billing.plan === id;
+            const isCurrent = billing.plan === id && isActive;
             const isHighlighted = id === "pro";
+            const isPending = pendingPlan === id;
+            const planSlug = id as CheckoutPlan;
             return (
               <Card
                 key={id}
                 className={`relative ${
-                  isHighlighted ? "border-primary/50 shadow-[0_0_30px_-12px_rgba(122,92,255,0.5)]" : ""
+                  isHighlighted
+                    ? "border-primary/50 shadow-[0_0_30px_-12px_rgba(122,92,255,0.5)]"
+                    : ""
                 }`}
                 data-testid={`plan-${id}`}
               >
@@ -110,7 +245,9 @@ export function SubscriptionCard() {
                   <CardDescription>{plan.tagline}</CardDescription>
                   <p className="text-3xl font-semibold mt-2">
                     {formatBrl(plan.priceMonthlyBrl)}
-                    <span className="text-sm text-muted-foreground font-normal">/mês</span>
+                    <span className="text-sm text-muted-foreground font-normal">
+                      /mês
+                    </span>
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -122,24 +259,39 @@ export function SubscriptionCard() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className="w-full"
-                    variant={isHighlighted ? "default" : "outline"}
-                    disabled
-                    title="Pagamento online em breve"
-                    data-testid={`upgrade-${id}`}
-                  >
-                    {isCurrent ? "Plano atual" : "Fazer upgrade (em breve)"}
-                  </Button>
+                  {isCurrent ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      Plano atual
+                    </Button>
+                  ) : isAdmin ? (
+                    <Button
+                      className="w-full"
+                      variant={isHighlighted ? "default" : "outline"}
+                      onClick={() => handleUpgrade(planSlug)}
+                      disabled={pendingPlan !== null}
+                      data-testid={`upgrade-${id}`}
+                    >
+                      {isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                          Abrindo checkout…
+                        </>
+                      ) : isActive ? (
+                        "Mudar para este plano"
+                      ) : (
+                        "Fazer upgrade"
+                      )}
+                    </Button>
+                  ) : (
+                    <Button className="w-full" variant="outline" disabled>
+                      Apenas admin
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
-        <p className="text-xs text-muted-foreground mt-4">
-          Para ativar um plano agora, fale com a equipe Synvet pelo WhatsApp ou e-mail
-          de suporte.
-        </p>
       </div>
     </div>
   );

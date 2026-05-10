@@ -1,14 +1,36 @@
 import { Link, useLocation } from "wouter";
-import { Sparkles, AlertTriangle } from "lucide-react";
-import { useGetMe } from "@workspace/api-client-react";
+import { Sparkles, AlertTriangle, Loader2 } from "lucide-react";
+import { useGetMe, useCreateBillingPortal } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/use-permissions";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function TrialBanner() {
   const { data: me } = useGetMe();
   const [location] = useLocation();
+  const { isAdmin } = usePermissions();
+  const portal = useCreateBillingPortal();
+  const [pending, setPending] = useState(false);
   const billing = me?.billing;
   if (!billing) return null;
   if (location.startsWith("/app/configuracoes")) return null;
+
+  const openPortal = () => {
+    setPending(true);
+    portal.mutate(undefined, {
+      onSuccess: ({ url }) => {
+        setPending(false);
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        else toast.error("Não foi possível abrir o portal");
+      },
+      onError: (err) => {
+        setPending(false);
+        const msg = err instanceof Error ? err.message : "Erro ao abrir portal";
+        toast.error(msg);
+      },
+    });
+  };
 
   if (billing.status === "trialing") {
     const days = billing.daysLeft ?? 0;
@@ -46,23 +68,45 @@ export function TrialBanner() {
     );
   }
 
-  if (billing.status === "past_due" || billing.status === "suspended") {
+  if (
+    billing.status === "past_due" ||
+    billing.status === "suspended" ||
+    billing.status === "canceled"
+  ) {
+    const message =
+      billing.status === "past_due"
+        ? "Pagamento pendente — atualize seu cartão para manter o acesso."
+        : billing.status === "suspended"
+          ? "Conta suspensa — atualize sua assinatura para reativar."
+          : "Assinatura cancelada — reative para continuar usando.";
     return (
-      <div className="bg-rose-500/10 border-b border-rose-500/30 text-rose-100">
+      <div
+        className="bg-rose-500/10 border-b border-rose-500/30 text-rose-100"
+        data-testid="trial-banner-past-due"
+      >
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4 text-rose-300" />
-            <span>
-              {billing.status === "past_due"
-                ? "Pagamento pendente — regularize para manter o acesso."
-                : "Conta suspensa — atualize sua assinatura para reativar."}
-            </span>
+            <span>{message}</span>
           </div>
-          <Link href="/app/configuracoes?tab=assinatura">
-            <Button size="sm" className="h-8">
-              Resolver agora
+          {isAdmin ? (
+            <Button
+              size="sm"
+              className="h-8"
+              onClick={openPortal}
+              disabled={pending}
+              data-testid="button-banner-portal"
+            >
+              {pending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+              Atualizar pagamento
             </Button>
-          </Link>
+          ) : (
+            <Link href="/app/configuracoes?tab=assinatura">
+              <Button size="sm" className="h-8">
+                Ver detalhes
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     );

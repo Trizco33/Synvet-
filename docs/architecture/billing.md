@@ -103,9 +103,13 @@ retorna 503 com mensagem explicativa.
 
 | Endpoint                       | Auth          | O que faz                                                |
 | ------------------------------ | ------------- | -------------------------------------------------------- |
-| `POST /api/billing/checkout`   | admin tenant  | Cria Checkout Session (mode=subscription) → `{ url }`.   |
+| `POST /api/billing/checkout`   | admin tenant  | Body: `{ plan: 'essencial'\|'pro'\|'clinic_plus' }`. Cria Checkout Session → `{ url }`. |
 | `POST /api/billing/portal`     | admin tenant  | Cria Billing Portal Session → `{ url }`.                 |
 | `POST /api/billing/webhook`    | público (raw) | Valida assinatura, idempotência, sincroniza `clinics`.   |
+
+O frontend NUNCA recebe price IDs — envia o slug do plano e o servidor
+resolve via `STRIPE_PRICE_*`. Isso permite trocar test/live mode sem
+deploy do frontend.
 
 O webhook é montado **direto no `app`** ANTES do `express.json()` global
 (precisa de raw body). Idempotência via tabela `stripe_events` (PK = event id).
@@ -153,12 +157,42 @@ de `clinics.status`. `getPlanByPriceId` faz o reverso priceId → plan.
    rodou antes de habilitar o webhook (caso contrário o INSERT de
    idempotência falha → handler retorna 500 → Stripe retenta).
 
-## Próximos passos (Fase B2+)
+## UI de Assinatura (Fase B2)
+
+Fluxo completo signup → trial → checkout → active → past_due → portal:
+
+1. **Signup → trial.** `/signup` cria clínica em `trialing`. `TrialBanner`
+   global mostra countdown; nos últimos 3 dias vira variante âmbar.
+2. **Aba Assinatura** (`/app/configuracoes?tab=assinatura`): `SubscriptionCard`
+   mostra plano atual com badge de status, dias restantes e próxima cobrança.
+   Lista os 3 planos pagos com CTAs.
+3. **Upgrade.** Apenas admin vê os botões; clique chama
+   `useCreateBillingCheckout({ data: { plan } })` e redireciona para a URL
+   do Stripe via `window.location.assign`. Não-admins veem botões "Apenas
+   admin" desabilitados.
+4. **Pagamento confirmado.** Stripe redireciona para
+   `/app/configuracoes/assinatura/sucesso?session_id=…`. A página
+   (`pages/assinatura-sucesso.tsx`) faz polling de `/me` a cada 2s
+   (timeout 30s) até `billing.status === "active"`. Ao chegar, mostra
+   ícone verde animado + plano contratado + CTAs para painel/detalhes.
+5. **Past due / suspended / canceled.** O webhook atualiza `clinics.status`,
+   o `TrialBanner` vira vermelho e o botão "Atualizar pagamento" abre o
+   Customer Portal em nova aba (`useCreateBillingPortal`). Mesmo botão
+   aparece em destaque no topo da aba Assinatura.
+6. **Gerenciar assinatura ativa.** Quando `status=active`, o
+   `SubscriptionCard` mostra botão "Gerenciar assinatura" que abre o
+   Customer Portal (cancelar, atualizar cartão, baixar faturas).
+7. **Erros.** Toast `sonner` com a mensagem do backend em qualquer falha
+   de checkout/portal (ex.: 503 quando price não está configurado).
+
+Cancel URL volta para a aba Assinatura com `?checkout=cancelled` (futuro:
+toast informativo).
+
+## Próximos passos (Fase B3+)
 
 - E-mails transacionais (boas-vindas, "faltam 3 dias", "trial encerrou").
 - Job diário para mover `trialing` → `past_due` quando `trialEndsAt < now`
   sem `stripeSubscriptionId` ativo.
 - Aplicação real dos limites de plano (`isFeatureEnabled`) nas rotas
   de Copilot, Comunicação e AI assist, com 402/403 explicativo.
-- UI de upgrade ligando `useCreateBillingCheckout` aos botões da aba
-  Assinatura (Fase B2 — task #6).
+- Toast informativo quando o usuário cancela o checkout (`?checkout=cancelled`).

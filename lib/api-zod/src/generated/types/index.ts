@@ -22,6 +22,7 @@ export * from "./aiResultTokens";
 export * from "./aiSummarizeConsultationParams";
 export * from "./anamnesis";
 export * from "./billingCheckoutBody";
+export * from "./billingCheckoutBodyPlan";
 export * from "./billingRedirectResponse";
 export * from "./billingStatus";
 export * from "./billingStatusPlan";

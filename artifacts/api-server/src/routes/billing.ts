@@ -2,9 +2,10 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, clinicsTable } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { PLANS, type ClinicPlan } from "@workspace/db";
 import {
   getStripeClient,
-  getConfiguredPriceIds,
+  getStripePriceId,
   isStripeConfigured,
 } from "../lib/stripe";
 
@@ -67,21 +68,17 @@ router.post(
       res.status(503).json({ error: "Stripe não configurado" });
       return;
     }
-    const priceId = String(req.body?.priceId ?? "").trim();
-    if (!priceId) {
-      res.status(400).json({ error: "priceId é obrigatório" });
-      return;
-    }
-    const allowed = getConfiguredPriceIds();
-    if (allowed.length === 0) {
-      res.status(503).json({
-        error:
-          "Nenhum plano configurado. Defina STRIPE_PRICE_ESSENCIAL/PRO/CLINIC_PLUS.",
-      });
-      return;
-    }
-    if (!allowed.includes(priceId)) {
+    const plan = String(req.body?.plan ?? "").trim() as ClinicPlan;
+    const validPlans: ClinicPlan[] = ["essencial", "pro", "clinic_plus"];
+    if (!validPlans.includes(plan)) {
       res.status(400).json({ error: "Plano inválido" });
+      return;
+    }
+    const priceId = getStripePriceId(plan);
+    if (!priceId) {
+      res.status(503).json({
+        error: `Plano ${PLANS[plan].name} ainda não configurado no Stripe`,
+      });
       return;
     }
     try {

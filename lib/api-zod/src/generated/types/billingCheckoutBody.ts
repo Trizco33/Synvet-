@@ -5,8 +5,11 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { BillingCheckoutBodyPlan } from "./billingCheckoutBodyPlan";
 
 export interface BillingCheckoutBody {
-  /** @minLength 1 */
-  priceId: string;
+  /** Slug do plano. O servidor resolve para o Stripe Price ID via
+STRIPE_PRICE_* (catálogo canônico em lib/db/src/billing.ts).
+ */
+  plan: BillingCheckoutBodyPlan;
 }

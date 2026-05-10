@@ -1143,8 +1143,13 @@ components:
     BillingCheckoutBody:
       type: object
       properties:
-        priceId: { type: string, minLength: 1 }
-      required: [priceId]
+        plan:
+          type: string
+          enum: [essencial, pro, clinic_plus]
+          description: |
+            Slug do plano. O servidor resolve para o Stripe Price ID via
+            STRIPE_PRICE_* (catálogo canônico em lib/db/src/billing.ts).
+      required: [plan]
 
     BillingRedirectResponse:
       type: object

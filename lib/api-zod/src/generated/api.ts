@@ -250,9 +250,12 @@ export const GetAdminMetricsResponse = zod.object({
 /**
  * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)
  */
-
 export const CreateBillingCheckoutBody = zod.object({
-  priceId: zod.string().min(1),
+  plan: zod
+    .enum(["essencial", "pro", "clinic_plus"])
+    .describe(
+      "Slug do plano. O servidor resolve para o Stripe Price ID via\nSTRIPE_PRICE_\* (catálogo canônico em lib\/db\/src\/billing.ts).\n",
+    ),
 });
 
 export const CreateBillingCheckoutResponse = zod.object({

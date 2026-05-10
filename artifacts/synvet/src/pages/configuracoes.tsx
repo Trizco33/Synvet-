@@ -108,6 +108,17 @@ export default function Configuracoes() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Toast quando o usuário cancela o checkout do Stripe e cai de volta na aba.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("checkout") === "cancelled") {
+      toast.info("Checkout cancelado. Quando quiser, escolha um plano abaixo.");
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+  }, []);
+
   const handleTabChange = (value: string) => {
     const next = (VALID_TABS as readonly string[]).includes(value)
       ? (value as ConfigTab)

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, eq, ilike, or, asc } from "drizzle-orm";
+import { and, eq, asc } from "drizzle-orm";
 import { db, tutorsTable, petsTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
@@ -22,6 +22,13 @@ function isUniqueViolation(err: unknown): boolean {
   );
 }
 
+function normalizeForSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 router.get("/tutors", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.ListTutorsQueryParams.safeParse(req.query);
@@ -29,24 +36,25 @@ router.get("/tutors", async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const q = params.data.q?.trim();
-  const where = q
-    ? and(
-        eq(tutorsTable.clinicId, user.clinicId),
-        or(
-          ilike(tutorsTable.name, `%${q}%`),
-          ilike(tutorsTable.email, `%${q}%`),
-          ilike(tutorsTable.phone, `%${q}%`),
-          ilike(tutorsTable.externalId, `%${q}%`),
-        ),
-      )
-    : eq(tutorsTable.clinicId, user.clinicId);
   const rows = await db
     .select()
     .from(tutorsTable)
-    .where(where)
+    .where(eq(tutorsTable.clinicId, user.clinicId))
     .orderBy(asc(tutorsTable.name));
-  res.json(schemas.ListTutorsResponse.parse(rows));
+  const q = params.data.q?.trim();
+  const filtered = q
+    ? (() => {
+        const needle = normalizeForSearch(q);
+        return rows.filter((r) => {
+          const haystack = [r.name, r.email, r.phone, r.whatsapp, r.externalId]
+            .filter(Boolean)
+            .map((s) => normalizeForSearch(String(s)))
+            .join(" \u0001 ");
+          return haystack.includes(needle);
+        });
+      })()
+    : rows;
+  res.json(schemas.ListTutorsResponse.parse(filtered));
 });
 
 router.post("/tutors", requireRole("admin", "vet"), async (req, res): Promise<void> => {

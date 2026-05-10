@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, desc, eq, ilike, max, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, max, sql } from "drizzle-orm";
 import {
   db,
   petsTable,
@@ -33,6 +33,13 @@ function isUniqueViolation(err: unknown): boolean {
   );
 }
 
+function normalizeForSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 router.get("/pets", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.ListPetsQueryParams.safeParse(req.query);
@@ -43,18 +50,6 @@ router.get("/pets", async (req, res): Promise<void> => {
   const filters = [eq(petsTable.clinicId, user.clinicId)];
   if (params.data.tutorId) filters.push(eq(petsTable.tutorId, params.data.tutorId));
   if (params.data.species) filters.push(eq(petsTable.species, params.data.species));
-  if (params.data.q) {
-    const q = params.data.q.trim();
-    filters.push(
-      or(
-        ilike(petsTable.name, `%${q}%`),
-        ilike(petsTable.breed, `%${q}%`),
-        ilike(tutorsTable.name, `%${q}%`),
-        ilike(petsTable.externalId, `%${q}%`),
-        ilike(tutorsTable.externalId, `%${q}%`),
-      )!,
-    );
-  }
   const rows = await db
     .select({
       id: petsTable.id,
@@ -78,12 +73,33 @@ router.get("/pets", async (req, res): Promise<void> => {
       tutorPhone: tutorsTable.phone,
       tutorWhatsapp: tutorsTable.whatsapp,
       tutorAddress: tutorsTable.address,
+      tutorExternalId: tutorsTable.externalId,
     })
     .from(petsTable)
     .innerJoin(tutorsTable, eq(petsTable.tutorId, tutorsTable.id))
     .where(and(...filters))
     .orderBy(asc(petsTable.name));
-  res.json(schemas.ListPetsResponse.parse(rows));
+
+  const q = params.data.q?.trim();
+  const filtered = q
+    ? (() => {
+        const needle = normalizeForSearch(q);
+        return rows.filter((r) => {
+          const haystack = [
+            r.name,
+            r.breed,
+            r.tutorName,
+            r.externalId,
+            r.tutorExternalId,
+          ]
+            .filter(Boolean)
+            .map((s) => normalizeForSearch(String(s)))
+            .join(" \u0001 ");
+          return haystack.includes(needle);
+        });
+      })()
+    : rows;
+  res.json(schemas.ListPetsResponse.parse(filtered));
 });
 
 router.post("/pets", requireRole("admin", "vet"), async (req, res): Promise<void> => {

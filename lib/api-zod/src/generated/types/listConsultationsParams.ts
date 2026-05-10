@@ -5,12 +5,23 @@
  * Synvet — Plataforma SaaS Veterinária
  * OpenAPI spec version: 0.1.0
  */
+import type { ListConsultationsStatus } from "./listConsultationsStatus";
 
 export type ListConsultationsParams = {
+  /**
+   * Limite inferior (inclusivo) de scheduledAt em ISO 8601.
+   */
   from?: Date;
+  /**
+   * Limite superior (inclusivo) de scheduledAt em ISO 8601.
+   */
   to?: Date;
   /**
    * Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.
    */
   q?: string;
+  /**
+   * Filtra pelo status da consulta.
+   */
+  status?: ListConsultationsStatus;
 };

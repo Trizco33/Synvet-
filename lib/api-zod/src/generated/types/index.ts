@@ -90,6 +90,7 @@ export * from "./listCommsMessagesParams";
 export * from "./listCommsMessagesResponse";
 export * from "./listCommsTemplatesResponse";
 export * from "./listConsultationsParams";
+export * from "./listConsultationsStatus";
 export * from "./listCopilotConversationsParams";
 export * from "./listCopilotConversationsResponse";
 export * from "./listExamsParams";

@@ -1,6 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { format, parseISO } from "date-fns";
+import {
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListConsultations,
@@ -52,10 +61,42 @@ const newConsultationSchema = z.object({
   reason: z.string().optional().or(z.literal("")),
 });
 
+type PeriodFilter = "all" | "today" | "week" | "month" | "custom";
+type StatusFilter =
+  | "all"
+  | "scheduled"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
+const PERIOD_LABELS: Record<PeriodFilter, string> = {
+  all: "Qualquer período",
+  today: "Hoje",
+  week: "Esta semana",
+  month: "Este mês",
+  custom: "Personalizado",
+};
+
+const STATUS_LABELS: Record<StatusFilter, string> = {
+  all: "Todos os status",
+  scheduled: "Agendadas",
+  in_progress: "Em andamento",
+  completed: "Concluídas",
+  cancelled: "Canceladas",
+};
+
+function toDateTimeParam(d: Date): string {
+  return d.toISOString();
+}
+
 export default function Consultas() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [period, setPeriod] = useState<PeriodFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -63,9 +104,50 @@ export default function Consultas() {
     return () => clearTimeout(handle);
   }, [searchInput]);
 
-  const { data: consultations, isLoading } = useListConsultations(
-    debouncedSearch ? { q: debouncedSearch } : {},
-  );
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    switch (period) {
+      case "today":
+        return {
+          from: toDateTimeParam(startOfDay(now)),
+          to: toDateTimeParam(endOfDay(now)),
+        };
+      case "week":
+        return {
+          from: toDateTimeParam(startOfWeek(now, { weekStartsOn: 1 })),
+          to: toDateTimeParam(endOfWeek(now, { weekStartsOn: 1 })),
+        };
+      case "month":
+        return {
+          from: toDateTimeParam(startOfMonth(now)),
+          to: toDateTimeParam(endOfMonth(now)),
+        };
+      case "custom":
+        return {
+          from: customFrom
+            ? toDateTimeParam(startOfDay(parseISO(customFrom)))
+            : undefined,
+          to: customTo
+            ? toDateTimeParam(endOfDay(parseISO(customTo)))
+            : undefined,
+        };
+      default:
+        return { from: undefined, to: undefined };
+    }
+  }, [period, customFrom, customTo]);
+
+  const queryParams: Record<string, string> = {};
+  if (debouncedSearch) queryParams.q = debouncedSearch;
+  if (from) queryParams.from = from;
+  if (to) queryParams.to = to;
+  if (status !== "all") queryParams.status = status;
+
+  const periodIsActive =
+    period !== "all" && (period !== "custom" || Boolean(from) || Boolean(to));
+  const hasActiveFilters =
+    Boolean(debouncedSearch) || periodIsActive || status !== "all";
+
+  const { data: consultations, isLoading } = useListConsultations(queryParams);
   const { data: pets } = useListPets({});
   const createConsultation = useCreateConsultation();
 
@@ -230,26 +312,106 @@ export default function Consultas() {
         </Dialog>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          type="search"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar por paciente, tutor ou ID antigo..."
-          className="pl-9 pr-9"
-          data-testid="input-search-consultations"
-        />
-        {searchInput && (
-          <button
-            type="button"
-            onClick={() => setSearchInput("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-md"
-            aria-label="Limpar busca"
-            data-testid="button-clear-search"
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:flex-wrap">
+        <div className="relative w-full lg:max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Buscar por paciente, tutor ou ID antigo..."
+            className="pl-9 pr-9"
+            data-testid="input-search-consultations"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-md"
+              aria-label="Limpar busca"
+              data-testid="button-clear-search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <Select
+          value={period}
+          onValueChange={(v) => setPeriod(v as PeriodFilter)}
+        >
+          <SelectTrigger
+            className="w-full sm:w-[180px]"
+            data-testid="select-period"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map((key) => (
+              <SelectItem key={key} value={key}>
+                {PERIOD_LABELS[key]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={status}
+          onValueChange={(v) => setStatus(v as StatusFilter)}
+        >
+          <SelectTrigger
+            className="w-full sm:w-[180px]"
+            data-testid="select-status-filter"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(STATUS_LABELS) as StatusFilter[]).map((key) => (
+              <SelectItem key={key} value={key}>
+                {STATUS_LABELS[key]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {period === "custom" && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="w-[160px]"
+              aria-label="Data inicial"
+              data-testid="input-custom-from"
+            />
+            <span className="text-muted-foreground text-sm">até</span>
+            <Input
+              type="date"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="w-[160px]"
+              aria-label="Data final"
+              data-testid="input-custom-to"
+            />
+          </div>
+        )}
+
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchInput("");
+              setPeriod("all");
+              setStatus("all");
+              setCustomFrom("");
+              setCustomTo("");
+            }}
+            data-testid="button-clear-filters"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Limpar filtros
+          </Button>
         )}
       </div>
 
@@ -327,10 +489,30 @@ export default function Consultas() {
           </div>
           <h3 className="text-lg font-medium mb-1">Nenhuma consulta encontrada</h3>
           <p className="text-muted-foreground mb-4 max-w-sm">
-            {debouncedSearch
-              ? `Nenhum resultado para "${debouncedSearch}".`
+            {hasActiveFilters
+              ? `Nenhum resultado para os filtros aplicados${
+                  debouncedSearch ? ` ("${debouncedSearch}")` : ""
+                }${period !== "all" ? ` · ${PERIOD_LABELS[period]}` : ""}${
+                  status !== "all" ? ` · ${STATUS_LABELS[status]}` : ""
+                }.`
               : "Sua agenda está vazia no momento."}
           </p>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchInput("");
+                setPeriod("all");
+                setStatus("all");
+                setCustomFrom("");
+                setCustomTo("");
+              }}
+              data-testid="button-clear-filters-empty"
+            >
+              Limpar filtros
+            </Button>
+          )}
         </div>
       )}
     </div>

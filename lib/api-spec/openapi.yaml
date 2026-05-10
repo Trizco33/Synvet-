@@ -658,14 +658,22 @@ paths:
       parameters:
         - in: query
           name: from
-          schema: { type: string, format: date }
+          description: Limite inferior (inclusivo) de scheduledAt em ISO 8601.
+          schema: { type: string, format: date-time }
         - in: query
           name: to
-          schema: { type: string, format: date }
+          description: Limite superior (inclusivo) de scheduledAt em ISO 8601.
+          schema: { type: string, format: date-time }
         - in: query
           name: q
           description: Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.
           schema: { type: string }
+        - in: query
+          name: status
+          description: Filtra pelo status da consulta.
+          schema:
+            type: string
+            enum: [scheduled, in_progress, completed, cancelled]
       responses:
         "200":
           description: OK

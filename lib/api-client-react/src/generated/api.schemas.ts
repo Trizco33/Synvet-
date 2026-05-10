@@ -1218,13 +1218,33 @@ export type ListPetsParams = {
 };
 
 export type ListConsultationsParams = {
+  /**
+   * Limite inferior (inclusivo) de scheduledAt em ISO 8601.
+   */
   from?: string;
+  /**
+   * Limite superior (inclusivo) de scheduledAt em ISO 8601.
+   */
   to?: string;
   /**
    * Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.
    */
   q?: string;
+  /**
+   * Filtra pelo status da consulta.
+   */
+  status?: ListConsultationsStatus;
 };
+
+export type ListConsultationsStatus =
+  (typeof ListConsultationsStatus)[keyof typeof ListConsultationsStatus];
+
+export const ListConsultationsStatus = {
+  scheduled: "scheduled",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
 
 export type ListExamsParams = {
   petId?: string;

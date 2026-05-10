@@ -34,6 +34,9 @@ router.get("/consultations", async (req, res): Promise<void> => {
   if (params.data.to) {
     filters.push(lte(consultationsTable.scheduledAt, new Date(params.data.to)));
   }
+  if (params.data.status) {
+    filters.push(eq(consultationsTable.status, params.data.status));
+  }
   const rows = await db
     .select({
       id: consultationsTable.id,

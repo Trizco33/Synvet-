@@ -881,14 +881,24 @@ export const CreateMedicalRecordBody = zod.object({
 });
 
 export const ListConsultationsQueryParams = zod.object({
-  from: zod.date().optional(),
-  to: zod.date().optional(),
+  from: zod.coerce
+    .date()
+    .optional()
+    .describe("Limite inferior (inclusivo) de scheduledAt em ISO 8601."),
+  to: zod.coerce
+    .date()
+    .optional()
+    .describe("Limite superior (inclusivo) de scheduledAt em ISO 8601."),
   q: zod.coerce
     .string()
     .optional()
     .describe(
       "Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.",
     ),
+  status: zod
+    .enum(["scheduled", "in_progress", "completed", "cancelled"])
+    .optional()
+    .describe("Filtra pelo status da consulta."),
 });
 
 export const ListConsultationsResponseItem = zod

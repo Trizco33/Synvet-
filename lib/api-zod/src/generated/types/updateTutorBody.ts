@@ -12,4 +12,5 @@ export interface UpdateTutorBody {
   phone?: string | null;
   whatsapp?: string | null;
   address?: string | null;
+  externalId?: string | null;
 }

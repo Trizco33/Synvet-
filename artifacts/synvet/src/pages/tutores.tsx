@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { Search, Plus, User, Phone, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,12 +38,14 @@ const tutorSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   whatsapp: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
+  externalId: z.string().optional().or(z.literal("")),
 });
 
 export default function Tutores() {
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { isAdmin } = usePermissions();
 
   const { data: tutors, isLoading } = useListTutors({ q: search || undefined });
   const createTutor = useCreateTutor();
@@ -55,6 +58,7 @@ export default function Tutores() {
       phone: "",
       whatsapp: "",
       address: "",
+      externalId: "",
     },
   });
 
@@ -67,6 +71,7 @@ export default function Tutores() {
           phone: values.phone || null,
           whatsapp: values.whatsapp || null,
           address: values.address || null,
+          ...(isAdmin ? { externalId: values.externalId?.trim() || null } : {}),
         },
       },
       {
@@ -76,8 +81,12 @@ export default function Tutores() {
           setIsCreateOpen(false);
           form.reset();
         },
-        onError: () => {
-          toast.error("Erro ao cadastrar tutor");
+        onError: (err: unknown) => {
+          const msg =
+            err && typeof err === "object" && "data" in err && (err as { data?: { error?: string } }).data?.error
+              ? (err as { data: { error: string } }).data.error
+              : "Erro ao cadastrar tutor";
+          toast.error(msg);
         },
       }
     );
@@ -174,6 +183,25 @@ export default function Tutores() {
                     </FormItem>
                   )}
                 />
+                {isAdmin && (
+                  <FormField
+                    control={form.control}
+                    name="externalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID do sistema antigo</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: TUT-001 (opcional)"
+                            {...field}
+                            data-testid="input-tutor-external-id"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <div className="pt-4 flex justify-end">
                   <Button type="submit" disabled={createTutor.isPending} data-testid="button-submit-tutor">
                     {createTutor.isPending ? "Salvando..." : "Salvar Tutor"}

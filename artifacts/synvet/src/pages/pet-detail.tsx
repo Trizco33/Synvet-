@@ -56,6 +56,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const updatePetSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -69,6 +70,7 @@ const updatePetSchema = z.object({
   continuousMedications: z.string().optional().or(z.literal("")),
   allergies: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  externalId: z.string().optional().or(z.literal("")),
 });
 
 const createVaccineSchema = z.object({
@@ -117,6 +119,7 @@ export default function PetDetail() {
   const updatePet = useUpdatePet();
   const createVaccine = useCreateVaccine();
   const createRecord = useCreateMedicalRecord();
+  const { isAdmin } = usePermissions();
 
   const [isVaccineOpen, setIsVaccineOpen] = useState(false);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
@@ -137,6 +140,7 @@ export default function PetDetail() {
       continuousMedications: "",
       allergies: "",
       notes: "",
+      externalId: "",
     },
   });
 
@@ -154,6 +158,7 @@ export default function PetDetail() {
         continuousMedications: petDetail.continuousMedications || "",
         allergies: petDetail.allergies || "",
         notes: petDetail.notes || "",
+        externalId: petDetail.externalId || "",
       });
     }
   }, [petDetail, editForm]);
@@ -192,6 +197,7 @@ export default function PetDetail() {
           continuousMedications: values.continuousMedications || null,
           allergies: values.allergies || null,
           notes: values.notes || null,
+          ...(isAdmin ? { externalId: values.externalId?.trim() || null } : {}),
         }
       },
       {
@@ -199,7 +205,10 @@ export default function PetDetail() {
           queryClient.invalidateQueries({ queryKey: getGetPetQueryKey(petId) });
           toast.success("Paciente atualizado com sucesso");
         },
-        onError: () => toast.error("Erro ao atualizar paciente")
+        onError: (err: unknown) => {
+          const data = (err as { data?: { error?: string } } | undefined)?.data;
+          toast.error(data?.error || "Erro ao atualizar paciente");
+        }
       }
     );
   };
@@ -842,6 +851,26 @@ export default function PetDetail() {
                         </FormItem>
                       )}
                     />
+
+                    {isAdmin && (
+                      <FormField
+                        control={editForm.control}
+                        name="externalId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID do sistema antigo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Opcional"
+                                {...field}
+                                data-testid="input-edit-pet-external-id"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <div className="pt-4">
                       <Button type="submit" disabled={updatePet.isPending}>

@@ -41,6 +41,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const updateTutorSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -48,6 +49,7 @@ const updateTutorSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   whatsapp: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
+  externalId: z.string().optional().or(z.literal("")),
 });
 
 const createPetSchema = z.object({
@@ -60,6 +62,7 @@ const createPetSchema = z.object({
   neutered: z.boolean().default(false),
   allergies: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  externalId: z.string().optional().or(z.literal("")),
 });
 
 export default function TutorDetail() {
@@ -73,6 +76,7 @@ export default function TutorDetail() {
 
   const updateTutor = useUpdateTutor();
   const createPet = useCreatePet();
+  const { isAdmin } = usePermissions();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreatePetOpen, setIsCreatePetOpen] = useState(false);
@@ -85,6 +89,7 @@ export default function TutorDetail() {
       phone: tutor?.phone || "",
       whatsapp: tutor?.whatsapp || "",
       address: tutor?.address || "",
+      externalId: tutor?.externalId || "",
     },
   });
 
@@ -96,6 +101,7 @@ export default function TutorDetail() {
         phone: tutor.phone || "",
         whatsapp: tutor.whatsapp || "",
         address: tutor.address || "",
+        externalId: tutor.externalId || "",
       });
     }
   }, [tutor, editForm]);
@@ -112,6 +118,7 @@ export default function TutorDetail() {
       neutered: false,
       allergies: "",
       notes: "",
+      externalId: "",
     },
   });
 
@@ -125,6 +132,7 @@ export default function TutorDetail() {
           phone: values.phone || null,
           whatsapp: values.whatsapp || null,
           address: values.address || null,
+          ...(isAdmin ? { externalId: values.externalId?.trim() || null } : {}),
         }
       },
       {
@@ -133,8 +141,12 @@ export default function TutorDetail() {
           toast.success("Tutor atualizado com sucesso");
           setIsEditOpen(false);
         },
-        onError: () => {
-          toast.error("Erro ao atualizar tutor");
+        onError: (err: unknown) => {
+          const msg =
+            err && typeof err === "object" && "data" in err && (err as { data?: { error?: string } }).data?.error
+              ? (err as { data: { error: string } }).data.error
+              : "Erro ao atualizar tutor";
+          toast.error(msg);
         }
       }
     );
@@ -154,6 +166,7 @@ export default function TutorDetail() {
           neutered: values.neutered,
           allergies: values.allergies || null,
           notes: values.notes || null,
+          ...(isAdmin ? { externalId: values.externalId?.trim() || null } : {}),
         }
       },
       {
@@ -163,8 +176,12 @@ export default function TutorDetail() {
           setIsCreatePetOpen(false);
           petForm.reset();
         },
-        onError: () => {
-          toast.error("Erro ao cadastrar paciente");
+        onError: (err: unknown) => {
+          const msg =
+            err && typeof err === "object" && "data" in err && (err as { data?: { error?: string } }).data?.error
+              ? (err as { data: { error: string } }).data.error
+              : "Erro ao cadastrar paciente";
+          toast.error(msg);
         }
       }
     );
@@ -224,6 +241,7 @@ export default function TutorDetail() {
                     phone: tutor.phone || "",
                     whatsapp: tutor.whatsapp || "",
                     address: tutor.address || "",
+                    externalId: tutor.externalId || "",
                   });
                 }}>
                   <Edit className="h-4 w-4" />
@@ -305,6 +323,25 @@ export default function TutorDetail() {
                         </FormItem>
                       )}
                     />
+                    {isAdmin && (
+                      <FormField
+                        control={editForm.control}
+                        name="externalId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID do sistema antigo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Opcional"
+                                {...field}
+                                data-testid="input-edit-tutor-external-id"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <div className="pt-4 flex justify-end">
                       <Button type="submit" disabled={updateTutor.isPending}>
                         {updateTutor.isPending ? "Salvando..." : "Salvar Alterações"}
@@ -500,6 +537,26 @@ export default function TutorDetail() {
                         </FormItem>
                       )}
                     />
+
+                    {isAdmin && (
+                      <FormField
+                        control={petForm.control}
+                        name="externalId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID do sistema antigo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Opcional"
+                                {...field}
+                                data-testid="input-pet-external-id"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <div className="pt-4 flex justify-end">
                       <Button type="submit" disabled={createPet.isPending}>

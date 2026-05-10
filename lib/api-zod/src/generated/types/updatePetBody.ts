@@ -21,4 +21,5 @@ export interface UpdatePetBody {
   isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
+  externalId?: string | null;
 }

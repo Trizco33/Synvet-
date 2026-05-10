@@ -13,4 +13,5 @@ export interface CreateTutorBody {
   phone?: string | null;
   whatsapp?: string | null;
   address?: string | null;
+  externalId?: string | null;
 }

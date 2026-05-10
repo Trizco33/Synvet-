@@ -22,4 +22,5 @@ export interface CreatePetBody {
   isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
+  externalId?: string | null;
 }

@@ -14,6 +14,7 @@ import {
 } from "@workspace/api-client-react";
 import { Search, Plus, Dog, Cat, User, Scale, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ const schema = z.object({
   tutorWhatsapp: z.string().optional().or(z.literal("")),
   tutorEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
   tutorAddress: z.string().optional().or(z.literal("")),
+  tutorExternalId: z.string().optional().or(z.literal("")),
   petName: z.string().min(1, "Nome do paciente é obrigatório"),
   species: z.string().min(1, "Espécie é obrigatória"),
   breed: z.string().optional().or(z.literal("")),
@@ -52,6 +54,7 @@ const schema = z.object({
   birthDate: z.string().optional().or(z.literal("")),
   weightKg: z.coerce.number().optional().or(z.literal("")),
   neutered: z.boolean().default(false),
+  petExternalId: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -60,6 +63,7 @@ export default function Pacientes() {
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { isAdmin } = usePermissions();
 
   const { data: pets, isLoading } = useListPets({ q: search || undefined });
   const createTutor = useCreateTutor();
@@ -73,6 +77,7 @@ export default function Pacientes() {
       tutorWhatsapp: "",
       tutorEmail: "",
       tutorAddress: "",
+      tutorExternalId: "",
       petName: "",
       species: "Canina",
       breed: "",
@@ -80,6 +85,7 @@ export default function Pacientes() {
       birthDate: "",
       weightKg: undefined,
       neutered: false,
+      petExternalId: "",
     },
   });
 
@@ -95,6 +101,7 @@ export default function Pacientes() {
           phone: values.tutorPhone || null,
           whatsapp: values.tutorWhatsapp || null,
           address: values.tutorAddress || null,
+          ...(isAdmin ? { externalId: values.tutorExternalId?.trim() || null } : {}),
         },
       });
       tutorId = tutor.id;
@@ -108,6 +115,7 @@ export default function Pacientes() {
           birthDate: values.birthDate ? new Date(values.birthDate).toISOString() : null,
           weightKg: values.weightKg ? Number(values.weightKg) : null,
           neutered: values.neutered,
+          ...(isAdmin ? { externalId: values.petExternalId?.trim() || null } : {}),
         },
       });
       queryClient.invalidateQueries({ queryKey: getListPetsQueryKey() });
@@ -227,6 +235,25 @@ export default function Pacientes() {
                       </FormItem>
                     )}
                   />
+                  {isAdmin && (
+                    <FormField
+                      control={form.control}
+                      name="tutorExternalId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID do sistema antigo (tutor)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Opcional"
+                              {...field}
+                              data-testid="input-create-tutor-external-id"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </section>
 
                 <section className="space-y-4 pt-4 border-t border-border/50">
@@ -355,6 +382,25 @@ export default function Pacientes() {
                       </FormItem>
                     )}
                   />
+                  {isAdmin && (
+                    <FormField
+                      control={form.control}
+                      name="petExternalId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID do sistema antigo (paciente)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Opcional"
+                              {...field}
+                              data-testid="input-create-pet-external-id"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </section>
 
                 <div className="pt-4 flex justify-end gap-2">

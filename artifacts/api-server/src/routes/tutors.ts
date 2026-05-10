@@ -6,6 +6,22 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
+function normalizeExternalId(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: string }).code === "23505"
+  );
+}
+
 router.get("/tutors", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.ListTutorsQueryParams.safeParse(req.query);
@@ -40,11 +56,31 @@ router.post("/tutors", requireRole("admin", "vet"), async (req, res): Promise<vo
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [tutor] = await db
-    .insert(tutorsTable)
-    .values({ ...parsed.data, clinicId: user.clinicId, createdBy: user.id })
-    .returning();
-  res.status(201).json(tutor);
+  const { externalId: rawExternalId, ...rest } = parsed.data;
+  const values: Record<string, unknown> = {
+    ...rest,
+    clinicId: user.clinicId,
+    createdBy: user.id,
+  };
+  if (rawExternalId !== undefined) {
+    if (user.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem definir o ID do sistema antigo." });
+      return;
+    }
+    values.externalId = normalizeExternalId(rawExternalId);
+  }
+  try {
+    const [tutor] = await db.insert(tutorsTable).values(values as typeof tutorsTable.$inferInsert).returning();
+    res.status(201).json(tutor);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      res
+        .status(409)
+        .json({ error: "Já existe um tutor com esse ID do sistema antigo nesta clínica." });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.get("/tutors/:tutorId", async (req, res): Promise<void> => {
@@ -83,21 +119,40 @@ router.patch("/tutors/:tutorId", requireRole("admin", "vet"), async (req, res): 
     res.status(400).json({ error: "Invalid request" });
     return;
   }
-  const [tutor] = await db
-    .update(tutorsTable)
-    .set({ ...body.data, updatedAt: new Date() })
-    .where(
-      and(
-        eq(tutorsTable.id, params.data.tutorId),
-        eq(tutorsTable.clinicId, user.clinicId),
-      ),
-    )
-    .returning();
-  if (!tutor) {
-    res.status(404).json({ error: "Tutor not found" });
-    return;
+  const { externalId: rawExternalId, ...rest } = body.data;
+  const updateValues: Record<string, unknown> = { ...rest, updatedAt: new Date() };
+  if (rawExternalId !== undefined) {
+    if (user.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem alterar o ID do sistema antigo." });
+      return;
+    }
+    updateValues.externalId = normalizeExternalId(rawExternalId);
   }
-  res.json(schemas.UpdateTutorResponse.parse(tutor));
+  try {
+    const [tutor] = await db
+      .update(tutorsTable)
+      .set(updateValues)
+      .where(
+        and(
+          eq(tutorsTable.id, params.data.tutorId),
+          eq(tutorsTable.clinicId, user.clinicId),
+        ),
+      )
+      .returning();
+    if (!tutor) {
+      res.status(404).json({ error: "Tutor not found" });
+      return;
+    }
+    res.json(schemas.UpdateTutorResponse.parse(tutor));
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      res
+        .status(409)
+        .json({ error: "Já existe um tutor com esse ID do sistema antigo nesta clínica." });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.delete("/tutors/:tutorId", requireRole("admin", "vet"), async (req, res): Promise<void> => {

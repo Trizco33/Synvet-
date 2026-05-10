@@ -1525,6 +1525,7 @@ components:
         phone: { type: string, nullable: true }
         whatsapp: { type: string, nullable: true }
         address: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
       required: [name]
 
     UpdateTutorBody:
@@ -1535,6 +1536,7 @@ components:
         phone: { type: string, nullable: true }
         whatsapp: { type: string, nullable: true }
         address: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
 
     Pet:
       type: object
@@ -1601,6 +1603,7 @@ components:
         isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
       required: [tutorId, name, species, sex, neutered]
 
     UpdatePetBody:
@@ -1619,6 +1622,7 @@ components:
         isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
 
     Consultation:
       type: object

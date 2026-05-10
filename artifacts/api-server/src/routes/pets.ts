@@ -17,6 +17,22 @@ import { commsBus } from "../comms";
 
 const router: IRouter = Router();
 
+function normalizeExternalId(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: string }).code === "23505"
+  );
+}
+
 router.get("/pets", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.ListPetsQueryParams.safeParse(req.query);
@@ -90,16 +106,35 @@ router.post("/pets", requireRole("admin", "vet"), async (req, res): Promise<void
     res.status(400).json({ error: "Tutor not found in clinic" });
     return;
   }
-  const [pet] = await db
-    .insert(petsTable)
-    .values({
-      ...parsed.data,
-      birthDate: toDateString(parsed.data.birthDate) ?? null,
-      clinicId: user.clinicId,
-      createdBy: user.id,
-    })
-    .returning();
-  res.status(201).json(pet);
+  const { externalId: rawExternalId, ...rest } = parsed.data;
+  const insertValues: Record<string, unknown> = {
+    ...rest,
+    birthDate: toDateString(parsed.data.birthDate) ?? null,
+    clinicId: user.clinicId,
+    createdBy: user.id,
+  };
+  if (rawExternalId !== undefined) {
+    if (user.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem definir o ID do sistema antigo." });
+      return;
+    }
+    insertValues.externalId = normalizeExternalId(rawExternalId);
+  }
+  try {
+    const [pet] = await db
+      .insert(petsTable)
+      .values(insertValues as typeof petsTable.$inferInsert)
+      .returning();
+    res.status(201).json(pet);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      res
+        .status(409)
+        .json({ error: "Já existe um paciente com esse ID do sistema antigo nesta clínica." });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.get("/pets/:petId", async (req, res): Promise<void> => {
@@ -143,22 +178,41 @@ router.patch("/pets/:petId", requireRole("admin", "vet"), async (req, res): Prom
     res.status(400).json({ error: "Invalid request" });
     return;
   }
-  const [pet] = await db
-    .update(petsTable)
-    .set({
-      ...body.data,
-      birthDate: toDateString(body.data.birthDate),
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(petsTable.id, params.data.petId), eq(petsTable.clinicId, user.clinicId)),
-    )
-    .returning();
-  if (!pet) {
-    res.status(404).json({ error: "Pet not found" });
-    return;
+  const { externalId: rawExternalId, ...rest } = body.data;
+  const updateValues: Record<string, unknown> = {
+    ...rest,
+    birthDate: toDateString(body.data.birthDate),
+    updatedAt: new Date(),
+  };
+  if (rawExternalId !== undefined) {
+    if (user.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem alterar o ID do sistema antigo." });
+      return;
+    }
+    updateValues.externalId = normalizeExternalId(rawExternalId);
   }
-  res.json(schemas.UpdatePetResponse.parse(pet));
+  try {
+    const [pet] = await db
+      .update(petsTable)
+      .set(updateValues)
+      .where(
+        and(eq(petsTable.id, params.data.petId), eq(petsTable.clinicId, user.clinicId)),
+      )
+      .returning();
+    if (!pet) {
+      res.status(404).json({ error: "Pet not found" });
+      return;
+    }
+    res.json(schemas.UpdatePetResponse.parse(pet));
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      res
+        .status(409)
+        .json({ error: "Já existe um paciente com esse ID do sistema antigo nesta clínica." });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.delete("/pets/:petId", requireRole("admin", "vet"), async (req, res): Promise<void> => {

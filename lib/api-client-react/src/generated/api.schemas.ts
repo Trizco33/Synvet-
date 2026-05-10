@@ -474,6 +474,7 @@ export interface CreateTutorBody {
   phone?: string | null;
   whatsapp?: string | null;
   address?: string | null;
+  externalId?: string | null;
 }
 
 export interface UpdateTutorBody {
@@ -482,6 +483,7 @@ export interface UpdateTutorBody {
   phone?: string | null;
   whatsapp?: string | null;
   address?: string | null;
+  externalId?: string | null;
 }
 
 export type PetWithTutor = Pet & {
@@ -527,6 +529,7 @@ export interface CreatePetBody {
   isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
+  externalId?: string | null;
 }
 
 export type UpdatePetBodySex =
@@ -552,6 +555,7 @@ export interface UpdatePetBody {
   isCritical?: boolean;
   notes?: string | null;
   photoUrl?: string | null;
+  externalId?: string | null;
 }
 
 export type ConsultationStatus =

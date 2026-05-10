@@ -483,6 +483,7 @@ export const CreateTutorBody = zod.object({
   phone: zod.string().nullish(),
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
+  externalId: zod.string().nullish(),
 });
 
 export const GetTutorParams = zod.object({
@@ -537,6 +538,7 @@ export const UpdateTutorBody = zod.object({
   phone: zod.string().nullish(),
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
+  externalId: zod.string().nullish(),
 });
 
 export const UpdateTutorResponse = zod.object({
@@ -612,6 +614,7 @@ export const CreatePetBody = zod.object({
   isCritical: zod.boolean().optional(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
+  externalId: zod.string().nullish(),
 });
 
 export const GetPetParams = zod.object({
@@ -678,6 +681,7 @@ export const UpdatePetBody = zod.object({
   isCritical: zod.boolean().optional(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
+  externalId: zod.string().nullish(),
 });
 
 export const UpdatePetResponse = zod.object({

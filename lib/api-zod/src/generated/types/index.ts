@@ -76,6 +76,8 @@ export * from "./exam";
 export * from "./examStatus";
 export * from "./examWithPet";
 export * from "./healthStatus";
+export * from "./importHistoryEntry";
+export * from "./importHistoryEntryKind";
 export * from "./importReport";
 export * from "./importReportKind";
 export * from "./importRowResult";

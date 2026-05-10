@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index } from "drizzle-orm/pg-core";
 import { clinicsTable } from "./clinics";
 import { usersTable } from "./users";
 
@@ -34,7 +34,11 @@ export const importLogsTable = pgTable(
   },
   (t) => [
     index("import_logs_clinic_idx").on(t.clinicId, t.createdAt),
-    uniqueIndex("import_logs_dedupe_idx").on(t.clinicId, t.kind, t.fileHash),
+    // Não-único de propósito: queremos preservar o histórico de
+    // reimportações do mesmo arquivo (mesmo hash) para auditoria. A
+    // lógica de bloqueio de re-upload acidental fica na rota
+    // (POST /import/:kind), que consulta este índice.
+    index("import_logs_dedupe_idx").on(t.clinicId, t.kind, t.fileHash),
   ],
 );
 

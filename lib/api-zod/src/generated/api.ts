@@ -334,6 +334,39 @@ export const GetImportTemplateParams = zod.object({
 });
 
 /**
+ * @summary Lista as últimas execuções de importação da clínica (admin)
+ */
+export const ListImportHistoryResponseItem = zod.object({
+  id: zod.string().uuid(),
+  kind: zod.enum([
+    "tutors",
+    "pets",
+    "appointments",
+    "exams",
+    "vaccines",
+    "medical_records",
+  ]),
+  fileName: zod.string().nullish(),
+  fileHash: zod.string(),
+  rowCount: zod.number(),
+  createdCount: zod.number(),
+  updatedCount: zod.number(),
+  skippedCount: zod.number(),
+  errorCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  userName: zod.string().nullish(),
+  userEmail: zod.string().nullish(),
+  isReimport: zod
+    .boolean()
+    .describe(
+      "Se já houve outra execução com o mesmo fileHash + kind nesta clínica antes desta.",
+    ),
+});
+export const ListImportHistoryResponse = zod.array(
+  ListImportHistoryResponseItem,
+);
+
+/**
  * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
  */
 export const RunImportParams = zod.object({

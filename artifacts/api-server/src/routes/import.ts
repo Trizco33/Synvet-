@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   db,
@@ -10,6 +10,7 @@ import {
   vaccinesTable,
   medicalRecordsTable,
   importLogsTable,
+  usersTable,
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
@@ -1018,6 +1019,72 @@ router.get("/import/template/:kind", async (req, res): Promise<void> => {
   res.send(csv);
 });
 
+router.get(
+  "/import/history",
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const user = requireAuth(req);
+    const rows = await db
+      .select({
+        id: importLogsTable.id,
+        kind: importLogsTable.kind,
+        fileName: importLogsTable.fileName,
+        fileHash: importLogsTable.fileHash,
+        rowCount: importLogsTable.rowCount,
+        createdCount: importLogsTable.createdCount,
+        updatedCount: importLogsTable.updatedCount,
+        skippedCount: importLogsTable.skippedCount,
+        errorCount: importLogsTable.errorCount,
+        createdAt: importLogsTable.createdAt,
+        userName: usersTable.name,
+        userEmail: usersTable.email,
+      })
+      .from(importLogsTable)
+      .leftJoin(usersTable, eq(importLogsTable.userId, usersTable.id))
+      .where(eq(importLogsTable.clinicId, user.clinicId))
+      .orderBy(desc(importLogsTable.createdAt))
+      .limit(50);
+
+    // Detecta re-uploads do mesmo arquivo: para cada (kind, fileHash) na
+    // clínica, calculamos o menor createdAt — entradas posteriores a essa
+    // primeira execução são marcadas como reimport. A primeira aparição
+    // não recebe a badge.
+    const firstSeen = await db
+      .select({
+        kind: importLogsTable.kind,
+        fileHash: importLogsTable.fileHash,
+        firstAt: sql<Date>`min(${importLogsTable.createdAt})`,
+      })
+      .from(importLogsTable)
+      .where(eq(importLogsTable.clinicId, user.clinicId))
+      .groupBy(importLogsTable.kind, importLogsTable.fileHash);
+    const firstSeenMap = new Map<string, number>();
+    for (const f of firstSeen) {
+      firstSeenMap.set(`${f.kind}::${f.fileHash}`, new Date(f.firstAt).getTime());
+    }
+
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        fileName: r.fileName,
+        fileHash: r.fileHash,
+        rowCount: r.rowCount,
+        createdCount: r.createdCount,
+        updatedCount: r.updatedCount,
+        skippedCount: r.skippedCount,
+        errorCount: r.errorCount,
+        createdAt: r.createdAt.toISOString(),
+        userName: r.userName,
+        userEmail: r.userEmail,
+        isReimport:
+          (firstSeenMap.get(`${r.kind}::${r.fileHash}`) ?? r.createdAt.getTime()) <
+          r.createdAt.getTime(),
+      })),
+    );
+  },
+);
+
 router.post(
   "/import/:kind",
   requireRole("admin"),
@@ -1047,8 +1114,11 @@ router.post(
       return;
     }
 
-    // Idempotência: bloqueia reimportação do mesmo arquivo (mesmo hash).
-    const previous = await db
+    // Idempotência: bloqueia reimportação do mesmo arquivo (mesmo hash)
+    // QUANDO a rodada anterior gravou dados (errorCount == 0). Retentativas
+    // após falha (errorCount > 0) são liberadas — o log antigo permanece
+    // para auditoria (histórico mostra badge "Reimportação").
+    const previousSuccessful = await db
       .select()
       .from(importLogsTable)
       .where(
@@ -1056,31 +1126,24 @@ router.post(
           eq(importLogsTable.clinicId, user.clinicId),
           eq(importLogsTable.kind, kind),
           eq(importLogsTable.fileHash, fileHash),
+          eq(importLogsTable.errorCount, 0),
         ),
       )
       .limit(1);
-    if (previous.length > 0) {
-      const p = previous[0]!;
-      // Permite retry quando a rodada anterior falhou (errorCount > 0):
-      // como nada foi gravado em fail-all, o usuário corrige o CSV (mesmo
-      // que mantenha algumas linhas iguais) e reenvia. Removemos o log
-      // antigo para não bater no UNIQUE INDEX (clinicId, kind, fileHash).
-      if (p.errorCount > 0) {
-        await db.delete(importLogsTable).where(eq(importLogsTable.id, p.id));
-      } else {
-        res.status(409).json({
-          error:
-            "Este arquivo já foi importado anteriormente. Para reimportar, ajuste pelo menos uma linha (o conteúdo precisa ser diferente).",
-          previousImport: {
-            createdAt: p.createdAt,
-            rowCount: p.rowCount,
-            created: p.createdCount,
-            skipped: p.skippedCount,
-            errors: p.errorCount,
-          },
-        });
-        return;
-      }
+    if (previousSuccessful.length > 0) {
+      const p = previousSuccessful[0]!;
+      res.status(409).json({
+        error:
+          "Este arquivo já foi importado anteriormente. Para reimportar, ajuste pelo menos uma linha (o conteúdo precisa ser diferente).",
+        previousImport: {
+          createdAt: p.createdAt,
+          rowCount: p.rowCount,
+          created: p.createdCount,
+          skipped: p.skippedCount,
+          errors: p.errorCount,
+        },
+      });
+      return;
     }
 
     // Aplica o mapping de cada linha (csvColumn → synvetField).

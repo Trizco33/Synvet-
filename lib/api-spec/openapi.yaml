@@ -302,6 +302,20 @@ paths:
             text/csv:
               schema: { type: string }
 
+  /import/history:
+    get:
+      operationId: listImportHistory
+      tags: [import]
+      summary: Lista as últimas execuções de importação da clínica (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ImportHistoryEntry" }
+
   /import/{kind}:
     parameters:
       - in: path
@@ -1289,6 +1303,24 @@ components:
         message: { type: string, nullable: true }
         id: { type: string, format: uuid, nullable: true }
       required: [row, outcome]
+
+    ImportHistoryEntry:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records] }
+        fileName: { type: string, nullable: true }
+        fileHash: { type: string }
+        rowCount: { type: integer }
+        createdCount: { type: integer }
+        updatedCount: { type: integer }
+        skippedCount: { type: integer }
+        errorCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        userName: { type: string, nullable: true }
+        userEmail: { type: string, nullable: true }
+        isReimport: { type: boolean, description: "Se já houve outra execução com o mesmo fileHash + kind nesta clínica antes desta." }
+      required: [id, kind, fileHash, rowCount, createdCount, updatedCount, skippedCount, errorCount, createdAt, isReimport]
 
     ImportReport:
       type: object

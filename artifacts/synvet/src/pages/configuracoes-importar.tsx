@@ -9,10 +9,35 @@ import {
   Syringe,
   FileText,
   ArrowLeft,
+  History,
 } from "lucide-react";
 import { Link } from "wouter";
 import { ImportWizard, type ImportField } from "@/components/import/ImportWizard";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useListImportHistory } from "@workspace/api-client-react";
+import type { ImportHistoryEntry } from "@workspace/api-client-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const KIND_LABELS: Record<ImportHistoryEntry["kind"], string> = {
+  tutors: "Tutores",
+  pets: "Pacientes",
+  appointments: "Agenda",
+  exams: "Exames",
+  vaccines: "Vacinas",
+  medical_records: "Prontuários",
+};
 
 const TUTOR_FIELDS: ImportField[] = [
   { key: "name", label: "Nome", required: true, aliases: ["nome", "tutor"] },
@@ -193,6 +218,133 @@ export default function ConfiguracoesImportar() {
           />
         </TabsContent>
       </Tabs>
+
+      <ImportHistory />
     </div>
+  );
+}
+
+function ImportHistory() {
+  const { data, isLoading, isError } = useListImportHistory();
+
+  return (
+    <Card data-testid="import-history-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <History className="w-5 h-5" />
+          Histórico de importações
+        </CardTitle>
+        <CardDescription>
+          Últimas 50 execuções da clínica — útil para auditoria e para
+          reconciliar reimportações do mesmo arquivo.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : isError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Não foi possível carregar o histórico</AlertTitle>
+            <AlertDescription>Tente recarregar a página.</AlertDescription>
+          </Alert>
+        ) : !data || data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhuma importação realizada ainda. Quando você importar um arquivo
+            CSV, ele aparecerá aqui.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Arquivo</TableHead>
+                  <TableHead className="text-right">Linhas</TableHead>
+                  <TableHead className="text-right">Criadas</TableHead>
+                  <TableHead className="text-right">Atualizadas</TableHead>
+                  <TableHead className="text-right">Ignoradas</TableHead>
+                  <TableHead className="text-right">Erros</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.map((entry) => (
+                  <TableRow
+                    key={entry.id}
+                    data-testid={`import-history-row-${entry.id}`}
+                  >
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div className="font-medium">
+                        {entry.userName ?? entry.userEmail ?? "—"}
+                      </div>
+                      {entry.userName && entry.userEmail ? (
+                        <div className="text-xs text-muted-foreground">
+                          {entry.userEmail}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {KIND_LABELS[entry.kind]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[240px]">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className="truncate text-sm"
+                          title={entry.fileName ?? undefined}
+                        >
+                          {entry.fileName ?? "(sem nome)"}
+                        </span>
+                        {entry.isReimport ? (
+                          <Badge
+                            variant="outline"
+                            className="text-amber-400 border-amber-500/50"
+                            data-testid={`reimport-badge-${entry.id}`}
+                          >
+                            Reimportação
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm">
+                      {entry.rowCount}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm text-emerald-400">
+                      {entry.createdCount}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
+                      {entry.updatedCount}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
+                      {entry.skippedCount}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm">
+                      {entry.errorCount > 0 ? (
+                        <span className="text-destructive">
+                          {entry.errorCount}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">0</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

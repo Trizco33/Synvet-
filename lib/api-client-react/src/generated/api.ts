@@ -54,6 +54,7 @@ import type {
   Exam,
   ExamWithPet,
   HealthStatus,
+  ImportHistoryEntry,
   ImportReport,
   ListCommsAutomationsResponse,
   ListCommsChannelsResponse,
@@ -1537,6 +1538,81 @@ export function useGetImportTemplate<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetImportTemplateQueryOptions(kind, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Lista as últimas execuções de importação da clínica (admin)
+ */
+export const getListImportHistoryUrl = () => {
+  return `/api/import/history`;
+};
+
+export const listImportHistory = async (
+  options?: RequestInit,
+): Promise<ImportHistoryEntry[]> => {
+  return customFetch<ImportHistoryEntry[]>(getListImportHistoryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListImportHistoryQueryKey = () => {
+  return [`/api/import/history`] as const;
+};
+
+export const getListImportHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImportHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listImportHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListImportHistoryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listImportHistory>>
+  > = ({ signal }) => listImportHistory({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImportHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListImportHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImportHistory>>
+>;
+export type ListImportHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Lista as últimas execuções de importação da clínica (admin)
+ */
+
+export function useListImportHistory<
+  TData = Awaited<ReturnType<typeof listImportHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listImportHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListImportHistoryQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

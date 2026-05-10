@@ -186,6 +186,35 @@ export interface ImportRowResult {
   id?: string | null;
 }
 
+export type ImportHistoryEntryKind =
+  (typeof ImportHistoryEntryKind)[keyof typeof ImportHistoryEntryKind];
+
+export const ImportHistoryEntryKind = {
+  tutors: "tutors",
+  pets: "pets",
+  appointments: "appointments",
+  exams: "exams",
+  vaccines: "vaccines",
+  medical_records: "medical_records",
+} as const;
+
+export interface ImportHistoryEntry {
+  id: string;
+  kind: ImportHistoryEntryKind;
+  fileName?: string | null;
+  fileHash: string;
+  rowCount: number;
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  errorCount: number;
+  createdAt: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  /** Se já houve outra execução com o mesmo fileHash + kind nesta clínica antes desta. */
+  isReimport: boolean;
+}
+
 export type ImportReportKind =
   (typeof ImportReportKind)[keyof typeof ImportReportKind];
 

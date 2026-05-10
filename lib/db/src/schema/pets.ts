@@ -7,6 +7,7 @@ import {
   date,
   doublePrecision,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { clinicsTable } from "./clinics";
@@ -35,6 +36,7 @@ export const petsTable = pgTable(
     isCritical: boolean("is_critical").notNull().default(false),
     notes: text("notes"),
     photoUrl: text("photo_url"),
+    externalId: text("external_id"),
     createdBy: uuid("created_by").references(() => usersTable.id, {
       onDelete: "set null",
     }),
@@ -45,6 +47,7 @@ export const petsTable = pgTable(
     index("pets_clinic_idx").on(t.clinicId),
     index("pets_tutor_idx").on(t.tutorId),
     index("pets_critical_idx").on(t.clinicId, t.isCritical),
+    uniqueIndex("pets_external_idx").on(t.clinicId, t.externalId),
   ],
 );
 

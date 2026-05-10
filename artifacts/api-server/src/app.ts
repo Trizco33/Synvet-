@@ -32,9 +32,10 @@ app.use(cors());
 // Deve ser montado ANTES do express.json() global.
 mountBillingWebhook(app);
 
-// Limite generoso para acomodar importações CSV (5k linhas × campos textuais).
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// Limite global de 5 MB — bate com o teto declarado da importação CSV
+// (5k linhas × campos textuais ficam bem abaixo desse teto na prática).
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 app.use("/api", router);
 

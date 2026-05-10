@@ -405,8 +405,8 @@ export function ImportWizard({ kind, fields, helperText }: Props) {
           <div className="py-8 space-y-3 text-center">
             <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">
-              Processando importação… linhas válidas serão criadas; inválidas
-              ficam no relatório para você corrigir e reenviar.
+              Validando arquivo… se qualquer linha estiver com erro, nada será
+              gravado e você corrige no relatório.
             </p>
             <Progress value={70} className="max-w-md mx-auto" />
           </div>

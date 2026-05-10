@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
 import {
   db,
   tutorsTable,
@@ -19,6 +20,9 @@ const KINDS: readonly Kind[] = ["tutors", "pets", "appointments"];
 function isKind(v: string): v is Kind {
   return (KINDS as readonly string[]).includes(v);
 }
+
+const MAX_BODY_BYTES = 5 * 1024 * 1024;
+const CHUNK_SIZE = 100;
 
 // =============================================================
 // Templates CSV — cabeçalho + 1 linha de exemplo por tipo.
@@ -44,6 +48,7 @@ const TEMPLATES: Record<Kind, { headers: string[]; example: string[] }> = {
       "weightKg",
       "tutorEmail",
       "tutorPhone",
+      "externalId",
       "notes",
     ],
     example: [
@@ -55,6 +60,7 @@ const TEMPLATES: Record<Kind, { headers: string[]; example: string[] }> = {
       "28.4",
       "maria@exemplo.com",
       "+55 11 99999-0001",
+      "PT-00125",
       "Vacinação em dia",
     ],
   },
@@ -118,27 +124,78 @@ function applyMapping(
 }
 
 // =============================================================
-// Importadores por tipo.
+// Zod schemas por kind — enforce contrato de cada linha.
 // =============================================================
-type RowResult = {
-  row: number;
-  outcome: "created" | "updated" | "skipped" | "error";
-  message?: string;
-  id?: string;
-};
+const optStr = z
+  .string()
+  .nullish()
+  .transform((v: string | null | undefined) =>
+    typeof v === "string" && v.trim().length > 0 ? v.trim() : null,
+  );
 
-async function importTutors(
+const reqStr = (msg: string) =>
+  z
+    .string({ required_error: msg, invalid_type_error: msg })
+    .nullish()
+    .transform((v: string | null | undefined) => (typeof v === "string" ? v.trim() : ""))
+    .refine((v: string) => v.length > 0, { message: msg });
+
+const TutorRowSchema = z
+  .object({
+    name: reqStr("Nome obrigatório"),
+    email: optStr,
+    phone: optStr,
+    whatsapp: optStr,
+    address: optStr,
+  })
+  .refine(
+    (d: { email: string | null; phone: string | null }) =>
+      normEmail(d.email) || normPhone(d.phone),
+    { message: "Informe e-mail ou telefone válido", path: ["email"] },
+  );
+
+const PetRowSchema = z.object({
+  name: reqStr("Nome obrigatório"),
+  species: reqStr("Espécie obrigatória (ex.: dog, cat)").transform((v: string) =>
+    v.toLowerCase(),
+  ),
+  breed: optStr,
+  sex: optStr,
+  birthDate: optStr,
+  weightKg: optStr,
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  externalId: optStr,
+  notes: optStr,
+});
+
+const AppointmentRowSchema = z.object({
+  scheduledAt: reqStr("Data/hora obrigatória"),
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  reason: optStr,
+  status: optStr,
+});
+
+const SEX_VALUES = new Set(["male", "female", "unknown"]);
+const STATUS_VALUES = new Set(["scheduled", "in_progress", "completed", "cancelled"]);
+
+// =============================================================
+// Planejamento (pass 1) — valida + resolve refs SEM gravar.
+// =============================================================
+type Plan =
+  | { row: number; outcome: "created"; insert: Record<string, unknown>; refKey?: string }
+  | { row: number; outcome: "skipped"; message: string; id: string }
+  | { row: number; outcome: "error"; message: string };
+
+async function planTutors(
   clinicId: string,
   userId: string,
   rows: Array<Record<string, string | null>>,
-): Promise<RowResult[]> {
-  // Pré-carrega tutores existentes da clínica (email / phone) para dedupe.
+): Promise<Plan[]> {
   const existing = await db
-    .select({
-      id: tutorsTable.id,
-      email: tutorsTable.email,
-      phone: tutorsTable.phone,
-    })
+    .select({ id: tutorsTable.id, email: tutorsTable.email, phone: tutorsTable.phone })
     .from(tutorsTable)
     .where(eq(tutorsTable.clinicId, clinicId));
   const byEmail = new Map<string, string>();
@@ -150,71 +207,60 @@ async function importTutors(
     if (p) byPhone.set(p, t.id);
   }
 
-  const results: RowResult[] = [];
-  await db.transaction(async (tx) => {
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const rowNum = i + 1;
-      const name = strOrNull(r.name);
-      const email = normEmail(r.email);
-      const phone = normPhone(r.phone);
-      const whatsapp = normPhone(r.whatsapp) ?? phone;
-      const address = strOrNull(r.address);
-      if (!name) {
-        results.push({ row: rowNum, outcome: "error", message: "Nome obrigatório" });
-        continue;
-      }
-      if (!email && !phone) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Informe e-mail ou telefone",
-        });
-        continue;
-      }
-      const dupId = (email && byEmail.get(email)) || (phone && byPhone.get(phone)) || null;
-      if (dupId) {
-        results.push({
-          row: rowNum,
-          outcome: "skipped",
-          message: "Tutor já existe (dedupe por e-mail/telefone)",
-          id: dupId,
-        });
-        continue;
-      }
-      const [created] = await tx
-        .insert(tutorsTable)
-        .values({
-          clinicId,
-          createdBy: userId,
-          name,
-          email: r.email?.trim() || null,
-          phone: r.phone?.trim() || null,
-          whatsapp: r.whatsapp?.trim() || r.phone?.trim() || null,
-          address,
-        })
-        .returning({ id: tutorsTable.id });
-      if (email) byEmail.set(email, created.id);
-      if (phone) byPhone.set(phone, created.id);
-      results.push({ row: rowNum, outcome: "created", id: created.id });
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = TutorRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
     }
-  });
-  return results;
+    const d = parsed.data;
+    const email = normEmail(d.email);
+    const phone = normPhone(d.phone);
+    const dupId = (email && byEmail.get(email)) || (phone && byPhone.get(phone)) || null;
+    if (dupId) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Tutor já existe (dedupe por e-mail/telefone)",
+        id: dupId,
+      });
+      continue;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        name: d.name,
+        email: d.email,
+        phone: d.phone,
+        whatsapp: d.whatsapp ?? d.phone,
+        address: d.address,
+      },
+      refKey: email ?? phone ?? `row-${rowNum}`,
+    });
+    // Reserva chave dentro do batch (linhas seguintes com mesmo email/phone
+    // viram skipped).
+    if (email) byEmail.set(email, "__pending__");
+    if (phone) byPhone.set(phone, "__pending__");
+  }
+  return plans;
 }
 
-async function importPets(
+async function planPets(
   clinicId: string,
   userId: string,
   rows: Array<Record<string, string | null>>,
-): Promise<RowResult[]> {
-  // Pré-carrega tutores (para resolver tutorEmail/tutorPhone) e pets existentes
-  // (para dedupe por (tutorId, name)).
+): Promise<Plan[]> {
   const tutors = await db
-    .select({
-      id: tutorsTable.id,
-      email: tutorsTable.email,
-      phone: tutorsTable.phone,
-    })
+    .select({ id: tutorsTable.id, email: tutorsTable.email, phone: tutorsTable.phone })
     .from(tutorsTable)
     .where(eq(tutorsTable.clinicId, clinicId));
   const tutorByEmail = new Map<string, string>();
@@ -226,107 +272,111 @@ async function importPets(
     if (p) tutorByPhone.set(p, t.id);
   }
   const existingPets = await db
-    .select({ id: petsTable.id, tutorId: petsTable.tutorId, name: petsTable.name })
+    .select({
+      id: petsTable.id,
+      tutorId: petsTable.tutorId,
+      name: petsTable.name,
+      externalId: petsTable.externalId,
+    })
     .from(petsTable)
     .where(eq(petsTable.clinicId, clinicId));
   const petKey = (tutorId: string, name: string) =>
     `${tutorId}::${name.trim().toLowerCase()}`;
   const petByKey = new Map<string, string>();
+  const petByExternalId = new Map<string, string>();
   for (const p of existingPets) {
     petByKey.set(petKey(p.tutorId, p.name), p.id);
+    if (p.externalId) petByExternalId.set(p.externalId, p.id);
   }
 
-  const SEX = new Set(["male", "female", "unknown"]);
-
-  const results: RowResult[] = [];
-  await db.transaction(async (tx) => {
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const rowNum = i + 1;
-      const name = strOrNull(r.name);
-      const species = strOrNull(r.species)?.toLowerCase() ?? null;
-      if (!name) {
-        results.push({ row: rowNum, outcome: "error", message: "Nome obrigatório" });
-        continue;
-      }
-      if (!species) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Espécie obrigatória (ex.: dog, cat)",
-        });
-        continue;
-      }
-      const tutorEmail = normEmail(r.tutorEmail);
-      const tutorPhone = normPhone(r.tutorPhone);
-      const tutorId =
-        (tutorEmail && tutorByEmail.get(tutorEmail)) ||
-        (tutorPhone && tutorByPhone.get(tutorPhone)) ||
-        null;
-      if (!tutorId) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message:
-            "Tutor não encontrado. Importe os tutores primeiro ou informe e-mail/telefone existente.",
-        });
-        continue;
-      }
-      const dupId = petByKey.get(petKey(tutorId, name));
-      if (dupId) {
-        results.push({
-          row: rowNum,
-          outcome: "skipped",
-          message: "Pet já cadastrado para este tutor",
-          id: dupId,
-        });
-        continue;
-      }
-      let sex: "male" | "female" | "unknown" = "unknown";
-      const sexRaw = strOrNull(r.sex)?.toLowerCase();
-      if (sexRaw && SEX.has(sexRaw)) sex = sexRaw as typeof sex;
-      const weightStr = strOrNull(r.weightKg);
-      let weightKg: number | null = null;
-      if (weightStr) {
-        const parsed = Number(weightStr.replace(",", "."));
-        weightKg = Number.isFinite(parsed) ? parsed : null;
-      }
-      const birthDate = strOrNull(r.birthDate);
-      const breed = strOrNull(r.breed);
-      const notes = strOrNull(r.notes);
-      const [created] = await tx
-        .insert(petsTable)
-        .values({
-          clinicId,
-          tutorId,
-          createdBy: userId,
-          name,
-          species,
-          breed,
-          sex,
-          birthDate,
-          weightKg,
-          notes,
-        })
-        .returning({ id: petsTable.id });
-      petByKey.set(petKey(tutorId, name), created.id);
-      results.push({ row: rowNum, outcome: "created", id: created.id });
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = PetRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
     }
-  });
-  return results;
+    const d = parsed.data;
+    const tutorEmail = normEmail(d.tutorEmail);
+    const tutorPhone = normPhone(d.tutorPhone);
+    const tutorId =
+      (tutorEmail && tutorByEmail.get(tutorEmail)) ||
+      (tutorPhone && tutorByPhone.get(tutorPhone)) ||
+      null;
+    if (!tutorId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Tutor não encontrado. Importe os tutores primeiro ou informe e-mail/telefone existente.",
+      });
+      continue;
+    }
+    // Dedupe prioritário por externalId; fallback (tutorId, name).
+    if (d.externalId && petByExternalId.has(d.externalId)) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Pet já cadastrado (mesmo ID externo)",
+        id: petByExternalId.get(d.externalId)!,
+      });
+      continue;
+    }
+    const dupKey = petKey(tutorId, d.name);
+    if (petByKey.has(dupKey)) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Pet já cadastrado para este tutor",
+        id: petByKey.get(dupKey)!,
+      });
+      continue;
+    }
+    let sex: "male" | "female" | "unknown" = "unknown";
+    if (d.sex && SEX_VALUES.has(d.sex.toLowerCase())) {
+      sex = d.sex.toLowerCase() as typeof sex;
+    }
+    let weightKg: number | null = null;
+    if (d.weightKg) {
+      const parsedNum = Number(d.weightKg.replace(",", "."));
+      if (Number.isFinite(parsedNum)) weightKg = parsedNum;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        tutorId,
+        createdBy: userId,
+        name: d.name,
+        species: d.species,
+        breed: d.breed,
+        sex,
+        birthDate: d.birthDate,
+        weightKg,
+        notes: d.notes,
+        externalId: d.externalId,
+      },
+      refKey: d.externalId ?? dupKey,
+    });
+    petByKey.set(dupKey, "__pending__");
+    if (d.externalId) petByExternalId.set(d.externalId, "__pending__");
+  }
+  return plans;
 }
 
-async function importAppointments(
+async function planAppointments(
   clinicId: string,
   userId: string,
   rows: Array<Record<string, string | null>>,
-): Promise<RowResult[]> {
+): Promise<Plan[]> {
   const tutors = await db
-    .select({
-      id: tutorsTable.id,
-      email: tutorsTable.email,
-      phone: tutorsTable.phone,
-    })
+    .select({ id: tutorsTable.id, email: tutorsTable.email, phone: tutorsTable.phone })
     .from(tutorsTable)
     .where(eq(tutorsTable.clinicId, clinicId));
   const tutorByEmail = new Map<string, string>();
@@ -353,80 +403,113 @@ async function importAppointments(
     petByKey.set(`${p.tutorId}::${p.name.trim().toLowerCase()}`, p.id);
   }
 
-  const STATUS = new Set(["scheduled", "in_progress", "completed", "cancelled"]);
-  const results: RowResult[] = [];
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = AppointmentRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    const scheduled = new Date(d.scheduledAt);
+    if (Number.isNaN(scheduled.getTime())) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Data inválida — use ISO 8601 (ex.: 2026-05-20T14:30:00-03:00)",
+      });
+      continue;
+    }
+    const tutorEmail = normEmail(d.tutorEmail);
+    const tutorPhone = normPhone(d.tutorPhone);
+    const tutorId =
+      (tutorEmail && tutorByEmail.get(tutorEmail)) ||
+      (tutorPhone && tutorByPhone.get(tutorPhone)) ||
+      null;
+    if (!tutorId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Tutor não encontrado (e-mail/telefone)",
+      });
+      continue;
+    }
+    const petId = petByKey.get(`${tutorId}::${d.petName.toLowerCase()}`);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Pet não encontrado para este tutor",
+      });
+      continue;
+    }
+    let status: "scheduled" | "in_progress" | "completed" | "cancelled" = "scheduled";
+    if (d.status && STATUS_VALUES.has(d.status.toLowerCase())) {
+      status = d.status.toLowerCase() as typeof status;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        scheduledAt: scheduled,
+        status,
+        reason: d.reason,
+      },
+    });
+  }
+  return plans;
+}
+
+// =============================================================
+// Execução (pass 2) — só roda se pass 1 não tiver NENHUM erro.
+// Atomicidade fail-all: tudo dentro da mesma transação, em chunks
+// de CHUNK_SIZE para evitar payloads gigantes em uma única query.
+// =============================================================
+type RowResult = {
+  row: number;
+  outcome: "created" | "updated" | "skipped" | "error";
+  message?: string;
+  id?: string;
+};
+
+async function executePlans(kind: Kind, plans: Plan[]): Promise<RowResult[]> {
+  const results: RowResult[] = plans.map((p) =>
+    p.outcome === "skipped"
+      ? { row: p.row, outcome: "skipped", message: p.message, id: p.id }
+      : p.outcome === "error"
+        ? { row: p.row, outcome: "error", message: p.message }
+        : { row: p.row, outcome: "created" },
+  );
+
+  const toCreate = plans.filter(
+    (p): p is Extract<Plan, { outcome: "created" }> => p.outcome === "created",
+  );
+  if (toCreate.length === 0) return results;
+
+  const table =
+    kind === "tutors" ? tutorsTable : kind === "pets" ? petsTable : consultationsTable;
 
   await db.transaction(async (tx) => {
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const rowNum = i + 1;
-      const scheduledRaw = strOrNull(r.scheduledAt);
-      const petName = strOrNull(r.petName);
-      const tutorEmail = normEmail(r.tutorEmail);
-      const tutorPhone = normPhone(r.tutorPhone);
-      if (!scheduledRaw) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Data/hora obrigatória (ISO 8601: YYYY-MM-DDThh:mm:ssZ)",
-        });
-        continue;
+    for (let i = 0; i < toCreate.length; i += CHUNK_SIZE) {
+      const slice = toCreate.slice(i, i + CHUNK_SIZE);
+      const inserted = await tx
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(table as any)
+        .values(slice.map((p) => p.insert))
+        .returning({ id: (table as { id: typeof tutorsTable.id }).id });
+      for (let j = 0; j < slice.length; j++) {
+        const planRow = slice[j]!.row;
+        const idx = results.findIndex((r) => r.row === planRow);
+        if (idx >= 0) results[idx]!.id = inserted[j]?.id;
       }
-      const scheduled = new Date(scheduledRaw);
-      if (Number.isNaN(scheduled.getTime())) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Data inválida — use ISO 8601 (ex.: 2026-05-20T14:30:00-03:00)",
-        });
-        continue;
-      }
-      if (!petName) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Nome do pet obrigatório",
-        });
-        continue;
-      }
-      const tutorId =
-        (tutorEmail && tutorByEmail.get(tutorEmail)) ||
-        (tutorPhone && tutorByPhone.get(tutorPhone)) ||
-        null;
-      if (!tutorId) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Tutor não encontrado (e-mail/telefone)",
-        });
-        continue;
-      }
-      const petId = petByKey.get(`${tutorId}::${petName.trim().toLowerCase()}`);
-      if (!petId) {
-        results.push({
-          row: rowNum,
-          outcome: "error",
-          message: "Pet não encontrado para este tutor",
-        });
-        continue;
-      }
-      let status: "scheduled" | "in_progress" | "completed" | "cancelled" =
-        "scheduled";
-      const statusRaw = strOrNull(r.status)?.toLowerCase();
-      if (statusRaw && STATUS.has(statusRaw)) status = statusRaw as typeof status;
-      const reason = strOrNull(r.reason);
-      const [created] = await tx
-        .insert(consultationsTable)
-        .values({
-          clinicId,
-          createdBy: userId,
-          petId,
-          scheduledAt: scheduled,
-          status,
-          reason,
-        })
-        .returning({ id: consultationsTable.id });
-      results.push({ row: rowNum, outcome: "created", id: created.id });
     }
   });
   return results;
@@ -460,6 +543,14 @@ router.post(
       res.status(400).json({ error: "Tipo inválido" });
       return;
     }
+
+    // Limite hard de 5 MB no servidor — não confia em validação cliente.
+    const contentLength = Number(req.headers["content-length"] ?? 0);
+    if (contentLength > MAX_BODY_BYTES) {
+      res.status(413).json({ error: "Arquivo acima de 5 MB. Divida em arquivos menores." });
+      return;
+    }
+
     const parsed = schemas.RunImportBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
@@ -471,8 +562,7 @@ router.post(
       return;
     }
 
-    // Idempotência: bloqueia reimportação do mesmo arquivo (mesmo hash) por
-    // clínica+tipo. Devolve 409 com a contagem do relatório anterior.
+    // Idempotência: bloqueia reimportação do mesmo arquivo (mesmo hash).
     const previous = await db
       .select()
       .from(importLogsTable)
@@ -505,35 +595,55 @@ router.post(
       applyMapping(r as Record<string, string | null>, mapping),
     );
 
-    let results: RowResult[];
+    // Pass 1 — valida + resolve refs sem gravar nada.
+    let plans: Plan[];
     try {
-      if (kind === "tutors") {
-        results = await importTutors(user.clinicId, user.id, mappedRows);
-      } else if (kind === "pets") {
-        results = await importPets(user.clinicId, user.id, mappedRows);
-      } else {
-        results = await importAppointments(user.clinicId, user.id, mappedRows);
-      }
+      if (kind === "tutors") plans = await planTutors(user.clinicId, user.id, mappedRows);
+      else if (kind === "pets") plans = await planPets(user.clinicId, user.id, mappedRows);
+      else plans = await planAppointments(user.clinicId, user.id, mappedRows);
     } catch (err) {
-      req.log.error({ err, kind }, "Import transaction failed");
+      req.log.error({ err, kind }, "Import planning failed");
       res.status(500).json({
-        error:
-          "Falha ao processar a importação. Nenhuma linha foi gravada — corrija o arquivo e tente novamente.",
+        error: "Falha ao validar a importação. Nenhuma linha foi gravada.",
       });
       return;
     }
 
+    const errorPlans = plans.filter((p) => p.outcome === "error");
     const summary = {
       created: 0,
       updated: 0,
       skipped: 0,
-      errors: 0,
+      errors: errorPlans.length,
     };
-    for (const r of results) {
-      if (r.outcome === "created") summary.created++;
-      else if (r.outcome === "updated") summary.updated++;
-      else if (r.outcome === "skipped") summary.skipped++;
-      else summary.errors++;
+    for (const p of plans) {
+      if (p.outcome === "skipped") summary.skipped++;
+      else if (p.outcome === "created") summary.created++;
+    }
+
+    // Atomicidade fail-all: se houver QUALQUER erro, devolve relatório
+    // sem gravar nada. Cliente corrige e reenvia.
+    let results: RowResult[];
+    if (errorPlans.length > 0) {
+      results = plans.map((p) =>
+        p.outcome === "skipped"
+          ? { row: p.row, outcome: "skipped", message: p.message, id: p.id }
+          : p.outcome === "error"
+            ? { row: p.row, outcome: "error", message: p.message }
+            : { row: p.row, outcome: "error", message: "Não gravado: outras linhas estão inválidas" },
+      );
+      summary.created = 0;
+      summary.errors = results.filter((r) => r.outcome === "error").length;
+    } else {
+      try {
+        results = await executePlans(kind, plans);
+      } catch (err) {
+        req.log.error({ err, kind }, "Import execution failed");
+        res.status(500).json({
+          error: "Falha ao gravar a importação. Nenhuma linha foi gravada.",
+        });
+        return;
+      }
     }
 
     await db

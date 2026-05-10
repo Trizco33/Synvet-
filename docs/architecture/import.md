@@ -35,29 +35,35 @@ brasileiro.
 
 ## Idempotência e atomicidade
 
-- **Linha-a-linha**: cada linha é validada e gravada individualmente. Linhas
-  inválidas viram `error` no relatório e as válidas seguem sendo criadas —
-  isso é proposital para CSVs grandes: o admin corrige só as linhas
-  problemáticas e reimporta. Falha catastrófica do banco aborta tudo (500
-  + nada gravado).
+- **Fail-all (atômico)**: cada importação roda em duas passadas. **Pass 1**
+  valida cada linha com Zod por kind e resolve referências (tutor por
+  e-mail/telefone, pet por nome) sem gravar nada. **Pass 2** só executa se
+  o Pass 1 não retornou nenhum erro: insere todas as linhas válidas em
+  uma única transação, em chunks de 100. Se qualquer linha estiver
+  inválida, nenhuma é gravada — o cliente recebe o relatório completo,
+  corrige e reenvia.
 - **Idempotência por hash**: cada execução grava `(clinicId, kind, fileHash)`
   em `import_logs` com `UNIQUE INDEX`. Reenviar o mesmo arquivo retorna
   HTTP 409 com o resumo da execução anterior — evita criar duplicatas em
   retries acidentais. Para reimportar, basta ajustar pelo menos uma linha.
-- **Dedupe por chave natural**: dentro do mesmo arquivo (e contra registros
-  já existentes na clínica), tutores/pets duplicados ficam `skipped`.
+- **Dedupe por chave natural** (não conta como erro):
+  - tutors: e-mail (lowercase) ou telefone (só dígitos)
+  - pets: prioridade `externalId` (ID do sistema antigo, com `UNIQUE INDEX
+    (clinicId, externalId)`); fallback `(tutorId, name)` case-insensitive
+  - appointments: sem dedupe
 - **`import_logs`**: cada execução grava 1 linha de auditoria (clinicId,
   userId, kind, fileName, fileHash sha-256, rowCount, contadores por
   outcome, mapping serializado).
 
 ## Limites
 
-- 5 MB por arquivo (validado no cliente; `express.json` default ~100KB seria
-  apertado, mas como rows são strings curtas o JSON resultante fica bem abaixo
-  desse teto na prática para CSVs típicos).
-- 5.000 linhas por arquivo (validado no cliente + Zod do backend via
-  `maxItems` no OpenAPI). Para volumes maiores, divida em partes.
-- Tamanho máximo de upload do `express.json` global é o default — ver app.ts.
+- **5 MB por arquivo** — validado em 3 camadas: cliente (rejeita antes de
+  parsear), `express.json({ limit: "5mb" })` global e check de
+  `Content-Length` no início da rota POST.
+- **5.000 linhas por arquivo** — `maxItems` no OpenAPI + Zod do backend.
+  Para volumes maiores, divida em partes.
+- **Chunking de DB**: inserts vão em lotes de 100 dentro de uma única
+  transação (evita queries gigantes mantendo atomicidade fail-all).
 
 ## Templates
 

@@ -22,6 +22,7 @@ const PET_FIELDS: ImportField[] = [
   { key: "weightKg", label: "Peso (kg)", aliases: ["peso", "peso_kg"] },
   { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
   { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "externalId", label: "ID do sistema antigo", aliases: ["externalid", "idexterno", "codigo", "código"] },
   { key: "notes", label: "Observações", aliases: ["notas", "observacoes", "obs"] },
 ];
 
@@ -64,8 +65,8 @@ export default function ConfiguracoesImportar() {
         <h1 className="text-3xl font-bold tracking-tight">Importar dados</h1>
         <p className="text-muted-foreground">
           Migre tutores, pacientes e agenda do seu sistema antigo via planilha
-          CSV. Cada linha é validada individualmente — as válidas são criadas e
-          as inválidas aparecem no relatório para você corrigir e reenviar.
+          CSV. Validamos o arquivo inteiro antes de gravar — se qualquer linha
+          estiver com erro, nada é salvo e você corrige no relatório.
         </p>
       </div>
 

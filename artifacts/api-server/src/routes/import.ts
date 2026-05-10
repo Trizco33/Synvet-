@@ -264,7 +264,7 @@ const STATUS_VALUES = new Set(["scheduled", "in_progress", "completed", "cancell
 const EXAM_STATUS_VALUES = new Set(["pending", "completed"]);
 
 const ExamRowSchema = z.object({
-  performedAt: reqStr("Data do exame obrigatória (YYYY-MM-DD)"),
+  performedAt: reqStr("Data do exame obrigatória (YYYY-MM-DD ou DD/MM/AAAA)"),
   petName: reqStr("Nome do pet obrigatório"),
   tutorEmail: optStr,
   tutorPhone: optStr,
@@ -276,7 +276,7 @@ const ExamRowSchema = z.object({
 });
 
 const VaccineRowSchema = z.object({
-  appliedAt: reqStr("Data de aplicação obrigatória (YYYY-MM-DD)"),
+  appliedAt: reqStr("Data de aplicação obrigatória (YYYY-MM-DD ou DD/MM/AAAA)"),
   petName: reqStr("Nome do pet obrigatório"),
   tutorEmail: optStr,
   tutorPhone: optStr,
@@ -296,6 +296,40 @@ const MedicalRecordRowSchema = z.object({
 
 function isValidDateOnly(v: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime());
+}
+
+// Aceita YYYY-MM-DD ou DD/MM/AAAA (formato BR exportado pelo Excel).
+// Devolve sempre YYYY-MM-DD quando válido, ou null caso contrário.
+function normalizeDateOnly(v: string): string | null {
+  const s = v.trim();
+  if (isValidDateOnly(s)) return s;
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+  if (br) {
+    const iso = `${br[3]}-${br[2]}-${br[1]}`;
+    if (isValidDateOnly(iso)) return iso;
+  }
+  return null;
+}
+
+// Aceita ISO 8601 (com hora/timezone), YYYY-MM-DD, ou
+// DD/MM/AAAA [HH:MM[:SS]] (formato BR). Devolve Date válido ou null.
+function parseDateTimeFlexible(v: string): Date | null {
+  const s = v.trim();
+  // YYYY-MM-DD puro → meio-dia UTC para evitar shift de timezone.
+  if (isValidDateOnly(s)) return new Date(`${s}T12:00:00Z`);
+  // DD/MM/AAAA [HH:MM[:SS]]
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+  if (br) {
+    const iso =
+      br[4]
+        ? `${br[3]}-${br[2]}-${br[1]}T${br[4]}:${br[5]}:${br[6] ?? "00"}`
+        : `${br[3]}-${br[2]}-${br[1]}T12:00:00Z`;
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  // Fallback: tenta o parser nativo (cobre ISO 8601 com offset).
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 // =============================================================
@@ -586,12 +620,13 @@ async function planAppointments(
       continue;
     }
     const d = parsed.data;
-    const scheduled = new Date(d.scheduledAt);
-    if (Number.isNaN(scheduled.getTime())) {
+    const scheduled = parseDateTimeFlexible(d.scheduledAt);
+    if (!scheduled) {
       plans.push({
         row: rowNum,
         outcome: "error",
-        message: "Data inválida — use ISO 8601 (ex.: 2026-05-20T14:30:00-03:00)",
+        message:
+          "Data inválida — use ISO 8601 (ex.: 2026-05-20T14:30:00-03:00) ou DD/MM/AAAA HH:MM",
       });
       continue;
     }
@@ -718,11 +753,13 @@ async function planExams(
       continue;
     }
     const d = parsed.data;
-    if (!isValidDateOnly(d.performedAt)) {
+    const performedAt = normalizeDateOnly(d.performedAt);
+    if (!performedAt) {
       plans.push({
         row: rowNum,
         outcome: "error",
-        message: "Data do exame inválida — use YYYY-MM-DD (ex.: 2026-04-12)",
+        message:
+          "Data do exame inválida — use YYYY-MM-DD (ex.: 2026-04-12) ou DD/MM/AAAA (ex.: 12/04/2026)",
       });
       continue;
     }
@@ -751,7 +788,7 @@ async function planExams(
         status,
         fileUrl: d.fileUrl,
         notes: d.notes,
-        performedAt: d.performedAt,
+        performedAt,
       },
     });
   }
@@ -793,21 +830,28 @@ async function planVaccines(
       continue;
     }
     const d = parsed.data;
-    if (!isValidDateOnly(d.appliedAt)) {
+    const appliedAt = normalizeDateOnly(d.appliedAt);
+    if (!appliedAt) {
       plans.push({
         row: rowNum,
         outcome: "error",
-        message: "Data de aplicação inválida — use YYYY-MM-DD (ex.: 2026-03-10)",
+        message:
+          "Data de aplicação inválida — use YYYY-MM-DD (ex.: 2026-03-10) ou DD/MM/AAAA (ex.: 10/03/2026)",
       });
       continue;
     }
-    if (d.nextDueAt && !isValidDateOnly(d.nextDueAt)) {
-      plans.push({
-        row: rowNum,
-        outcome: "error",
-        message: "Próxima dose inválida — use YYYY-MM-DD ou deixe em branco",
-      });
-      continue;
+    let nextDueAt: string | null = null;
+    if (d.nextDueAt) {
+      nextDueAt = normalizeDateOnly(d.nextDueAt);
+      if (!nextDueAt) {
+        plans.push({
+          row: rowNum,
+          outcome: "error",
+          message:
+            "Próxima dose inválida — use YYYY-MM-DD ou DD/MM/AAAA, ou deixe em branco",
+        });
+        continue;
+      }
     }
     const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
     if (!petId) {
@@ -818,7 +862,7 @@ async function planVaccines(
       });
       continue;
     }
-    const k = dupKey(petId, d.vaccine, d.appliedAt);
+    const k = dupKey(petId, d.vaccine, appliedAt);
     if (existingByKey.has(k)) {
       plans.push({
         row: rowNum,
@@ -846,8 +890,8 @@ async function planVaccines(
         createdBy: userId,
         petId,
         name: d.vaccine,
-        appliedAt: d.appliedAt,
-        nextDueAt: d.nextDueAt,
+        appliedAt,
+        nextDueAt,
         notes: d.notes,
       },
     });
@@ -876,15 +920,14 @@ async function planMedicalRecords(
     const d = parsed.data;
     let recordedAt: Date | null = null;
     if (d.recordedAt) {
-      // Aceita YYYY-MM-DD ou ISO 8601 completo.
-      const candidate = isValidDateOnly(d.recordedAt)
-        ? new Date(`${d.recordedAt}T12:00:00Z`)
-        : new Date(d.recordedAt);
-      if (Number.isNaN(candidate.getTime())) {
+      // Aceita YYYY-MM-DD, DD/MM/AAAA ou ISO 8601 completo.
+      const candidate = parseDateTimeFlexible(d.recordedAt);
+      if (!candidate) {
         plans.push({
           row: rowNum,
           outcome: "error",
-          message: "Data do prontuário inválida — use YYYY-MM-DD ou ISO 8601",
+          message:
+            "Data do prontuário inválida — use YYYY-MM-DD, DD/MM/AAAA ou ISO 8601",
         });
         continue;
       }

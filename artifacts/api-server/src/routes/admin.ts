@@ -12,7 +12,7 @@ import { superAdminMiddleware, requireSuperAdmin } from "../middlewares/super-ad
 
 const router: IRouter = Router();
 
-router.use(superAdminMiddleware);
+router.use("/admin", superAdminMiddleware);
 
 router.get("/admin/me", (req, res) => {
   const admin = requireSuperAdmin(req);

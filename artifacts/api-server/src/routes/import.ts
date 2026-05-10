@@ -619,18 +619,26 @@ router.post(
       .limit(1);
     if (previous.length > 0) {
       const p = previous[0]!;
-      res.status(409).json({
-        error:
-          "Este arquivo já foi importado anteriormente. Para reimportar, ajuste pelo menos uma linha (o conteúdo precisa ser diferente).",
-        previousImport: {
-          createdAt: p.createdAt,
-          rowCount: p.rowCount,
-          created: p.createdCount,
-          skipped: p.skippedCount,
-          errors: p.errorCount,
-        },
-      });
-      return;
+      // Permite retry quando a rodada anterior falhou (errorCount > 0):
+      // como nada foi gravado em fail-all, o usuário corrige o CSV (mesmo
+      // que mantenha algumas linhas iguais) e reenvia. Removemos o log
+      // antigo para não bater no UNIQUE INDEX (clinicId, kind, fileHash).
+      if (p.errorCount > 0) {
+        await db.delete(importLogsTable).where(eq(importLogsTable.id, p.id));
+      } else {
+        res.status(409).json({
+          error:
+            "Este arquivo já foi importado anteriormente. Para reimportar, ajuste pelo menos uma linha (o conteúdo precisa ser diferente).",
+          previousImport: {
+            createdAt: p.createdAt,
+            rowCount: p.rowCount,
+            created: p.createdCount,
+            skipped: p.skippedCount,
+            errors: p.errorCount,
+          },
+        });
+        return;
+      }
     }
 
     // Aplica o mapping de cada linha (csvColumn → synvetField).

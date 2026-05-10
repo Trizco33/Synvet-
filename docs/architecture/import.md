@@ -73,7 +73,7 @@ via `<a download>`.
 
 ## Endpoints
 
-- `GET  /api/import/template/{kind}` — público (downloads do CSV-modelo)
+- `GET  /api/import/template/{kind}` — autenticado (admin) — downloads do CSV-modelo
 - `POST /api/import/{kind}` — `requireRole("admin")`, retorna `ImportReport`
 
 ## Onde mexer

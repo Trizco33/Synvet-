@@ -6,6 +6,9 @@ import {
   tutorsTable,
   petsTable,
   consultationsTable,
+  examsTable,
+  vaccinesTable,
+  medicalRecordsTable,
   importLogsTable,
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
@@ -13,9 +16,22 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-type Kind = "tutors" | "pets" | "appointments";
+type Kind =
+  | "tutors"
+  | "pets"
+  | "appointments"
+  | "exams"
+  | "vaccines"
+  | "medical_records";
 
-const KINDS: readonly Kind[] = ["tutors", "pets", "appointments"];
+const KINDS: readonly Kind[] = [
+  "tutors",
+  "pets",
+  "appointments",
+  "exams",
+  "vaccines",
+  "medical_records",
+];
 
 function isKind(v: string): v is Kind {
   return (KINDS as readonly string[]).includes(v);
@@ -74,6 +90,68 @@ const TEMPLATES: Record<Kind, { headers: string[]; example: string[] }> = {
       "+55 11 99999-0001",
       "Consulta de rotina",
       "scheduled",
+    ],
+  },
+  exams: {
+    headers: [
+      "performedAt",
+      "petName",
+      "tutorEmail",
+      "tutorPhone",
+      "title",
+      "category",
+      "status",
+      "fileUrl",
+      "notes",
+    ],
+    example: [
+      "2026-04-12",
+      "Thor",
+      "maria@exemplo.com",
+      "+55 11 99999-0001",
+      "Hemograma completo",
+      "laboratorial",
+      "completed",
+      "https://exemplo.com/laudos/thor-hemograma.pdf",
+      "Sem alterações relevantes",
+    ],
+  },
+  vaccines: {
+    headers: [
+      "appliedAt",
+      "petName",
+      "tutorEmail",
+      "tutorPhone",
+      "vaccine",
+      "nextDueAt",
+      "notes",
+    ],
+    example: [
+      "2026-03-10",
+      "Thor",
+      "maria@exemplo.com",
+      "+55 11 99999-0001",
+      "V10",
+      "2027-03-10",
+      "Lote ABC123 — reforço anual",
+    ],
+  },
+  medical_records: {
+    headers: [
+      "recordedAt",
+      "petName",
+      "tutorEmail",
+      "tutorPhone",
+      "title",
+      "content",
+    ],
+    example: [
+      "2025-11-22",
+      "Thor",
+      "maria@exemplo.com",
+      "+55 11 99999-0001",
+      "Atendimento clínico",
+      "Paciente apresentou quadro de dermatite. Prescrito banho medicamentoso por 7 dias.",
     ],
   },
 };
@@ -182,6 +260,42 @@ const AppointmentRowSchema = z.object({
 
 const SEX_VALUES = new Set(["male", "female", "unknown"]);
 const STATUS_VALUES = new Set(["scheduled", "in_progress", "completed", "cancelled"]);
+const EXAM_STATUS_VALUES = new Set(["pending", "completed"]);
+
+const ExamRowSchema = z.object({
+  performedAt: reqStr("Data do exame obrigatória (YYYY-MM-DD)"),
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  title: reqStr("Título do exame obrigatório"),
+  category: reqStr("Categoria obrigatória (ex.: laboratorial, imagem)"),
+  status: optStr,
+  fileUrl: optStr,
+  notes: optStr,
+});
+
+const VaccineRowSchema = z.object({
+  appliedAt: reqStr("Data de aplicação obrigatória (YYYY-MM-DD)"),
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  vaccine: reqStr("Nome da vacina obrigatório"),
+  nextDueAt: optStr,
+  notes: optStr,
+});
+
+const MedicalRecordRowSchema = z.object({
+  recordedAt: optStr,
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  title: reqStr("Título obrigatório"),
+  content: reqStr("Conteúdo do prontuário obrigatório"),
+});
+
+function isValidDateOnly(v: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime());
+}
 
 // =============================================================
 // Planejamento (pass 1) — valida + resolve refs SEM gravar.
@@ -523,6 +637,285 @@ async function planAppointments(
   return plans;
 }
 
+type PetLookup = {
+  petByKey: Map<string, string>;
+};
+
+async function loadPetLookup(clinicId: string): Promise<PetLookup> {
+  const tutors = await db
+    .select({ id: tutorsTable.id, email: tutorsTable.email, phone: tutorsTable.phone })
+    .from(tutorsTable)
+    .where(eq(tutorsTable.clinicId, clinicId));
+  const tutorByEmail = new Map<string, string>();
+  const tutorByPhone = new Map<string, string>();
+  for (const t of tutors) {
+    const e = normEmail(t.email);
+    if (e) tutorByEmail.set(e, t.id);
+    const p = normPhone(t.phone);
+    if (p) tutorByPhone.set(p, t.id);
+  }
+  const tutorIds = tutors.map((t) => t.id);
+  const pets = tutorIds.length
+    ? await db
+        .select({
+          id: petsTable.id,
+          tutorId: petsTable.tutorId,
+          name: petsTable.name,
+        })
+        .from(petsTable)
+        .where(inArray(petsTable.tutorId, tutorIds))
+    : [];
+  const petByKey = new Map<string, string>();
+  for (const p of pets) {
+    const tutor = tutors.find((t) => t.id === p.tutorId);
+    if (!tutor) continue;
+    const e = normEmail(tutor.email);
+    const ph = normPhone(tutor.phone);
+    const nameKey = p.name.trim().toLowerCase();
+    if (e) petByKey.set(`e:${e}::${nameKey}`, p.id);
+    if (ph) petByKey.set(`p:${ph}::${nameKey}`, p.id);
+  }
+  return { petByKey };
+}
+
+function resolvePetId(
+  lookup: PetLookup,
+  petName: string,
+  tutorEmail: string | null,
+  tutorPhone: string | null,
+): string | null {
+  const nameKey = petName.trim().toLowerCase();
+  const e = normEmail(tutorEmail);
+  const p = normPhone(tutorPhone);
+  if (e) {
+    const id = lookup.petByKey.get(`e:${e}::${nameKey}`);
+    if (id) return id;
+  }
+  if (p) {
+    const id = lookup.petByKey.get(`p:${p}::${nameKey}`);
+    if (id) return id;
+  }
+  return null;
+}
+
+async function planExams(
+  clinicId: string,
+  userId: string,
+  rows: Array<Record<string, string | null>>,
+): Promise<Plan[]> {
+  const lookup = await loadPetLookup(clinicId);
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = ExamRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    if (!isValidDateOnly(d.performedAt)) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Data do exame inválida — use YYYY-MM-DD (ex.: 2026-04-12)",
+      });
+      continue;
+    }
+    const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Pet não encontrado. Importe tutores e pacientes antes dos exames.",
+      });
+      continue;
+    }
+    let status: "pending" | "completed" = "completed";
+    if (d.status && EXAM_STATUS_VALUES.has(d.status.toLowerCase())) {
+      status = d.status.toLowerCase() as typeof status;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        title: d.title,
+        category: d.category,
+        status,
+        fileUrl: d.fileUrl,
+        notes: d.notes,
+        performedAt: d.performedAt,
+      },
+    });
+  }
+  return plans;
+}
+
+async function planVaccines(
+  clinicId: string,
+  userId: string,
+  rows: Array<Record<string, string | null>>,
+): Promise<Plan[]> {
+  const lookup = await loadPetLookup(clinicId);
+  const existing = await db
+    .select({
+      id: vaccinesTable.id,
+      petId: vaccinesTable.petId,
+      name: vaccinesTable.name,
+      appliedAt: vaccinesTable.appliedAt,
+    })
+    .from(vaccinesTable)
+    .where(eq(vaccinesTable.clinicId, clinicId));
+  const dupKey = (petId: string, name: string, appliedAt: string) =>
+    `${petId}::${name.trim().toLowerCase()}::${appliedAt}`;
+  const existingByKey = new Map<string, string>();
+  for (const v of existing) {
+    existingByKey.set(dupKey(v.petId, v.name, v.appliedAt), v.id);
+  }
+  const inBatchKeys = new Set<string>();
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = VaccineRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    if (!isValidDateOnly(d.appliedAt)) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Data de aplicação inválida — use YYYY-MM-DD (ex.: 2026-03-10)",
+      });
+      continue;
+    }
+    if (d.nextDueAt && !isValidDateOnly(d.nextDueAt)) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Próxima dose inválida — use YYYY-MM-DD ou deixe em branco",
+      });
+      continue;
+    }
+    const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Pet não encontrado. Importe tutores e pacientes antes das vacinas.",
+      });
+      continue;
+    }
+    const k = dupKey(petId, d.vaccine, d.appliedAt);
+    if (existingByKey.has(k)) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Vacina já registrada (mesmo pet, vacina e data)",
+        id: existingByKey.get(k)!,
+      });
+      continue;
+    }
+    if (inBatchKeys.has(k)) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Linha duplicada dentro do mesmo arquivo",
+        id: null,
+      });
+      continue;
+    }
+    inBatchKeys.add(k);
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        name: d.vaccine,
+        appliedAt: d.appliedAt,
+        nextDueAt: d.nextDueAt,
+        notes: d.notes,
+      },
+    });
+  }
+  return plans;
+}
+
+async function planMedicalRecords(
+  clinicId: string,
+  userId: string,
+  rows: Array<Record<string, string | null>>,
+): Promise<Plan[]> {
+  const lookup = await loadPetLookup(clinicId);
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = MedicalRecordRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    let recordedAt: Date | null = null;
+    if (d.recordedAt) {
+      // Aceita YYYY-MM-DD ou ISO 8601 completo.
+      const candidate = isValidDateOnly(d.recordedAt)
+        ? new Date(`${d.recordedAt}T12:00:00Z`)
+        : new Date(d.recordedAt);
+      if (Number.isNaN(candidate.getTime())) {
+        plans.push({
+          row: rowNum,
+          outcome: "error",
+          message: "Data do prontuário inválida — use YYYY-MM-DD ou ISO 8601",
+        });
+        continue;
+      }
+      recordedAt = candidate;
+    }
+    const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Pet não encontrado. Importe tutores e pacientes antes dos prontuários.",
+      });
+      continue;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        title: d.title,
+        content: d.content,
+        sourceType: "manual",
+        ...(recordedAt ? { createdAt: recordedAt, updatedAt: recordedAt } : {}),
+      },
+    });
+  }
+  return plans;
+}
+
 // =============================================================
 // Execução (pass 2) — só roda se pass 1 não tiver NENHUM erro.
 // Atomicidade fail-all: tudo dentro da mesma transação, em chunks
@@ -577,11 +970,29 @@ async function executePlans(kind: Kind, plans: Plan[]): Promise<RowResult[]> {
           .values(slice.map((p) => p.insert as typeof petsTable.$inferInsert))
           .returning({ id: petsTable.id });
         writeBackIds(inserted, slice);
-      } else {
+      } else if (kind === "appointments") {
         const inserted = await tx
           .insert(consultationsTable)
           .values(slice.map((p) => p.insert as typeof consultationsTable.$inferInsert))
           .returning({ id: consultationsTable.id });
+        writeBackIds(inserted, slice);
+      } else if (kind === "exams") {
+        const inserted = await tx
+          .insert(examsTable)
+          .values(slice.map((p) => p.insert as typeof examsTable.$inferInsert))
+          .returning({ id: examsTable.id });
+        writeBackIds(inserted, slice);
+      } else if (kind === "vaccines") {
+        const inserted = await tx
+          .insert(vaccinesTable)
+          .values(slice.map((p) => p.insert as typeof vaccinesTable.$inferInsert))
+          .returning({ id: vaccinesTable.id });
+        writeBackIds(inserted, slice);
+      } else {
+        const inserted = await tx
+          .insert(medicalRecordsTable)
+          .values(slice.map((p) => p.insert as typeof medicalRecordsTable.$inferInsert))
+          .returning({ id: medicalRecordsTable.id });
         writeBackIds(inserted, slice);
       }
     }
@@ -682,7 +1093,12 @@ router.post(
     try {
       if (kind === "tutors") plans = await planTutors(user.clinicId, user.id, mappedRows);
       else if (kind === "pets") plans = await planPets(user.clinicId, user.id, mappedRows);
-      else plans = await planAppointments(user.clinicId, user.id, mappedRows);
+      else if (kind === "appointments")
+        plans = await planAppointments(user.clinicId, user.id, mappedRows);
+      else if (kind === "exams") plans = await planExams(user.clinicId, user.id, mappedRows);
+      else if (kind === "vaccines")
+        plans = await planVaccines(user.clinicId, user.id, mappedRows);
+      else plans = await planMedicalRecords(user.clinicId, user.id, mappedRows);
     } catch (err) {
       req.log.error({ err, kind }, "Import planning failed");
       res.status(500).json({

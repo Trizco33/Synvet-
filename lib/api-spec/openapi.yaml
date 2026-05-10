@@ -290,7 +290,7 @@ paths:
         required: true
         schema:
           type: string
-          enum: [tutors, pets, appointments]
+          enum: [tutors, pets, appointments, exams, vaccines, medical_records]
     get:
       operationId: getImportTemplate
       tags: [import]
@@ -309,7 +309,7 @@ paths:
         required: true
         schema:
           type: string
-          enum: [tutors, pets, appointments]
+          enum: [tutors, pets, appointments, exams, vaccines, medical_records]
     post:
       operationId: runImport
       tags: [import]
@@ -1293,7 +1293,7 @@ components:
     ImportReport:
       type: object
       properties:
-        kind: { type: string, enum: [tutors, pets, appointments] }
+        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records] }
         total: { type: integer }
         created: { type: integer }
         updated: { type: integer }

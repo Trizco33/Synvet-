@@ -1428,13 +1428,25 @@ export function useGetAdminMetrics<
  * @summary Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
  */
 export const getGetImportTemplateUrl = (
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
 ) => {
   return `/api/import/template/${kind}`;
 };
 
 export const getImportTemplate = async (
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
   options?: RequestInit,
 ): Promise<string> => {
   return customFetch<string>(getGetImportTemplateUrl(kind), {
@@ -1444,7 +1456,13 @@ export const getImportTemplate = async (
 };
 
 export const getGetImportTemplateQueryKey = (
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
 ) => {
   return [`/api/import/template/${kind}`] as const;
 };
@@ -1453,7 +1471,13 @@ export const getGetImportTemplateQueryOptions = <
   TData = Awaited<ReturnType<typeof getImportTemplate>>,
   TError = ErrorType<unknown>,
 >(
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImportTemplate>>,
@@ -1496,7 +1520,13 @@ export function useGetImportTemplate<
   TData = Awaited<ReturnType<typeof getImportTemplate>>,
   TError = ErrorType<unknown>,
 >(
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImportTemplate>>,
@@ -1518,12 +1548,26 @@ export function useGetImportTemplate<
 /**
  * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
  */
-export const getRunImportUrl = (kind: "tutors" | "pets" | "appointments") => {
+export const getRunImportUrl = (
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
+) => {
   return `/api/import/${kind}`;
 };
 
 export const runImport = async (
-  kind: "tutors" | "pets" | "appointments",
+  kind:
+    | "tutors"
+    | "pets"
+    | "appointments"
+    | "exams"
+    | "vaccines"
+    | "medical_records",
   runImportBody: RunImportBody,
   options?: RequestInit,
 ): Promise<ImportReport> => {
@@ -1542,14 +1586,32 @@ export const getRunImportMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof runImport>>,
     TError,
-    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+    {
+      kind:
+        | "tutors"
+        | "pets"
+        | "appointments"
+        | "exams"
+        | "vaccines"
+        | "medical_records";
+      data: BodyType<RunImportBody>;
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof runImport>>,
   TError,
-  { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+  {
+    kind:
+      | "tutors"
+      | "pets"
+      | "appointments"
+      | "exams"
+      | "vaccines"
+      | "medical_records";
+    data: BodyType<RunImportBody>;
+  },
   TContext
 > => {
   const mutationKey = ["runImport"];
@@ -1563,7 +1625,16 @@ export const getRunImportMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof runImport>>,
-    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> }
+    {
+      kind:
+        | "tutors"
+        | "pets"
+        | "appointments"
+        | "exams"
+        | "vaccines"
+        | "medical_records";
+      data: BodyType<RunImportBody>;
+    }
   > = (props) => {
     const { kind, data } = props ?? {};
 
@@ -1589,14 +1660,32 @@ export const useRunImport = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof runImport>>,
     TError,
-    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+    {
+      kind:
+        | "tutors"
+        | "pets"
+        | "appointments"
+        | "exams"
+        | "vaccines"
+        | "medical_records";
+      data: BodyType<RunImportBody>;
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof runImport>>,
   TError,
-  { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+  {
+    kind:
+      | "tutors"
+      | "pets"
+      | "appointments"
+      | "exams"
+      | "vaccines"
+      | "medical_records";
+    data: BodyType<RunImportBody>;
+  },
   TContext
 > => {
   return useMutation(getRunImportMutationOptions(options));

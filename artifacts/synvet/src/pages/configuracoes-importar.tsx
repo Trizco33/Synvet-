@@ -1,6 +1,15 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldAlert, Users, Dog, CalendarDays, ArrowLeft } from "lucide-react";
+import {
+  ShieldAlert,
+  Users,
+  Dog,
+  CalendarDays,
+  FlaskConical,
+  Syringe,
+  FileText,
+  ArrowLeft,
+} from "lucide-react";
 import { Link } from "wouter";
 import { ImportWizard, type ImportField } from "@/components/import/ImportWizard";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -34,6 +43,37 @@ const APPT_FIELDS: ImportField[] = [
   { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone"] },
   { key: "reason", label: "Motivo", aliases: ["motivo", "queixa"] },
   { key: "status", label: "Status", aliases: ["status", "situacao"] },
+];
+
+const EXAM_FIELDS: ImportField[] = [
+  { key: "performedAt", label: "Data do exame (YYYY-MM-DD)", required: true, aliases: ["data", "performedat", "datadoexame"] },
+  { key: "petName", label: "Nome do pet", required: true, aliases: ["pet", "paciente"] },
+  { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
+  { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "title", label: "Título do exame", required: true, aliases: ["titulo", "nome", "exame"] },
+  { key: "category", label: "Categoria", required: true, aliases: ["categoria", "tipo"] },
+  { key: "status", label: "Status (pending/completed)", aliases: ["status", "situacao"] },
+  { key: "fileUrl", label: "URL do laudo (opcional)", aliases: ["url", "fileurl", "laudo", "link"] },
+  { key: "notes", label: "Observações", aliases: ["notas", "observacoes", "obs"] },
+];
+
+const VACCINE_FIELDS: ImportField[] = [
+  { key: "appliedAt", label: "Data de aplicação (YYYY-MM-DD)", required: true, aliases: ["data", "appliedat", "dataaplicacao"] },
+  { key: "petName", label: "Nome do pet", required: true, aliases: ["pet", "paciente"] },
+  { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
+  { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "vaccine", label: "Vacina", required: true, aliases: ["vacina", "nome", "name"] },
+  { key: "nextDueAt", label: "Próxima dose (YYYY-MM-DD)", aliases: ["nextdueat", "proximadose", "proxima"] },
+  { key: "notes", label: "Observações (lote, fabricante…)", aliases: ["notas", "observacoes", "obs", "lote"] },
+];
+
+const RECORD_FIELDS: ImportField[] = [
+  { key: "recordedAt", label: "Data (YYYY-MM-DD ou ISO)", aliases: ["data", "recordedat", "datadoatendimento"] },
+  { key: "petName", label: "Nome do pet", required: true, aliases: ["pet", "paciente"] },
+  { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
+  { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "title", label: "Título", required: true, aliases: ["titulo", "assunto"] },
+  { key: "content", label: "Conteúdo", required: true, aliases: ["conteudo", "texto", "anotacao", "descricao"] },
 ];
 
 export default function ConfiguracoesImportar() {
@@ -77,13 +117,13 @@ export default function ConfiguracoesImportar() {
           <p>· Exporte como CSV (separador vírgula).</p>
           <p>· Codificação UTF-8 (preferida) ou Windows-1252.</p>
           <p>· Limite de 5 MB e até 5.000 linhas por arquivo. Para volumes maiores, divida em partes.</p>
-          <p>· Importe na ordem: <strong>Tutores → Pacientes → Agenda</strong> (pets dependem de tutores; agenda depende de pets).</p>
+          <p>· Importe na ordem: <strong>Tutores → Pacientes → Agenda / Exames / Vacinas / Prontuários</strong> (todo registro clínico depende do paciente já cadastrado).</p>
           <p>· Para deduplicar registros migrados, preencha o <strong>ID do sistema antigo</strong>: ele tem prioridade sobre e-mail/telefone na hora de identificar duplicatas.</p>
         </AlertDescription>
       </Alert>
 
       <Tabs defaultValue="tutors" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-xl">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 max-w-3xl">
           <TabsTrigger value="tutors" data-testid="import-tab-tutors">
             <Users className="w-4 h-4 mr-1.5" />
             Tutores
@@ -95,6 +135,18 @@ export default function ConfiguracoesImportar() {
           <TabsTrigger value="appointments" data-testid="import-tab-appointments">
             <CalendarDays className="w-4 h-4 mr-1.5" />
             Agenda
+          </TabsTrigger>
+          <TabsTrigger value="exams" data-testid="import-tab-exams">
+            <FlaskConical className="w-4 h-4 mr-1.5" />
+            Exames
+          </TabsTrigger>
+          <TabsTrigger value="vaccines" data-testid="import-tab-vaccines">
+            <Syringe className="w-4 h-4 mr-1.5" />
+            Vacinas
+          </TabsTrigger>
+          <TabsTrigger value="medical_records" data-testid="import-tab-medical-records">
+            <FileText className="w-4 h-4 mr-1.5" />
+            Prontuários
           </TabsTrigger>
         </TabsList>
 
@@ -117,6 +169,27 @@ export default function ConfiguracoesImportar() {
             kind="appointments"
             fields={APPT_FIELDS}
             helperText="Data/hora em ISO 8601 (ex.: 2026-05-20T14:30:00-03:00). Pet identificado por nome dentro do tutor."
+          />
+        </TabsContent>
+        <TabsContent value="exams" className="mt-6">
+          <ImportWizard
+            kind="exams"
+            fields={EXAM_FIELDS}
+            helperText="Exames são sempre criados (sem dedupe). Identifique o pet por nome + e-mail/telefone do tutor já cadastrado."
+          />
+        </TabsContent>
+        <TabsContent value="vaccines" className="mt-6">
+          <ImportWizard
+            kind="vaccines"
+            fields={VACCINE_FIELDS}
+            helperText="Dedupe automático por (pet, vacina, data de aplicação) — registros idênticos não são reimportados."
+          />
+        </TabsContent>
+        <TabsContent value="medical_records" className="mt-6">
+          <ImportWizard
+            kind="medical_records"
+            fields={RECORD_FIELDS}
+            helperText="Texto livre datado. Cada linha gera um registro novo (sem dedupe). A data preserva a do sistema antigo."
           />
         </TabsContent>
       </Tabs>

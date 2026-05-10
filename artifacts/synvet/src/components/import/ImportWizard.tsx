@@ -45,7 +45,13 @@ export type ImportField = {
   aliases?: string[];
 };
 
-export type ImportKind = "tutors" | "pets" | "appointments";
+export type ImportKind =
+  | "tutors"
+  | "pets"
+  | "appointments"
+  | "exams"
+  | "vaccines"
+  | "medical_records";
 
 type Props = {
   kind: ImportKind;
@@ -424,6 +430,9 @@ const KIND_LABEL: Record<ImportKind, string> = {
   tutors: "Tutores",
   pets: "Pacientes",
   appointments: "Agenda",
+  exams: "Exames",
+  vaccines: "Vacinas",
+  medical_records: "Prontuários",
 };
 
 function ImportReportView({

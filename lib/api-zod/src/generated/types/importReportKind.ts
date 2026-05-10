@@ -13,4 +13,7 @@ export const ImportReportKind = {
   tutors: "tutors",
   pets: "pets",
   appointments: "appointments",
+  exams: "exams",
+  vaccines: "vaccines",
+  medical_records: "medical_records",
 } as const;

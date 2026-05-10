@@ -19,7 +19,9 @@ export const importLogsTable = pgTable(
     userId: uuid("user_id").references(() => usersTable.id, {
       onDelete: "set null",
     }),
-    kind: text("kind", { enum: ["tutors", "pets", "appointments"] }).notNull(),
+    kind: text("kind", {
+      enum: ["tutors", "pets", "appointments", "exams", "vaccines", "medical_records"],
+    }).notNull(),
     fileName: text("file_name"),
     fileHash: text("file_hash").notNull(),
     rowCount: integer("row_count").notNull(),

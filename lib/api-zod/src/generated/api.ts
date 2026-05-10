@@ -323,14 +323,28 @@ export const GetAdminMetricsResponse = zod.object({
  * @summary Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
  */
 export const GetImportTemplateParams = zod.object({
-  kind: zod.enum(["tutors", "pets", "appointments"]),
+  kind: zod.enum([
+    "tutors",
+    "pets",
+    "appointments",
+    "exams",
+    "vaccines",
+    "medical_records",
+  ]),
 });
 
 /**
  * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
  */
 export const RunImportParams = zod.object({
-  kind: zod.enum(["tutors", "pets", "appointments"]),
+  kind: zod.enum([
+    "tutors",
+    "pets",
+    "appointments",
+    "exams",
+    "vaccines",
+    "medical_records",
+  ]),
 });
 
 export const runImportBodyFileNameMax = 200;
@@ -353,7 +367,14 @@ export const RunImportBody = zod.object({
 });
 
 export const RunImportResponse = zod.object({
-  kind: zod.enum(["tutors", "pets", "appointments"]),
+  kind: zod.enum([
+    "tutors",
+    "pets",
+    "appointments",
+    "exams",
+    "vaccines",
+    "medical_records",
+  ]),
   total: zod.number(),
   created: zod.number(),
   updated: zod.number(),

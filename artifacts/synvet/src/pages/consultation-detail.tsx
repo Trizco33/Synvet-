@@ -212,6 +212,18 @@ export default function ConsultationDetail() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Raça:</span> <span>{consultation.pet.breed || "N/A"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Idade:</span> <span>{consultation.pet.birthDate ? format(parseISO(consultation.pet.birthDate), "dd/MM/yyyy") : "N/A"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Tutor:</span> <Link href={`/tutores/${consultation.tutor.id}`} className="hover:underline">{consultation.tutor.name}</Link></div>
+                {consultation.pet.externalId && (
+                  <div className="flex justify-between" data-testid="detail-pet-external-id">
+                    <span className="text-muted-foreground">ID antigo (paciente):</span>
+                    <span className="font-mono text-xs">{consultation.pet.externalId}</span>
+                  </div>
+                )}
+                {consultation.tutor.externalId && (
+                  <div className="flex justify-between" data-testid="detail-tutor-external-id">
+                    <span className="text-muted-foreground">ID antigo (tutor):</span>
+                    <span className="font-mono text-xs">{consultation.tutor.externalId}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

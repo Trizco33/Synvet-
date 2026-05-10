@@ -247,14 +247,32 @@ export default function Consultas() {
                         </span>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-semibold text-lg">{consultation.petName}</h3>
                           <span className="text-xs text-muted-foreground">({consultation.petSpecies})</span>
+                          {consultation.petExternalId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-mono text-muted-foreground border-border/60"
+                              title="ID do paciente no sistema antigo"
+                              data-testid={`pet-external-id-${consultation.id}`}
+                            >
+                              ID antigo: {consultation.petExternalId}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                          <span className="flex items-center gap-1.5">
+                        <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-wrap">
+                          <span className="flex items-center gap-1.5 flex-wrap">
                             <User className="w-3.5 h-3.5" />
                             {consultation.tutorName}
+                            {consultation.tutorExternalId && (
+                              <span
+                                className="text-[10px] font-mono text-muted-foreground/80"
+                                title="ID do tutor no sistema antigo"
+                              >
+                                · ID antigo: {consultation.tutorExternalId}
+                              </span>
+                            )}
                           </span>
                           {consultation.reason && (
                             <span className="text-foreground/80 line-clamp-1">Motivo: {consultation.reason}</span>

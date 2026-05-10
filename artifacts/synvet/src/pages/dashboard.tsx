@@ -206,12 +206,25 @@ export default function Dashboard() {
                         <span className="text-sm font-semibold">{format(parseISO(item.scheduledAt), "HH:mm")}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-semibold truncate">{item.petName}</span>
                           <span className="text-xs text-muted-foreground truncate hidden sm:inline-block">({item.petSpecies})</span>
+                          {item.petExternalId && (
+                            <span
+                              className="text-[10px] font-mono text-muted-foreground/80 px-1.5 py-0.5 rounded border border-border/60"
+                              title="ID do paciente no sistema antigo"
+                            >
+                              ID antigo: {item.petExternalId}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground truncate">
                           Tutor: {item.tutorName}
+                          {item.tutorExternalId && (
+                            <span className="ml-2 text-[10px] font-mono text-muted-foreground/80">
+                              · ID antigo: {item.tutorExternalId}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div>

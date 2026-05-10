@@ -177,7 +177,15 @@ export const GetTodayScheduleResponseItem = zod.object({
   petId: zod.string(),
   petName: zod.string(),
   petSpecies: zod.string(),
+  petExternalId: zod
+    .string()
+    .nullish()
+    .describe("ID do paciente no sistema antigo (importação)."),
   tutorName: zod.string(),
+  tutorExternalId: zod
+    .string()
+    .nullish()
+    .describe("ID do tutor no sistema antigo (importação)."),
   reason: zod.string().nullish(),
 });
 export const GetTodayScheduleResponse = zod.array(GetTodayScheduleResponseItem);
@@ -895,7 +903,15 @@ export const ListConsultationsResponseItem = zod
     zod.object({
       petName: zod.string(),
       petSpecies: zod.string(),
+      petExternalId: zod
+        .string()
+        .nullish()
+        .describe("ID do paciente no sistema antigo (importação)."),
       tutorName: zod.string(),
+      tutorExternalId: zod
+        .string()
+        .nullish()
+        .describe("ID do tutor no sistema antigo (importação)."),
     }),
   );
 export const ListConsultationsResponse = zod.array(

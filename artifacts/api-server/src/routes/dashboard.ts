@@ -87,7 +87,9 @@ router.get("/dashboard/today-schedule", async (req, res): Promise<void> => {
       petId: petsTable.id,
       petName: petsTable.name,
       petSpecies: petsTable.species,
+      petExternalId: petsTable.externalId,
       tutorName: tutorsTable.name,
+      tutorExternalId: tutorsTable.externalId,
     })
     .from(consultationsTable)
     .innerJoin(petsTable, eq(consultationsTable.petId, petsTable.id))

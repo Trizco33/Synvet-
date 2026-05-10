@@ -1425,7 +1425,9 @@ components:
         petId: { type: string }
         petName: { type: string }
         petSpecies: { type: string }
+        petExternalId: { type: string, nullable: true, description: "ID do paciente no sistema antigo (importação)." }
         tutorName: { type: string }
+        tutorExternalId: { type: string, nullable: true, description: "ID do tutor no sistema antigo (importação)." }
         reason: { type: string, nullable: true }
       required: [id, scheduledAt, status, petId, petName, petSpecies, tutorName]
 
@@ -1687,7 +1689,9 @@ components:
           properties:
             petName: { type: string }
             petSpecies: { type: string }
+            petExternalId: { type: string, nullable: true, description: "ID do paciente no sistema antigo (importação)." }
             tutorName: { type: string }
+            tutorExternalId: { type: string, nullable: true, description: "ID do tutor no sistema antigo (importação)." }
           required: [petName, petSpecies, tutorName]
 
     ConsultationDetail:

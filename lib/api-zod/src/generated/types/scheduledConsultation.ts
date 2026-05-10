@@ -13,6 +13,10 @@ export interface ScheduledConsultation {
   petId: string;
   petName: string;
   petSpecies: string;
+  /** ID do paciente no sistema antigo (importação). */
+  petExternalId?: string | null;
   tutorName: string;
+  /** ID do tutor no sistema antigo (importação). */
+  tutorExternalId?: string | null;
   reason?: string | null;
 }

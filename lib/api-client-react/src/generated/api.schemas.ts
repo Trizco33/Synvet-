@@ -217,6 +217,36 @@ export interface ImportHistoryEntry {
   isReimport: boolean;
 }
 
+export type ImportHistoryDetailKind =
+  (typeof ImportHistoryDetailKind)[keyof typeof ImportHistoryDetailKind];
+
+export const ImportHistoryDetailKind = {
+  tutors: "tutors",
+  pets: "pets",
+  appointments: "appointments",
+  exams: "exams",
+  vaccines: "vaccines",
+  medical_records: "medical_records",
+  weigh_ins: "weigh_ins",
+  prescriptions: "prescriptions",
+} as const;
+
+export interface ImportHistoryDetail {
+  id: string;
+  kind: ImportHistoryDetailKind;
+  fileName?: string | null;
+  rowCount: number;
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  errorCount: number;
+  createdAt: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  /** Relatório linha-a-linha. Null em logs antigos sem detalhes persistidos. */
+  results?: ImportRowResult[] | null;
+}
+
 export type ImportReportKind =
   (typeof ImportReportKind)[keyof typeof ImportReportKind];
 

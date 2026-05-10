@@ -371,6 +371,51 @@ export const ListImportHistoryResponse = zod.array(
 );
 
 /**
+ * @summary Relatório linha-a-linha de uma execução antiga (admin)
+ */
+export const GetImportHistoryDetailParams = zod.object({
+  logId: zod.coerce.string().uuid(),
+});
+
+export const GetImportHistoryDetailResponse = zod.object({
+  id: zod.string().uuid(),
+  kind: zod.enum([
+    "tutors",
+    "pets",
+    "appointments",
+    "exams",
+    "vaccines",
+    "medical_records",
+    "weigh_ins",
+    "prescriptions",
+  ]),
+  fileName: zod.string().nullish(),
+  rowCount: zod.number(),
+  createdCount: zod.number(),
+  updatedCount: zod.number(),
+  skippedCount: zod.number(),
+  errorCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  userName: zod.string().nullish(),
+  userEmail: zod.string().nullish(),
+  results: zod
+    .array(
+      zod.object({
+        row: zod
+          .number()
+          .describe("Índice 1-based da linha no arquivo original"),
+        outcome: zod.enum(["created", "updated", "skipped", "error"]),
+        message: zod.string().nullish(),
+        id: zod.string().uuid().nullish(),
+      }),
+    )
+    .nullish()
+    .describe(
+      "Relatório linha-a-linha. Null em logs antigos sem detalhes persistidos.",
+    ),
+});
+
+/**
  * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
  */
 export const RunImportParams = zod.object({

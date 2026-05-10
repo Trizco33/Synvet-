@@ -1368,6 +1368,58 @@ router.get(
   },
 );
 
+router.get(
+  "/import/history/:logId",
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const user = requireAuth(req);
+    const logId = String(req.params.logId);
+    const rows = await db
+      .select({
+        id: importLogsTable.id,
+        kind: importLogsTable.kind,
+        fileName: importLogsTable.fileName,
+        rowCount: importLogsTable.rowCount,
+        createdCount: importLogsTable.createdCount,
+        updatedCount: importLogsTable.updatedCount,
+        skippedCount: importLogsTable.skippedCount,
+        errorCount: importLogsTable.errorCount,
+        createdAt: importLogsTable.createdAt,
+        results: importLogsTable.results,
+        userName: usersTable.name,
+        userEmail: usersTable.email,
+      })
+      .from(importLogsTable)
+      .leftJoin(usersTable, eq(importLogsTable.userId, usersTable.id))
+      .where(
+        and(
+          eq(importLogsTable.id, logId),
+          eq(importLogsTable.clinicId, user.clinicId),
+        ),
+      )
+      .limit(1);
+    const row = rows[0];
+    if (!row) {
+      res.status(404).json({ error: "Importação não encontrada" });
+      return;
+    }
+    res.json({
+      id: row.id,
+      kind: row.kind,
+      fileName: row.fileName,
+      rowCount: row.rowCount,
+      createdCount: row.createdCount,
+      updatedCount: row.updatedCount,
+      skippedCount: row.skippedCount,
+      errorCount: row.errorCount,
+      createdAt: row.createdAt.toISOString(),
+      userName: row.userName,
+      userEmail: row.userEmail,
+      results: row.results ?? null,
+    });
+  },
+);
+
 router.post(
   "/import/:kind",
   requireRole("admin"),
@@ -1513,6 +1565,7 @@ router.post(
         skippedCount: summary.skipped,
         errorCount: summary.errors,
         mapping: JSON.stringify(mapping),
+        results,
       })
       .catch((err) => {
         req.log.error({ err }, "Failed to write import_log");

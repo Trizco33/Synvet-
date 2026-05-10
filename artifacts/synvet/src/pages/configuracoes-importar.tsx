@@ -27,10 +27,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useListImportHistory } from "@workspace/api-client-react";
-import type { ImportHistoryEntry } from "@workspace/api-client-react";
+import {
+  useListImportHistory,
+  useGetImportHistoryDetail,
+  getGetImportHistoryDetailQueryKey,
+} from "@workspace/api-client-react";
+import type {
+  ImportHistoryEntry,
+  ImportHistoryDetail,
+} from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Eye, Download, Loader2 } from "lucide-react";
 
 const KIND_LABELS: Record<ImportHistoryEntry["kind"], string> = {
   tutors: "Tutores",
@@ -272,6 +289,7 @@ export default function ConfiguracoesImportar() {
 
 function ImportHistory() {
   const { data, isLoading, isError } = useListImportHistory();
+  const [detailLogId, setDetailLogId] = useState<string | null>(null);
 
   return (
     <Card data-testid="import-history-card">
@@ -316,6 +334,7 @@ function ImportHistory() {
                   <TableHead className="text-right">Atualizadas</TableHead>
                   <TableHead className="text-right">Ignoradas</TableHead>
                   <TableHead className="text-right">Erros</TableHead>
+                  <TableHead className="text-right">Detalhes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -384,6 +403,17 @@ function ImportHistory() {
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDetailLogId(entry.id)}
+                        data-testid={`import-history-detail-${entry.id}`}
+                      >
+                        <Eye className="w-4 h-4 mr-1.5" />
+                        Ver
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -391,6 +421,214 @@ function ImportHistory() {
           </div>
         )}
       </CardContent>
+      <ImportDetailDialog
+        logId={detailLogId}
+        onClose={() => setDetailLogId(null)}
+      />
     </Card>
+  );
+}
+
+function csvEscapeCell(v: string): string {
+  if (v.includes('"') || v.includes(",") || v.includes("\n") || v.includes("\r")) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return v;
+}
+
+function buildResultsCsv(detail: ImportHistoryDetail): string {
+  const headers = ["row", "outcome", "message", "id"];
+  const lines = [headers.join(",")];
+  for (const r of detail.results ?? []) {
+    lines.push(
+      [
+        String(r.row),
+        r.outcome,
+        csvEscapeCell(r.message ?? ""),
+        csvEscapeCell(r.id ?? ""),
+      ].join(","),
+    );
+  }
+  return lines.join("\n") + "\n";
+}
+
+function downloadResultsCsv(detail: ImportHistoryDetail) {
+  const csv = buildResultsCsv(detail);
+  // BOM para o Excel reconhecer UTF-8.
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const stamp = format(new Date(detail.createdAt), "yyyyMMdd-HHmm");
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `synvet-import-${detail.kind}-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+const OUTCOME_LABEL: Record<string, string> = {
+  created: "Criada",
+  updated: "Atualizada",
+  skipped: "Ignorada",
+  error: "Erro",
+};
+
+const OUTCOME_CLASS: Record<string, string> = {
+  created: "text-emerald-400",
+  updated: "text-sky-400",
+  skipped: "text-muted-foreground",
+  error: "text-destructive",
+};
+
+function ImportDetailDialog({
+  logId,
+  onClose,
+}: {
+  logId: string | null;
+  onClose: () => void;
+}) {
+  const { data: detail, isLoading, isError } = useGetImportHistoryDetail(
+    logId ?? "",
+    {
+      query: {
+        enabled: !!logId,
+        queryKey: getGetImportHistoryDetailQueryKey(logId ?? ""),
+      },
+    },
+  );
+
+  return (
+    <Dialog open={!!logId} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Detalhes da importação</DialogTitle>
+          <DialogDescription>
+            Relatório linha-a-linha de uma execução do wizard. Permite
+            auditar exatamente quais linhas foram criadas, ignoradas
+            ou rejeitadas.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : isError || !detail ? (
+          <Alert variant="destructive">
+            <AlertTitle>Não foi possível carregar os detalhes</AlertTitle>
+            <AlertDescription>
+              Tente novamente mais tarde.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm border rounded-md p-3 bg-muted/30">
+              <div>
+                <div className="text-xs text-muted-foreground">Tipo</div>
+                <div className="font-medium">{KIND_LABELS[detail.kind]}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Quando</div>
+                <div className="font-medium">
+                  {format(new Date(detail.createdAt), "dd/MM/yyyy HH:mm", {
+                    locale: ptBR,
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Arquivo</div>
+                <div className="font-medium truncate" title={detail.fileName ?? undefined}>
+                  {detail.fileName ?? "(sem nome)"}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Usuário</div>
+                <div className="font-medium truncate">
+                  {detail.userName ?? detail.userEmail ?? "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Linhas</div>
+                <div className="font-medium tabular-nums">{detail.rowCount}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Criadas</div>
+                <div className="font-medium text-emerald-400 tabular-nums">
+                  {detail.createdCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Ignoradas</div>
+                <div className="font-medium tabular-nums">
+                  {detail.skippedCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Erros</div>
+                <div className="font-medium text-destructive tabular-nums">
+                  {detail.errorCount}
+                </div>
+              </div>
+            </div>
+
+            {detail.results && detail.results.length > 0 ? (
+              <>
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadResultsCsv(detail)}
+                    data-testid="import-detail-download-csv"
+                  >
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Baixar CSV
+                  </Button>
+                </div>
+                <div className="overflow-y-auto border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16 text-right">Linha</TableHead>
+                        <TableHead className="w-32">Resultado</TableHead>
+                        <TableHead>Mensagem</TableHead>
+                        <TableHead className="w-64">ID gerado</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detail.results.map((r) => (
+                        <TableRow key={r.row} data-testid={`detail-row-${r.row}`}>
+                          <TableCell className="text-right tabular-nums text-sm">
+                            {r.row}
+                          </TableCell>
+                          <TableCell className={`text-sm ${OUTCOME_CLASS[r.outcome] ?? ""}`}>
+                            {OUTCOME_LABEL[r.outcome] ?? r.outcome}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {r.message ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-xs font-mono text-muted-foreground truncate">
+                            {r.id ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            ) : (
+              <Alert>
+                <AlertTitle>Detalhes indisponíveis</AlertTitle>
+                <AlertDescription>
+                  Esta importação foi executada antes da gravação do
+                  relatório linha-a-linha. Apenas os contadores
+                  agregados estão disponíveis.
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

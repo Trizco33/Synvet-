@@ -54,6 +54,7 @@ import type {
   Exam,
   ExamWithPet,
   HealthStatus,
+  ImportHistoryDetail,
   ImportHistoryEntry,
   ImportReport,
   ListCommsAutomationsResponse,
@@ -1623,6 +1624,95 @@ export function useListImportHistory<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListImportHistoryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Relatório linha-a-linha de uma execução antiga (admin)
+ */
+export const getGetImportHistoryDetailUrl = (logId: string) => {
+  return `/api/import/history/${logId}`;
+};
+
+export const getImportHistoryDetail = async (
+  logId: string,
+  options?: RequestInit,
+): Promise<ImportHistoryDetail> => {
+  return customFetch<ImportHistoryDetail>(getGetImportHistoryDetailUrl(logId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImportHistoryDetailQueryKey = (logId: string) => {
+  return [`/api/import/history/${logId}`] as const;
+};
+
+export const getGetImportHistoryDetailQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImportHistoryDetail>>,
+  TError = ErrorType<void>,
+>(
+  logId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImportHistoryDetail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImportHistoryDetailQueryKey(logId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImportHistoryDetail>>
+  > = ({ signal }) =>
+    getImportHistoryDetail(logId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!logId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImportHistoryDetail>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImportHistoryDetailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImportHistoryDetail>>
+>;
+export type GetImportHistoryDetailQueryError = ErrorType<void>;
+
+/**
+ * @summary Relatório linha-a-linha de uma execução antiga (admin)
+ */
+
+export function useGetImportHistoryDetail<
+  TData = Awaited<ReturnType<typeof getImportHistoryDetail>>,
+  TError = ErrorType<void>,
+>(
+  logId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImportHistoryDetail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImportHistoryDetailQueryOptions(logId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

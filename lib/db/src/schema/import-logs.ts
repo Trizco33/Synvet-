@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, jsonb } from "drizzle-orm/pg-core";
 import { clinicsTable } from "./clinics";
 import { usersTable } from "./users";
 
@@ -39,6 +39,12 @@ export const importLogsTable = pgTable(
     skippedCount: integer("skipped_count").notNull().default(0),
     errorCount: integer("error_count").notNull().default(0),
     mapping: text("mapping"),
+    // Relatório linha-a-linha persistido para auditoria pós-import.
+    // Cada item: { row, outcome, message?, id? }. Pode ser null em logs
+    // antigos (anteriores à coluna).
+    results: jsonb("results").$type<
+      Array<{ row: number; outcome: "created" | "updated" | "skipped" | "error"; message?: string; id?: string }>
+    >(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

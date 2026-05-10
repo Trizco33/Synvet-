@@ -316,6 +316,25 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/ImportHistoryEntry" }
 
+  /import/history/{logId}:
+    parameters:
+      - in: path
+        name: logId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getImportHistoryDetail
+      tags: [import]
+      summary: Relatório linha-a-linha de uma execução antiga (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportHistoryDetail" }
+        "404":
+          description: Log não encontrado
+
   /import/{kind}:
     parameters:
       - in: path
@@ -1321,6 +1340,27 @@ components:
         userEmail: { type: string, nullable: true }
         isReimport: { type: boolean, description: "Se já houve outra execução com o mesmo fileHash + kind nesta clínica antes desta." }
       required: [id, kind, fileHash, rowCount, createdCount, updatedCount, skippedCount, errorCount, createdAt, isReimport]
+
+    ImportHistoryDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records, weigh_ins, prescriptions] }
+        fileName: { type: string, nullable: true }
+        rowCount: { type: integer }
+        createdCount: { type: integer }
+        updatedCount: { type: integer }
+        skippedCount: { type: integer }
+        errorCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        userName: { type: string, nullable: true }
+        userEmail: { type: string, nullable: true }
+        results:
+          type: array
+          nullable: true
+          description: "Relatório linha-a-linha. Null em logs antigos sem detalhes persistidos."
+          items: { $ref: "#/components/schemas/ImportRowResult" }
+      required: [id, kind, rowCount, createdCount, updatedCount, skippedCount, errorCount, createdAt]
 
     ImportReport:
       type: object

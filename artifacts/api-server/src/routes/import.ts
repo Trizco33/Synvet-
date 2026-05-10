@@ -346,8 +346,8 @@ const PrescriptionRowSchema = z.object({
   tutorEmail: optStr,
   tutorPhone: optStr,
   medication: reqStr("Medicamento obrigatório"),
-  dosage: optStr,
-  duration: optStr,
+  dosage: reqStr("Posologia obrigatória (ex.: 1 comprimido a cada 12h)"),
+  duration: reqStr("Duração obrigatória (ex.: 7 dias)"),
   notes: optStr,
 });
 

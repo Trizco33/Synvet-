@@ -111,8 +111,8 @@ const PRESCRIPTION_FIELDS: ImportField[] = [
   { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
   { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
   { key: "medication", label: "Medicamento", required: true, aliases: ["medicamento", "remedio", "remédio", "droga", "farmaco", "fármaco"] },
-  { key: "dosage", label: "Posologia", aliases: ["posologia", "dose", "dosagem"] },
-  { key: "duration", label: "Duração", aliases: ["duracao", "duração", "tempo", "periodo", "período"] },
+  { key: "dosage", label: "Posologia", required: true, aliases: ["posologia", "dose", "dosagem"] },
+  { key: "duration", label: "Duração", required: true, aliases: ["duracao", "duração", "tempo", "periodo", "período"] },
   { key: "notes", label: "Observações", aliases: ["notas", "observacoes", "obs"] },
 ];
 

@@ -90,6 +90,15 @@ export interface Clinic {
   updatedAt: string;
 }
 
+export interface BillingCheckoutBody {
+  /** @minLength 1 */
+  priceId: string;
+}
+
+export interface BillingRedirectResponse {
+  url: string;
+}
+
 export interface UpdateClinicBody {
   name?: string;
   cnpj?: string | null;

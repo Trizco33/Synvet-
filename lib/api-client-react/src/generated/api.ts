@@ -25,6 +25,8 @@ import type {
   AiOrganizeTextBody,
   AiResult,
   Anamnesis,
+  BillingCheckoutBody,
+  BillingRedirectResponse,
   Clinic,
   CommsAutomation,
   CommsChannel,
@@ -1173,6 +1175,173 @@ export function useGetAdminMetrics<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)
+ */
+export const getCreateBillingCheckoutUrl = () => {
+  return `/api/billing/checkout`;
+};
+
+export const createBillingCheckout = async (
+  billingCheckoutBody: BillingCheckoutBody,
+  options?: RequestInit,
+): Promise<BillingRedirectResponse> => {
+  return customFetch<BillingRedirectResponse>(getCreateBillingCheckoutUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(billingCheckoutBody),
+  });
+};
+
+export const getCreateBillingCheckoutMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBillingCheckout>>,
+    TError,
+    { data: BodyType<BillingCheckoutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBillingCheckout>>,
+  TError,
+  { data: BodyType<BillingCheckoutBody> },
+  TContext
+> => {
+  const mutationKey = ["createBillingCheckout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBillingCheckout>>,
+    { data: BodyType<BillingCheckoutBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBillingCheckout(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBillingCheckoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBillingCheckout>>
+>;
+export type CreateBillingCheckoutMutationBody = BodyType<BillingCheckoutBody>;
+export type CreateBillingCheckoutMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)
+ */
+export const useCreateBillingCheckout = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBillingCheckout>>,
+    TError,
+    { data: BodyType<BillingCheckoutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBillingCheckout>>,
+  TError,
+  { data: BodyType<BillingCheckoutBody> },
+  TContext
+> => {
+  return useMutation(getCreateBillingCheckoutMutationOptions(options));
+};
+
+/**
+ * @summary Abre Stripe Customer Portal (gerenciar cartão / cancelar / faturas)
+ */
+export const getCreateBillingPortalUrl = () => {
+  return `/api/billing/portal`;
+};
+
+export const createBillingPortal = async (
+  options?: RequestInit,
+): Promise<BillingRedirectResponse> => {
+  return customFetch<BillingRedirectResponse>(getCreateBillingPortalUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCreateBillingPortalMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBillingPortal>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBillingPortal>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["createBillingPortal"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBillingPortal>>,
+    void
+  > = () => {
+    return createBillingPortal(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBillingPortalMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBillingPortal>>
+>;
+
+export type CreateBillingPortalMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Abre Stripe Customer Portal (gerenciar cartão / cancelar / faturas)
+ */
+export const useCreateBillingPortal = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBillingPortal>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBillingPortal>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCreateBillingPortalMutationOptions(options));
+};
 
 /**
  * @summary Listar tutores

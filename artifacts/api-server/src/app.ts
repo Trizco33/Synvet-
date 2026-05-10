@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { mountBillingWebhook } from "./routes/billing-webhook";
 
 const app: Express = express();
 
@@ -26,6 +27,11 @@ app.use(
   }),
 );
 app.use(cors());
+
+// IMPORTANTE: webhook Stripe precisa do raw body para validar assinatura.
+// Deve ser montado ANTES do express.json() global.
+mountBillingWebhook(app);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

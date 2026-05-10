@@ -18,6 +18,7 @@ Vars:
 - Sem essas vars → backend cria automaticamente clínica/usuário **demo** (apenas dev; `NODE_ENV=production` bloqueia, reativar com `ALLOW_DEMO_AUTH=true`).
 - Comunicação: `COMMS_PROVIDER=mock` (default) | `evolution` (stub — ver docs).
 - Back-office: `SUPERADMIN_EMAIL` (CSV opcional) — e-mails promovidos a superadmin no boot. Sem isso, ninguém vê `/admin`.
+- Stripe (Fase B1): chaves vêm do Replit connector (sem env). Necessárias: `STRIPE_PRICE_ESSENCIAL`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_CLINIC_PLUS` (price IDs recurring) e `STRIPE_WEBHOOK_SECRET` (`whsec_…` do endpoint configurado no Dashboard apontando para `/api/billing/webhook`). Sem isso, checkout/portal devolvem 503.
 
 ## Stack
 
@@ -45,7 +46,8 @@ Vars:
 - Hooks/schemas gerados: `lib/api-client-react/src/generated`, `lib/api-zod/src/generated` (importar via `schemas.*`)
 - Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**)
 - Catálogo de planos: `lib/db/src/billing.ts` (server) + `artifacts/synvet/src/lib/plans.ts` (cliente, manter em sincronia)
-- Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms,admin}.ts` (auth/leads/**admin** são públicos no roteador raiz, montados ANTES do `authMiddleware` tenant — admin tem `superAdminMiddleware` próprio)
+- Stripe (Fase B1): `artifacts/api-server/src/lib/stripe.ts` (client + helpers price↔plan), `routes/billing.ts` (checkout/portal — admin tenant), `routes/billing-webhook.ts` (raw body, montado no `app.ts` ANTES do `express.json`), schema `lib/db/src/schema/stripe-events.ts` (idempotência)
+- Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms,admin,billing}.ts` (auth/leads/**admin** são públicos no roteador raiz, montados ANTES do `authMiddleware` tenant — admin tem `superAdminMiddleware` próprio; **billing** segue tenant authMiddleware com `requireRole("admin")`. Webhook é montado direto no `app`, fora do router)
 - Site institucional: `artifacts/synvet/src/pages/site/landing.tsx` + `components/site/{site-nav,site-footer,lead-form}.tsx`
 - Middleware de auth: `artifacts/api-server/src/middlewares/{auth,super-admin}.ts`
 - Billing helpers (server): `artifacts/api-server/src/lib/billing.ts` (trial dates + buildBillingStatus)

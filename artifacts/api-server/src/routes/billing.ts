@@ -1,0 +1,134 @@
+import { Router, type IRouter } from "express";
+import { eq } from "drizzle-orm";
+import { db, clinicsTable } from "@workspace/db";
+import { requireAuth, requireRole } from "../middlewares/auth";
+import {
+  getStripeClient,
+  getConfiguredPriceIds,
+  isStripeConfigured,
+} from "../lib/stripe";
+
+const router: IRouter = Router();
+
+function appOrigin(req: import("express").Request): string {
+  // Em produção/dev preview o usuário acessa via proxy Replit. Forward host respeita o domínio público.
+  const xfHost = req.get("x-forwarded-host") ?? req.get("host");
+  const xfProto = req.get("x-forwarded-proto") ?? req.protocol;
+  return `${xfProto}://${xfHost}`;
+}
+
+/** Garante que a clínica tem um `stripeCustomerId` — cria se faltar. */
+async function ensureStripeCustomer(
+  clinicId: string,
+  email: string,
+  name: string,
+): Promise<string> {
+  const [clinic] = await db
+    .select()
+    .from(clinicsTable)
+    .where(eq(clinicsTable.id, clinicId));
+  if (!clinic) throw new Error("Clínica não encontrada");
+  if (clinic.stripeCustomerId) return clinic.stripeCustomerId;
+
+  const stripe = await getStripeClient();
+  const customer = await stripe.customers.create({
+    email,
+    name: clinic.name,
+    metadata: { clinicId, ownerEmail: email, ownerName: name },
+  });
+  await db
+    .update(clinicsTable)
+    .set({ stripeCustomerId: customer.id, updatedAt: new Date() })
+    .where(eq(clinicsTable.id, clinicId));
+  return customer.id;
+}
+
+router.post(
+  "/billing/checkout",
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const user = requireAuth(req);
+    if (!(await isStripeConfigured())) {
+      res.status(503).json({ error: "Stripe não configurado" });
+      return;
+    }
+    const priceId = String(req.body?.priceId ?? "").trim();
+    if (!priceId) {
+      res.status(400).json({ error: "priceId é obrigatório" });
+      return;
+    }
+    const allowed = getConfiguredPriceIds();
+    if (allowed.length === 0) {
+      res.status(503).json({
+        error:
+          "Nenhum plano configurado. Defina STRIPE_PRICE_ESSENCIAL/PRO/CLINIC_PLUS.",
+      });
+      return;
+    }
+    if (!allowed.includes(priceId)) {
+      res.status(400).json({ error: "Plano inválido" });
+      return;
+    }
+    try {
+      const customerId = await ensureStripeCustomer(
+        user.clinicId,
+        user.email,
+        user.name ?? user.email,
+      );
+      const stripe = await getStripeClient();
+      const origin = appOrigin(req);
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        client_reference_id: user.clinicId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/app/configuracoes/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/app/configuracoes?tab=assinatura&checkout=cancelled`,
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: { clinicId: user.clinicId },
+        },
+        metadata: { clinicId: user.clinicId },
+      });
+      if (!session.url) {
+        res.status(500).json({ error: "Stripe não retornou URL de checkout" });
+        return;
+      }
+      res.json({ url: session.url });
+    } catch (err) {
+      req.log.error({ err }, "billing checkout failed");
+      res.status(500).json({ error: "Falha ao criar sessão de checkout" });
+    }
+  },
+);
+
+router.post(
+  "/billing/portal",
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const user = requireAuth(req);
+    if (!(await isStripeConfigured())) {
+      res.status(503).json({ error: "Stripe não configurado" });
+      return;
+    }
+    try {
+      const customerId = await ensureStripeCustomer(
+        user.clinicId,
+        user.email,
+        user.name ?? user.email,
+      );
+      const stripe = await getStripeClient();
+      const origin = appOrigin(req);
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${origin}/app/configuracoes?tab=assinatura`,
+      });
+      res.json({ url: portal.url });
+    } catch (err) {
+      req.log.error({ err }, "billing portal failed");
+      res.status(500).json({ error: "Falha ao abrir portal de assinatura" });
+    }
+  },
+);
+
+export default router;

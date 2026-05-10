@@ -1,7 +1,8 @@
-# Billing — Trial e Planos (Fase A)
+# Billing — Trial, Planos e Stripe
 
-A Fase A entrega a fundação comercial da Synvet sem cobrança online. O
-gateway de pagamento (Stripe) e e-mails transacionais ficam para a Fase B.
+A Fase A entregou a fundação comercial sem cobrança. A **Fase B1** liga
+o Stripe (Checkout + Customer Portal + Webhook) para upgrade/downgrade
+self-service. E-mails transacionais ficam na Fase B2.
 
 ## Modelo
 
@@ -68,12 +69,74 @@ no servidor permite gates por plano (a aplicação em features é incremental).
 - UI: `components/layout/TrialBanner.tsx`,
   `components/billing/SubscriptionCard.tsx`, `pages/signup.tsx`
 
-## Próximos passos (Fase B)
+## Stripe (Fase B1)
 
-- Conector Stripe (Replit integration) → checkout sessions e webhooks
-  atualizando `status`, `currentPeriodEnd`, `stripeCustomerId/SubscriptionId`.
-- Envio de e-mail (boas-vindas, "faltam 3 dias", "trial encerrou").
+### Conexão
+
+- Cliente Stripe vem do **Replit Connector** (`connector_names=stripe`).
+  Helper: `artifacts/api-server/src/lib/stripe.ts` → `getStripeClient()`.
+  Nunca cachear o client em variável de longo prazo — chame a função em
+  cada request (credenciais têm cache curto interno de 5min).
+- Modo Sandbox/Live é decidido pela conexão (campo `environment` no Replit).
+  `REPLIT_DEPLOYMENT=1` força `production`, caso contrário usa `development`.
+
+### Variáveis necessárias
+
+| Variável                  | Onde                | Para quê                                   |
+| ------------------------- | ------------------- | ------------------------------------------ |
+| `STRIPE_PRICE_ESSENCIAL`  | server              | Price ID (recurring) do plano Essencial.   |
+| `STRIPE_PRICE_PRO`        | server              | Price ID do plano Pro.                     |
+| `STRIPE_PRICE_CLINIC_PLUS`| server              | Price ID do plano Clinic+.                 |
+| `STRIPE_WEBHOOK_SECRET`   | server              | Secret do endpoint de webhook (`whsec_…`). |
+
+Se algum `STRIPE_PRICE_*` não estiver setado, o checkout para aquele plano
+retorna 503 com mensagem explicativa.
+
+### Customer
+
+- Criado **best-effort no signup** (rota `/auth/signup`). Falha não
+  derruba o cadastro — `routes/billing.ts` recria lazy se faltar.
+- Metadata: `{ clinicId, ownerEmail, ownerName }`.
+- Persistido em `clinics.stripeCustomerId`.
+
+### Endpoints
+
+| Endpoint                       | Auth          | O que faz                                                |
+| ------------------------------ | ------------- | -------------------------------------------------------- |
+| `POST /api/billing/checkout`   | admin tenant  | Cria Checkout Session (mode=subscription) → `{ url }`.   |
+| `POST /api/billing/portal`     | admin tenant  | Cria Billing Portal Session → `{ url }`.                 |
+| `POST /api/billing/webhook`    | público (raw) | Valida assinatura, idempotência, sincroniza `clinics`.   |
+
+O webhook é montado **direto no `app`** ANTES do `express.json()` global
+(precisa de raw body). Idempotência via tabela `stripe_events` (PK = event id).
+
+### Eventos tratados
+
+- `checkout.session.completed` → busca subscription e sincroniza.
+- `customer.subscription.created/updated/deleted/trial_will_end`
+- `invoice.payment_succeeded` → marca `active`.
+- `invoice.payment_failed` → marca `past_due`.
+
+`mapSubscriptionStatus` traduz status nativo do Stripe para os 5 valores
+de `clinics.status`. `getPlanByPriceId` faz o reverso priceId → plan.
+
+### Como configurar do zero
+
+1. Conectar Stripe via Replit Integrations (já feito — connection
+   `conn_stripe_…`).
+2. No Stripe Dashboard, criar 3 Products + Prices recurring (mensal) e
+   colar os IDs em `STRIPE_PRICE_*`.
+3. Criar webhook endpoint apontando para
+   `https://<seu-dominio>/api/billing/webhook` com os eventos acima.
+   Copiar o signing secret para `STRIPE_WEBHOOK_SECRET`.
+4. Restart do API server e testar `POST /api/billing/checkout` como admin.
+
+## Próximos passos (Fase B2+)
+
+- E-mails transacionais (boas-vindas, "faltam 3 dias", "trial encerrou").
 - Job diário para mover `trialing` → `past_due` quando `trialEndsAt < now`
-  e nenhum `stripeSubscriptionId` ativo.
+  sem `stripeSubscriptionId` ativo.
 - Aplicação real dos limites de plano (`isFeatureEnabled`) nas rotas
   de Copilot, Comunicação e AI assist, com 402/403 explicativo.
+- UI de upgrade ligando `useCreateBillingCheckout` aos botões da aba
+  Assinatura (Fase B2 — task #6).

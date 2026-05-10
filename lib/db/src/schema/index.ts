@@ -11,3 +11,4 @@ export * from "./copilot";
 export * from "./leads";
 export * from "./comms";
 export * from "./platform-admins";
+export * from "./stripe-events";

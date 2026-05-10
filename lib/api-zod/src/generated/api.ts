@@ -243,6 +243,25 @@ export const GetAdminMetricsResponse = zod.object({
 });
 
 /**
+ * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)
+ */
+
+export const CreateBillingCheckoutBody = zod.object({
+  priceId: zod.string().min(1),
+});
+
+export const CreateBillingCheckoutResponse = zod.object({
+  url: zod.string().url(),
+});
+
+/**
+ * @summary Abre Stripe Customer Portal (gerenciar cartão / cancelar / faturas)
+ */
+export const CreateBillingPortalResponse = zod.object({
+  url: zod.string().url(),
+});
+
+/**
  * @summary Listar tutores
  */
 export const ListTutorsQueryParams = zod.object({

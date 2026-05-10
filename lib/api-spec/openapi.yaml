@@ -34,6 +34,8 @@ tags:
     description: IA assistiva clínica (resumos, organização de texto, padrões)
   - name: admin
     description: Back-office Synvet (apenas superadmins da plataforma)
+  - name: billing
+    description: Assinaturas Stripe (checkout + portal)
 paths:
   /healthz:
     get:
@@ -237,6 +239,35 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminMetrics" }
+
+  /billing/checkout:
+    post:
+      operationId: createBillingCheckout
+      tags: [billing]
+      summary: Cria sessão de Stripe Checkout para upgrade de plano (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BillingCheckoutBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BillingRedirectResponse" }
+
+  /billing/portal:
+    post:
+      operationId: createBillingPortal
+      tags: [billing]
+      summary: Abre Stripe Customer Portal (gerenciar cartão / cancelar / faturas)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BillingRedirectResponse" }
 
   /tutors:
     get:
@@ -1101,6 +1132,18 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required: [id, name, plan, status, createdAt, updatedAt]
+
+    BillingCheckoutBody:
+      type: object
+      properties:
+        priceId: { type: string, minLength: 1 }
+      required: [priceId]
+
+    BillingRedirectResponse:
+      type: object
+      properties:
+        url: { type: string, format: uri }
+      required: [url]
 
     UpdateClinicBody:
       type: object

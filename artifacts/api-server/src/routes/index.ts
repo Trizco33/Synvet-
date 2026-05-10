@@ -15,6 +15,7 @@ import aiRouter from "./ai";
 import copilotRouter from "./copilot";
 import commsRouter from "./comms";
 import adminRouter from "./admin";
+import billingRouter from "./billing";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -40,5 +41,6 @@ router.use(storageRouter);
 router.use(aiRouter);
 router.use(copilotRouter);
 router.use(commsRouter);
+router.use(billingRouter);
 
 export default router;

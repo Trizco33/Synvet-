@@ -5,6 +5,7 @@ import { db, clinicsTable, usersTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { getSupabaseAdmin } from "../lib/supabase";
 import { trialEndsAtFromNow } from "../lib/billing";
+import { getStripeClient, isStripeConfigured } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -53,7 +54,7 @@ router.post("/auth/signup", signupLimiter, async (req, res): Promise<void> => {
         .where(eq(usersTable.authId, authId));
 
       if (!existing) {
-        await db.transaction(async (tx) => {
+        const created = await db.transaction(async (tx) => {
           const [clinic] = await tx
             .insert(clinicsTable)
             .values({
@@ -70,7 +71,30 @@ router.post("/auth/signup", signupLimiter, async (req, res): Promise<void> => {
             name,
             role: "admin",
           });
+          return clinic;
         });
+
+        // Best-effort: cria Stripe Customer já no signup. Falha silenciosa —
+        // o checkout/portal cria lazy se faltar.
+        if (await isStripeConfigured()) {
+          try {
+            const stripe = await getStripeClient();
+            const customer = await stripe.customers.create({
+              email,
+              name: created.name,
+              metadata: { clinicId: created.id, ownerEmail: email, ownerName: name },
+            });
+            await db
+              .update(clinicsTable)
+              .set({ stripeCustomerId: customer.id, updatedAt: new Date() })
+              .where(eq(clinicsTable.id, created.id));
+          } catch (stripeErr) {
+            req.log.warn(
+              { err: stripeErr, clinicId: created.id },
+              "signup: falha ao criar Stripe customer (será criado no checkout)",
+            );
+          }
+        }
       }
     } catch (dbErr) {
       req.log.error({ err: dbErr, authId }, "signup db failure — rolling back supabase user");

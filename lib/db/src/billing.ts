@@ -22,9 +22,27 @@ export type PlanDefinition = {
   features: PlanFeatures;
   limits: PlanLimits;
   highlights: string[];
+  /**
+   * Env var (no servidor) que carrega o Stripe Price ID recurring deste plano.
+   * Trial não tem price (não é cobrado). Lookup runtime via process.env[stripePriceEnvVar].
+   * Mantido como nome de var em vez do valor para não vazar IDs em código versionado
+   * e permitir alternar entre test/live mode sem rebuild.
+   */
+  stripePriceEnvVar: string | null;
 };
 
 export const TRIAL_DAYS = 14;
+
+/**
+ * Mapeamento canônico plan ↔ env var do price ID Stripe.
+ * Re-exportado para uso no servidor (lib/stripe.ts) e clientes que precisam
+ * resolver o priceId em tempo de request.
+ */
+export const PLAN_PRICE_ENV: Partial<Record<ClinicPlan, string>> = {
+  essencial: "STRIPE_PRICE_ESSENCIAL",
+  pro: "STRIPE_PRICE_PRO",
+  clinic_plus: "STRIPE_PRICE_CLINIC_PLUS",
+};
 
 export const PLANS: Record<ClinicPlan, PlanDefinition> = {
   trial: {
@@ -45,6 +63,7 @@ export const PLANS: Record<ClinicPlan, PlanDefinition> = {
       "Sem cartão de crédito",
       "Migração assistida de dados",
     ],
+    stripePriceEnvVar: null,
   },
   essencial: {
     id: "essencial",
@@ -64,6 +83,7 @@ export const PLANS: Record<ClinicPlan, PlanDefinition> = {
       "IA assistiva (resumos e organização)",
       "Até 3 usuários",
     ],
+    stripePriceEnvVar: "STRIPE_PRICE_ESSENCIAL",
   },
   pro: {
     id: "pro",
@@ -83,6 +103,7 @@ export const PLANS: Record<ClinicPlan, PlanDefinition> = {
       "Comunicação WhatsApp + automações",
       "Até 10 usuários",
     ],
+    stripePriceEnvVar: "STRIPE_PRICE_PRO",
   },
   clinic_plus: {
     id: "clinic_plus",
@@ -102,6 +123,7 @@ export const PLANS: Record<ClinicPlan, PlanDefinition> = {
       "Suporte dedicado e onboarding 1:1",
       "Volume estendido de WhatsApp",
     ],
+    stripePriceEnvVar: "STRIPE_PRICE_CLINIC_PLUS",
   },
 };
 

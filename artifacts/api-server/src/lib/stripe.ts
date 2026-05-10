@@ -1,7 +1,14 @@
-// Cliente Stripe via Replit connector. Não cachear o client — tokens podem expirar.
-// Snippet base: blueprint Stripe (Replit).
+// Cliente Stripe via Replit connector.
+//
+// Por que NÃO usamos um singleton: o blueprint oficial do Stripe no Replit exige
+// reautenticar a cada request porque o token do connector pode expirar/rotacionar
+// silenciosamente. Manter o client em memória entre requests resulta em 401s
+// intermitentes em produção. Mantemos um cache curto (5 min) só das credenciais
+// para evitar round-trips ao endpoint de connectors em cada request — não do
+// próprio client Stripe.
 import Stripe from "stripe";
 import type { ClinicPlan } from "@workspace/db";
+import { PLAN_PRICE_ENV } from "@workspace/db";
 import { logger } from "./logger";
 
 let cachedConnection:
@@ -88,35 +95,32 @@ export async function isStripeConfigured(): Promise<boolean> {
   }
 }
 
-/** Mapa plan → priceId vindo de variáveis de ambiente. */
+/**
+ * Mapa plan → priceId vindo de variáveis de ambiente.
+ * O catálogo canônico (PLAN_PRICE_ENV) vive em `lib/db/src/billing.ts` para
+ * que clientes (frontend) também possam consultar quais planos têm price.
+ */
 export function getStripePriceId(plan: ClinicPlan): string | null {
-  switch (plan) {
-    case "essencial":
-      return process.env.STRIPE_PRICE_ESSENCIAL ?? null;
-    case "pro":
-      return process.env.STRIPE_PRICE_PRO ?? null;
-    case "clinic_plus":
-      return process.env.STRIPE_PRICE_CLINIC_PLUS ?? null;
-    default:
-      return null;
-  }
+  const envVar = PLAN_PRICE_ENV[plan];
+  if (!envVar) return null;
+  return process.env[envVar] ?? null;
 }
 
 /** Reverso: priceId → plano. Usado no webhook para descobrir o plano da subscription. */
 export function getPlanByPriceId(priceId: string): ClinicPlan | null {
-  if (priceId === process.env.STRIPE_PRICE_ESSENCIAL) return "essencial";
-  if (priceId === process.env.STRIPE_PRICE_PRO) return "pro";
-  if (priceId === process.env.STRIPE_PRICE_CLINIC_PLUS) return "clinic_plus";
+  for (const [plan, envVar] of Object.entries(PLAN_PRICE_ENV) as Array<
+    [ClinicPlan, string]
+  >) {
+    if (process.env[envVar] === priceId) return plan;
+  }
   return null;
 }
 
 /** Lista de Price IDs configurados (para validar o body do checkout). */
 export function getConfiguredPriceIds(): string[] {
-  return [
-    process.env.STRIPE_PRICE_ESSENCIAL,
-    process.env.STRIPE_PRICE_PRO,
-    process.env.STRIPE_PRICE_CLINIC_PLUS,
-  ].filter((s): s is string => Boolean(s));
+  return Object.values(PLAN_PRICE_ENV)
+    .map((envVar) => (envVar ? process.env[envVar] : undefined))
+    .filter((s): s is string => Boolean(s));
 }
 
 /** Mapeia o status nativo do Stripe para o status persistido em `clinics.status`. */

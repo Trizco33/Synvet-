@@ -40,3 +40,7 @@ channel = "stable-25_05"
 [userenv.shared]
 VITE_SUPABASE_URL = "https://bzvuhycbtwdkhvkxsypu.supabase.co"
 SUPABASE_URL = "https://bzvuhycbtwdkhvkxsypu.supabase.co"
+STRIPE_PRICE_ESSENCIAL = "price_1TVWmiIEDPpyboWcOeRoMKIS"
+STRIPE_PRICE_PRO = "price_1TVWmjIEDPpyboWcdNNQzlwL"
+STRIPE_PRICE_CLINIC_PLUS = "price_1TVWmjIEDPpyboWcEYLYHSkm"
+STRIPE_WEBHOOK_SECRET = "whsec_wNmLKUvHjRTPpQ7lbRWGw2kSUyAjhq3Q"

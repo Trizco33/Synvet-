@@ -4,6 +4,7 @@ import express, { type Express, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 import { db, clinicsTable, stripeEventsTable } from "@workspace/db";
+// eq é usado também no pré-check de idempotência abaixo.
 import { logger } from "../lib/logger";
 import { getStripeClient, getPlanByPriceId, mapSubscriptionStatus } from "../lib/stripe";
 
@@ -40,10 +41,15 @@ async function syncSubscriptionToClinic(
   const priceId = item?.price?.id ?? null;
   const plan = priceId ? getPlanByPriceId(priceId) : null;
 
-  // current_period_end vive no item (basil API). Fallback para subscription se existir.
-  const periodEndUnix =
-    (item as Stripe.SubscriptionItem & { current_period_end?: number } | undefined)
-      ?.current_period_end ?? null;
+  // current_period_end migrou do nível subscription para o item na API basil/clover.
+  // Lemos do item primeiro; fallback para o nível subscription se ainda existir.
+  const itemPeriodEnd = (
+    item as (Stripe.SubscriptionItem & { current_period_end?: number }) | undefined
+  )?.current_period_end;
+  const subPeriodEnd = (
+    subscription as Stripe.Subscription & { current_period_end?: number }
+  ).current_period_end;
+  const periodEndUnix = itemPeriodEnd ?? subPeriodEnd ?? null;
 
   await db
     .update(clinicsTable)
@@ -88,13 +94,10 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           ? invoice.subscription
           : invoice.subscription?.id ?? null;
       if (!subId) return;
-      try {
-        const stripe = await getStripeClient();
-        const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscriptionToClinic(sub);
-      } catch (err) {
-        logger.warn({ err, subId }, "falha ao buscar subscription do invoice");
-      }
+      // Falha aqui DEVE propagar (500 → Stripe retenta) — não engolir.
+      const stripe = await getStripeClient();
+      const sub = await stripe.subscriptions.retrieve(subId);
+      await syncSubscriptionToClinic(sub);
       return;
     }
     case "checkout.session.completed": {
@@ -105,13 +108,9 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           ? session.subscription
           : session.subscription?.id ?? null;
       if (!subId) return;
-      try {
-        const stripe = await getStripeClient();
-        const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscriptionToClinic(sub);
-      } catch (err) {
-        logger.warn({ err, subId }, "falha ao buscar subscription do checkout");
-      }
+      const stripe = await getStripeClient();
+      const sub = await stripe.subscriptions.retrieve(subId);
+      await syncSubscriptionToClinic(sub);
       return;
     }
     default:
@@ -146,32 +145,40 @@ export function mountBillingWebhook(app: Express): void {
         return;
       }
 
-      // Idempotência — se já processado, retornar 200 sem reprocessar.
-      try {
-        const inserted = await db
-          .insert(stripeEventsTable)
-          .values({ id: event.id, type: event.type })
-          .onConflictDoNothing({ target: stripeEventsTable.id })
-          .returning();
-        if (inserted.length === 0) {
-          logger.debug({ id: event.id, type: event.type }, "stripe webhook: duplicado");
-          res.json({ received: true, duplicate: true });
-          return;
-        }
-      } catch (err) {
-        logger.error({ err, id: event.id }, "falha ao registrar evento stripe");
-        res.status(500).send("internal");
+      // Pré-check de idempotência: se já está registrado, devolve 200 sem reprocessar.
+      // Os handlers em si são idempotentes (UPDATE por subscription state), então
+      // mesmo se o registro acontecer entre check e insert, reprocessar é seguro.
+      const [existing] = await db
+        .select({ id: stripeEventsTable.id })
+        .from(stripeEventsTable)
+        .where(eq(stripeEventsTable.id, event.id));
+      if (existing) {
+        logger.debug({ id: event.id, type: event.type }, "stripe webhook: duplicado");
+        res.json({ received: true, duplicate: true });
         return;
       }
 
       try {
         await handleEvent(event);
-        res.json({ received: true });
       } catch (err) {
-        logger.error({ err, id: event.id, type: event.type }, "stripe webhook: handler falhou");
-        // Devolver 500 faz o Stripe retentar — bom para erros transitórios.
+        // Falha transitória → 500 faz o Stripe retentar. NÃO marcar como processado.
+        logger.error(
+          { err, id: event.id, type: event.type },
+          "stripe webhook: handler falhou — retornando 500 para retry",
+        );
         res.status(500).send("handler error");
+        return;
       }
+
+      // Só marca como processado APÓS sucesso. onConflictDoNothing absorve
+      // race entre retries concorrentes (writes são idempotentes mesmo se
+      // duplicarem por uma fração de segundo).
+      await db
+        .insert(stripeEventsTable)
+        .values({ id: event.id, type: event.type })
+        .onConflictDoNothing({ target: stripeEventsTable.id });
+
+      res.json({ received: true });
     },
   );
 }

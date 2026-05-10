@@ -330,6 +330,8 @@ export const GetImportTemplateParams = zod.object({
     "exams",
     "vaccines",
     "medical_records",
+    "weigh_ins",
+    "prescriptions",
   ]),
 });
 
@@ -345,6 +347,8 @@ export const ListImportHistoryResponseItem = zod.object({
     "exams",
     "vaccines",
     "medical_records",
+    "weigh_ins",
+    "prescriptions",
   ]),
   fileName: zod.string().nullish(),
   fileHash: zod.string(),
@@ -377,6 +381,8 @@ export const RunImportParams = zod.object({
     "exams",
     "vaccines",
     "medical_records",
+    "weigh_ins",
+    "prescriptions",
   ]),
 });
 
@@ -407,6 +413,8 @@ export const RunImportResponse = zod.object({
     "exams",
     "vaccines",
     "medical_records",
+    "weigh_ins",
+    "prescriptions",
   ]),
   total: zod.number(),
   created: zod.number(),

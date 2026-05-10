@@ -11,6 +11,8 @@ import {
   medicalRecordsTable,
   importLogsTable,
   usersTable,
+  weighInsTable,
+  prescriptionsTable,
 } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
@@ -23,7 +25,9 @@ type Kind =
   | "appointments"
   | "exams"
   | "vaccines"
-  | "medical_records";
+  | "medical_records"
+  | "weigh_ins"
+  | "prescriptions";
 
 const KINDS: readonly Kind[] = [
   "tutors",
@@ -32,6 +36,8 @@ const KINDS: readonly Kind[] = [
   "exams",
   "vaccines",
   "medical_records",
+  "weigh_ins",
+  "prescriptions",
 ];
 
 function isKind(v: string): v is Kind {
@@ -153,6 +159,46 @@ const TEMPLATES: Record<Kind, { headers: string[]; example: string[] }> = {
       "+55 11 99999-0001",
       "Atendimento clínico",
       "Paciente apresentou quadro de dermatite. Prescrito banho medicamentoso por 7 dias.",
+    ],
+  },
+  weigh_ins: {
+    headers: [
+      "weighedAt",
+      "petName",
+      "tutorEmail",
+      "tutorPhone",
+      "weightKg",
+      "notes",
+    ],
+    example: [
+      "2026-04-12",
+      "Thor",
+      "maria@exemplo.com",
+      "+55 11 99999-0001",
+      "28.4",
+      "Pesado em jejum",
+    ],
+  },
+  prescriptions: {
+    headers: [
+      "prescribedAt",
+      "petName",
+      "tutorEmail",
+      "tutorPhone",
+      "medication",
+      "dosage",
+      "duration",
+      "notes",
+    ],
+    example: [
+      "2026-04-12",
+      "Thor",
+      "maria@exemplo.com",
+      "+55 11 99999-0001",
+      "Amoxicilina 500mg",
+      "1 comprimido a cada 12h",
+      "7 dias",
+      "Administrar com alimento",
     ],
   },
 };
@@ -282,6 +328,26 @@ const VaccineRowSchema = z.object({
   tutorPhone: optStr,
   vaccine: reqStr("Nome da vacina obrigatório"),
   nextDueAt: optStr,
+  notes: optStr,
+});
+
+const WeighInRowSchema = z.object({
+  weighedAt: reqStr("Data da pesagem obrigatória (YYYY-MM-DD ou DD/MM/AAAA)"),
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  weightKg: reqStr("Peso (kg) obrigatório"),
+  notes: optStr,
+});
+
+const PrescriptionRowSchema = z.object({
+  prescribedAt: reqStr("Data da prescrição obrigatória (YYYY-MM-DD ou DD/MM/AAAA)"),
+  petName: reqStr("Nome do pet obrigatório"),
+  tutorEmail: optStr,
+  tutorPhone: optStr,
+  medication: reqStr("Medicamento obrigatório"),
+  dosage: optStr,
+  duration: optStr,
   notes: optStr,
 });
 
@@ -1000,6 +1066,128 @@ async function planMedicalRecords(
   return plans;
 }
 
+async function planWeighIns(
+  clinicId: string,
+  userId: string,
+  rows: Array<Record<string, string | null>>,
+): Promise<Plan[]> {
+  const lookup = await loadPetLookup(clinicId);
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = WeighInRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    const weighedAt = normalizeDateOnly(d.weighedAt);
+    if (!weighedAt) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Data da pesagem inválida — use YYYY-MM-DD (ex.: 2026-04-12) ou DD/MM/AAAA (ex.: 12/04/2026)",
+      });
+      continue;
+    }
+    const weightStr = d.weightKg.replace(",", ".").trim();
+    const weightNum = Number(weightStr);
+    if (!Number.isFinite(weightNum) || weightNum <= 0 || weightNum > 999.99) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: "Peso inválido — use número positivo em kg (ex.: 28.4)",
+      });
+      continue;
+    }
+    const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Pet não encontrado. Importe tutores e pacientes antes das pesagens.",
+      });
+      continue;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        weighedAt,
+        weightKg: weightNum.toFixed(2),
+        notes: d.notes,
+      },
+    });
+  }
+  return plans;
+}
+
+async function planPrescriptions(
+  clinicId: string,
+  userId: string,
+  rows: Array<Record<string, string | null>>,
+): Promise<Plan[]> {
+  const lookup = await loadPetLookup(clinicId);
+  const plans: Plan[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum = i + 1;
+    const parsed = PrescriptionRowSchema.safeParse(rows[i]);
+    if (!parsed.success) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message: parsed.error.issues[0]?.message ?? "Linha inválida",
+      });
+      continue;
+    }
+    const d = parsed.data;
+    const prescribedAt = normalizeDateOnly(d.prescribedAt);
+    if (!prescribedAt) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Data da prescrição inválida — use YYYY-MM-DD (ex.: 2026-04-12) ou DD/MM/AAAA (ex.: 12/04/2026)",
+      });
+      continue;
+    }
+    const petId = resolvePetId(lookup, d.petName, d.tutorEmail, d.tutorPhone);
+    if (!petId) {
+      plans.push({
+        row: rowNum,
+        outcome: "error",
+        message:
+          "Pet não encontrado. Importe tutores e pacientes antes das prescrições.",
+      });
+      continue;
+    }
+    plans.push({
+      row: rowNum,
+      outcome: "created",
+      insert: {
+        clinicId,
+        createdBy: userId,
+        petId,
+        prescribedAt,
+        medication: d.medication,
+        dosage: d.dosage,
+        duration: d.duration,
+        notes: d.notes,
+      },
+    });
+  }
+  return plans;
+}
+
 // =============================================================
 // Execução (pass 2) — só roda se pass 1 não tiver NENHUM erro.
 // Atomicidade fail-all: tudo dentro da mesma transação, em chunks
@@ -1072,11 +1260,23 @@ async function executePlans(kind: Kind, plans: Plan[]): Promise<RowResult[]> {
           .values(slice.map((p) => p.insert as typeof vaccinesTable.$inferInsert))
           .returning({ id: vaccinesTable.id });
         writeBackIds(inserted, slice);
-      } else {
+      } else if (kind === "medical_records") {
         const inserted = await tx
           .insert(medicalRecordsTable)
           .values(slice.map((p) => p.insert as typeof medicalRecordsTable.$inferInsert))
           .returning({ id: medicalRecordsTable.id });
+        writeBackIds(inserted, slice);
+      } else if (kind === "weigh_ins") {
+        const inserted = await tx
+          .insert(weighInsTable)
+          .values(slice.map((p) => p.insert as typeof weighInsTable.$inferInsert))
+          .returning({ id: weighInsTable.id });
+        writeBackIds(inserted, slice);
+      } else {
+        const inserted = await tx
+          .insert(prescriptionsTable)
+          .values(slice.map((p) => p.insert as typeof prescriptionsTable.$inferInsert))
+          .returning({ id: prescriptionsTable.id });
         writeBackIds(inserted, slice);
       }
     }
@@ -1244,7 +1444,11 @@ router.post(
       else if (kind === "exams") plans = await planExams(user.clinicId, user.id, mappedRows);
       else if (kind === "vaccines")
         plans = await planVaccines(user.clinicId, user.id, mappedRows);
-      else plans = await planMedicalRecords(user.clinicId, user.id, mappedRows);
+      else if (kind === "medical_records")
+        plans = await planMedicalRecords(user.clinicId, user.id, mappedRows);
+      else if (kind === "weigh_ins")
+        plans = await planWeighIns(user.clinicId, user.id, mappedRows);
+      else plans = await planPrescriptions(user.clinicId, user.id, mappedRows);
     } catch (err) {
       req.log.error({ err, kind }, "Import planning failed");
       res.status(500).json({

@@ -14,3 +14,5 @@ export * from "./platform-admins";
 export * from "./stripe-events";
 export * from "./email-sends";
 export * from "./import-logs";
+export * from "./weigh-ins";
+export * from "./prescriptions";

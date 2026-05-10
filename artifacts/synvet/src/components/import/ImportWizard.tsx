@@ -51,7 +51,9 @@ export type ImportKind =
   | "appointments"
   | "exams"
   | "vaccines"
-  | "medical_records";
+  | "medical_records"
+  | "weigh_ins"
+  | "prescriptions";
 
 type Props = {
   kind: ImportKind;
@@ -433,6 +435,8 @@ const KIND_LABEL: Record<ImportKind, string> = {
   exams: "Exames",
   vaccines: "Vacinas",
   medical_records: "Prontuários",
+  weigh_ins: "Pesagens",
+  prescriptions: "Prescrições",
 };
 
 function ImportReportView({

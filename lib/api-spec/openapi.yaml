@@ -290,7 +290,7 @@ paths:
         required: true
         schema:
           type: string
-          enum: [tutors, pets, appointments, exams, vaccines, medical_records]
+          enum: [tutors, pets, appointments, exams, vaccines, medical_records, weigh_ins, prescriptions]
     get:
       operationId: getImportTemplate
       tags: [import]
@@ -323,7 +323,7 @@ paths:
         required: true
         schema:
           type: string
-          enum: [tutors, pets, appointments, exams, vaccines, medical_records]
+          enum: [tutors, pets, appointments, exams, vaccines, medical_records, weigh_ins, prescriptions]
     post:
       operationId: runImport
       tags: [import]
@@ -1308,7 +1308,7 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records] }
+        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records, weigh_ins, prescriptions] }
         fileName: { type: string, nullable: true }
         fileHash: { type: string }
         rowCount: { type: integer }
@@ -1325,7 +1325,7 @@ components:
     ImportReport:
       type: object
       properties:
-        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records] }
+        kind: { type: string, enum: [tutors, pets, appointments, exams, vaccines, medical_records, weigh_ins, prescriptions] }
         total: { type: integer }
         created: { type: integer }
         updated: { type: integer }

@@ -1435,7 +1435,9 @@ export const getGetImportTemplateUrl = (
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
 ) => {
   return `/api/import/template/${kind}`;
 };
@@ -1447,7 +1449,9 @@ export const getImportTemplate = async (
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
   options?: RequestInit,
 ): Promise<string> => {
   return customFetch<string>(getGetImportTemplateUrl(kind), {
@@ -1463,7 +1467,9 @@ export const getGetImportTemplateQueryKey = (
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
 ) => {
   return [`/api/import/template/${kind}`] as const;
 };
@@ -1478,7 +1484,9 @@ export const getGetImportTemplateQueryOptions = <
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImportTemplate>>,
@@ -1527,7 +1535,9 @@ export function useGetImportTemplate<
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImportTemplate>>,
@@ -1631,7 +1641,9 @@ export const getRunImportUrl = (
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
 ) => {
   return `/api/import/${kind}`;
 };
@@ -1643,7 +1655,9 @@ export const runImport = async (
     | "appointments"
     | "exams"
     | "vaccines"
-    | "medical_records",
+    | "medical_records"
+    | "weigh_ins"
+    | "prescriptions",
   runImportBody: RunImportBody,
   options?: RequestInit,
 ): Promise<ImportReport> => {
@@ -1669,7 +1683,9 @@ export const getRunImportMutationOptions = <
         | "appointments"
         | "exams"
         | "vaccines"
-        | "medical_records";
+        | "medical_records"
+        | "weigh_ins"
+        | "prescriptions";
       data: BodyType<RunImportBody>;
     },
     TContext
@@ -1685,7 +1701,9 @@ export const getRunImportMutationOptions = <
       | "appointments"
       | "exams"
       | "vaccines"
-      | "medical_records";
+      | "medical_records"
+      | "weigh_ins"
+      | "prescriptions";
     data: BodyType<RunImportBody>;
   },
   TContext
@@ -1708,7 +1726,9 @@ export const getRunImportMutationOptions = <
         | "appointments"
         | "exams"
         | "vaccines"
-        | "medical_records";
+        | "medical_records"
+        | "weigh_ins"
+        | "prescriptions";
       data: BodyType<RunImportBody>;
     }
   > = (props) => {
@@ -1743,7 +1763,9 @@ export const useRunImport = <
         | "appointments"
         | "exams"
         | "vaccines"
-        | "medical_records";
+        | "medical_records"
+        | "weigh_ins"
+        | "prescriptions";
       data: BodyType<RunImportBody>;
     },
     TContext
@@ -1759,7 +1781,9 @@ export const useRunImport = <
       | "appointments"
       | "exams"
       | "vaccines"
-      | "medical_records";
+      | "medical_records"
+      | "weigh_ins"
+      | "prescriptions";
     data: BodyType<RunImportBody>;
   },
   TContext

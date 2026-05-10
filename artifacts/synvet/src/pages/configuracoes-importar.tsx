@@ -10,6 +10,8 @@ import {
   FileText,
   ArrowLeft,
   History,
+  Scale,
+  Pill,
 } from "lucide-react";
 import { Link } from "wouter";
 import { ImportWizard, type ImportField } from "@/components/import/ImportWizard";
@@ -37,6 +39,8 @@ const KIND_LABELS: Record<ImportHistoryEntry["kind"], string> = {
   exams: "Exames",
   vaccines: "Vacinas",
   medical_records: "Prontuários",
+  weigh_ins: "Pesagens",
+  prescriptions: "Prescrições",
 };
 
 const TUTOR_FIELDS: ImportField[] = [
@@ -90,6 +94,26 @@ const VACCINE_FIELDS: ImportField[] = [
   { key: "vaccine", label: "Vacina", required: true, aliases: ["vacina", "nome", "name"] },
   { key: "nextDueAt", label: "Próxima dose (YYYY-MM-DD)", aliases: ["nextdueat", "proximadose", "proxima"] },
   { key: "notes", label: "Observações (lote, fabricante…)", aliases: ["notas", "observacoes", "obs", "lote"] },
+];
+
+const WEIGH_IN_FIELDS: ImportField[] = [
+  { key: "weighedAt", label: "Data da pesagem (YYYY-MM-DD ou DD/MM/AAAA)", required: true, aliases: ["data", "weighedat", "datadapesagem"] },
+  { key: "petName", label: "Nome do pet", required: true, aliases: ["pet", "paciente"] },
+  { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
+  { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "weightKg", label: "Peso (kg)", required: true, aliases: ["peso", "peso_kg", "pesokg", "weight"] },
+  { key: "notes", label: "Observações", aliases: ["notas", "observacoes", "obs"] },
+];
+
+const PRESCRIPTION_FIELDS: ImportField[] = [
+  { key: "prescribedAt", label: "Data da prescrição (YYYY-MM-DD ou DD/MM/AAAA)", required: true, aliases: ["data", "prescribedat", "dataprescricao"] },
+  { key: "petName", label: "Nome do pet", required: true, aliases: ["pet", "paciente"] },
+  { key: "tutorEmail", label: "E-mail do tutor", aliases: ["tutoremail", "emailtutor"] },
+  { key: "tutorPhone", label: "Telefone do tutor", aliases: ["tutorphone", "telefonetutor"] },
+  { key: "medication", label: "Medicamento", required: true, aliases: ["medicamento", "remedio", "remédio", "droga", "farmaco", "fármaco"] },
+  { key: "dosage", label: "Posologia", aliases: ["posologia", "dose", "dosagem"] },
+  { key: "duration", label: "Duração", aliases: ["duracao", "duração", "tempo", "periodo", "período"] },
+  { key: "notes", label: "Observações", aliases: ["notas", "observacoes", "obs"] },
 ];
 
 const RECORD_FIELDS: ImportField[] = [
@@ -148,7 +172,7 @@ export default function ConfiguracoesImportar() {
       </Alert>
 
       <Tabs defaultValue="tutors" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 max-w-4xl">
           <TabsTrigger value="tutors" data-testid="import-tab-tutors">
             <Users className="w-4 h-4 mr-1.5" />
             Tutores
@@ -172,6 +196,14 @@ export default function ConfiguracoesImportar() {
           <TabsTrigger value="medical_records" data-testid="import-tab-medical-records">
             <FileText className="w-4 h-4 mr-1.5" />
             Prontuários
+          </TabsTrigger>
+          <TabsTrigger value="weigh_ins" data-testid="import-tab-weigh-ins">
+            <Scale className="w-4 h-4 mr-1.5" />
+            Pesagens
+          </TabsTrigger>
+          <TabsTrigger value="prescriptions" data-testid="import-tab-prescriptions">
+            <Pill className="w-4 h-4 mr-1.5" />
+            Prescrições
           </TabsTrigger>
         </TabsList>
 
@@ -215,6 +247,20 @@ export default function ConfiguracoesImportar() {
             kind="medical_records"
             fields={RECORD_FIELDS}
             helperText="Texto livre datado. Cada linha gera um registro novo (sem dedupe). A data preserva a do sistema antigo."
+          />
+        </TabsContent>
+        <TabsContent value="weigh_ins" className="mt-6">
+          <ImportWizard
+            kind="weigh_ins"
+            fields={WEIGH_IN_FIELDS}
+            helperText="Cada pesagem é um ponto na curva de evolução — sem dedupe. Identifique o pet por nome + e-mail/telefone do tutor já cadastrado."
+          />
+        </TabsContent>
+        <TabsContent value="prescriptions" className="mt-6">
+          <ImportWizard
+            kind="prescriptions"
+            fields={PRESCRIPTION_FIELDS}
+            helperText="Cada linha gera uma prescrição nova (sem dedupe). Identifique o pet por nome + e-mail/telefone do tutor já cadastrado."
           />
         </TabsContent>
       </Tabs>

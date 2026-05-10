@@ -20,7 +20,16 @@ export const importLogsTable = pgTable(
       onDelete: "set null",
     }),
     kind: text("kind", {
-      enum: ["tutors", "pets", "appointments", "exams", "vaccines", "medical_records"],
+      enum: [
+        "tutors",
+        "pets",
+        "appointments",
+        "exams",
+        "vaccines",
+        "medical_records",
+        "weigh_ins",
+        "prescriptions",
+      ],
     }).notNull(),
     fileName: text("file_name"),
     fileHash: text("file_hash").notNull(),

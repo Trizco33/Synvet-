@@ -45,7 +45,7 @@ Vars:
 
 - Contrato API: `lib/api-spec/openapi.yaml`
 - Hooks/schemas gerados: `lib/api-client-react/src/generated`, `lib/api-zod/src/generated` (importar via `schemas.*`)
-- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**, **email-sends**, **import-logs**)
+- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**, **email-sends**, **import-logs**, **weigh-ins**, **prescriptions**)
 - Catálogo de planos: `lib/db/src/billing.ts` (server) + `artifacts/synvet/src/lib/plans.ts` (cliente, manter em sincronia)
 - Stripe (Fase B1): `artifacts/api-server/src/lib/stripe.ts` (client + helpers price↔plan), `routes/billing.ts` (checkout/portal — admin tenant), `routes/billing-webhook.ts` (raw body, montado no `app.ts` ANTES do `express.json`), schema `lib/db/src/schema/stripe-events.ts` (idempotência)
 - Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms,admin,billing}.ts` (auth/leads/**admin** são públicos no roteador raiz, montados ANTES do `authMiddleware` tenant — admin tem `superAdminMiddleware` próprio; **billing** segue tenant authMiddleware com `requireRole("admin")`. Webhook é montado direto no `app`, fora do router)

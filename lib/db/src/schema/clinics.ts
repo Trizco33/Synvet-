@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const CLINIC_PLANS = ["trial", "essencial", "pro", "clinic_plus"] as const;
 export type ClinicPlan = (typeof CLINIC_PLANS)[number];
@@ -24,6 +24,9 @@ export const clinicsTable = pgTable("clinics", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  // Preferências de notificação (e-mails opcionais — opt-out por clínica).
+  // Recibos, falhas de pagamento e convites de equipe NÃO são opt-out.
+  notifyTrialReminder: boolean("notify_trial_reminder").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

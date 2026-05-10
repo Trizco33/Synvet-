@@ -4,10 +4,13 @@ import {
   useGetMe,
   useListTeam,
   useUpdateTeamMember,
+  useUpdateNotificationPrefs,
+  getGetMeQueryKey,
   getListTeamQueryKey,
   type TeamMember,
   type UpdateTeamMemberBodyRole,
 } from "@workspace/api-client-react";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -26,14 +29,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Building, MapPin, Phone, FileText, Users, Sparkles, UserCircle } from "lucide-react";
+import { Building, MapPin, Phone, FileText, Users, Sparkles, UserCircle, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubscriptionCard } from "@/components/billing/SubscriptionCard";
 import { useLocation } from "wouter";
 
-const VALID_TABS = ["geral", "equipe", "assinatura"] as const;
+const VALID_TABS = ["geral", "equipe", "assinatura", "notificacoes"] as const;
 type ConfigTab = (typeof VALID_TABS)[number];
 
 function readTabFromUrl(): ConfigTab {
@@ -145,7 +148,7 @@ export default function Configuracoes() {
       </div>
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
           <TabsTrigger value="geral" data-testid="tab-geral">
             <Building className="w-4 h-4 mr-1.5" /> Geral
           </TabsTrigger>
@@ -154,6 +157,9 @@ export default function Configuracoes() {
           </TabsTrigger>
           <TabsTrigger value="assinatura" data-testid="tab-assinatura">
             <Sparkles className="w-4 h-4 mr-1.5" /> Assinatura
+          </TabsTrigger>
+          <TabsTrigger value="notificacoes" data-testid="tab-notificacoes">
+            <Bell className="w-4 h-4 mr-1.5" /> Notificações
           </TabsTrigger>
         </TabsList>
 
@@ -278,7 +284,73 @@ export default function Configuracoes() {
         <TabsContent value="assinatura" className="space-y-6 mt-6">
           <SubscriptionCard />
         </TabsContent>
+
+        <TabsContent value="notificacoes" className="space-y-6 mt-6">
+          <NotificationsSection canManage={isAdmin} />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function NotificationsSection({ canManage }: { canManage: boolean }) {
+  const { data: me, isLoading } = useGetMe();
+  const queryClient = useQueryClient();
+  const updatePrefs = useUpdateNotificationPrefs();
+  const trialReminder = me?.notifications?.notifyTrialReminder ?? true;
+
+  const handleToggleTrial = (next: boolean) => {
+    updatePrefs.mutate(
+      { data: { notifyTrialReminder: next } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          toast.success("Preferência atualizada");
+        },
+        onError: () => toast.error("Falha ao atualizar preferência"),
+      },
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary" />
+            Notificações por e-mail
+          </CardTitle>
+          <CardDescription>
+            Controle quais e-mails opcionais sua clínica recebe. Recibos de pagamento, falhas de
+            cobrança e convites de equipe são transacionais e não podem ser desativados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading ? (
+            <Skeleton className="h-12 w-full" />
+          ) : (
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 p-4">
+              <div className="space-y-1">
+                <p className="font-medium leading-none">Lembretes de fim de trial</p>
+                <p className="text-sm text-muted-foreground">
+                  Avisos quando faltam 3 dias para o trial expirar e quando ele termina.
+                </p>
+              </div>
+              <Switch
+                checked={trialReminder}
+                disabled={!canManage || updatePrefs.isPending}
+                onCheckedChange={handleToggleTrial}
+                data-testid="toggle-trial-reminder"
+              />
+            </div>
+          )}
+          {!canManage && (
+            <p className="text-xs text-muted-foreground">
+              Apenas administradores podem alterar as preferências da clínica.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

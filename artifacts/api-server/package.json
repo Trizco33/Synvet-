@@ -21,6 +21,7 @@
     "express-rate-limit": "^7.4.1",
     "pino": "^9",
     "pino-http": "^10",
+    "resend": "^6.12.3",
     "stripe": "^20.4.1",
     "stripe-replit-sync": "^1.0.0"
   },

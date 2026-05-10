@@ -12,3 +12,4 @@ export * from "./leads";
 export * from "./comms";
 export * from "./platform-admins";
 export * from "./stripe-events";
+export * from "./email-sends";

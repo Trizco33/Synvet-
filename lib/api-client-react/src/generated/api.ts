@@ -67,6 +67,7 @@ import type {
   ListTutorsParams,
   MeResponse,
   MedicalRecord,
+  NotificationPrefs,
   Pet,
   PetDetail,
   PetWithTutor,
@@ -87,6 +88,7 @@ import type {
   UpdateCommsChannelBody,
   UpdateCommsTemplateBody,
   UpdateConsultationBody,
+  UpdateNotificationPrefsBody,
   UpdatePetBody,
   UpdateTeamMemberBody,
   UpdateTutorBody,
@@ -240,6 +242,93 @@ export function useGetMe<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Atualizar preferências de notificação por e-mail (admin)
+ */
+export const getUpdateNotificationPrefsUrl = () => {
+  return `/api/me/notifications`;
+};
+
+export const updateNotificationPrefs = async (
+  updateNotificationPrefsBody: UpdateNotificationPrefsBody,
+  options?: RequestInit,
+): Promise<NotificationPrefs> => {
+  return customFetch<NotificationPrefs>(getUpdateNotificationPrefsUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateNotificationPrefsBody),
+  });
+};
+
+export const getUpdateNotificationPrefsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNotificationPrefs>>,
+    TError,
+    { data: BodyType<UpdateNotificationPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateNotificationPrefs>>,
+  TError,
+  { data: BodyType<UpdateNotificationPrefsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateNotificationPrefs"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateNotificationPrefs>>,
+    { data: BodyType<UpdateNotificationPrefsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateNotificationPrefs(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateNotificationPrefsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateNotificationPrefs>>
+>;
+export type UpdateNotificationPrefsMutationBody =
+  BodyType<UpdateNotificationPrefsBody>;
+export type UpdateNotificationPrefsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Atualizar preferências de notificação por e-mail (admin)
+ */
+export const useUpdateNotificationPrefs = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNotificationPrefs>>,
+    TError,
+    { data: BodyType<UpdateNotificationPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateNotificationPrefs>>,
+  TError,
+  { data: BodyType<UpdateNotificationPrefsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateNotificationPrefsMutationOptions(options));
+};
 
 /**
  * @summary Dados da clínica do usuário

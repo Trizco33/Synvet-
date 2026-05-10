@@ -19,6 +19,7 @@ Vars:
 - Comunicação: `COMMS_PROVIDER=mock` (default) | `evolution` (stub — ver docs).
 - Back-office: `SUPERADMIN_EMAIL` (CSV opcional) — e-mails promovidos a superadmin no boot. Sem isso, ninguém vê `/admin`.
 - Stripe (Fase B1): chaves vêm do Replit connector (sem env). Necessárias: `STRIPE_PRICE_ESSENCIAL`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_CLINIC_PLUS` (price IDs recurring) e `STRIPE_WEBHOOK_SECRET` (`whsec_…` do endpoint configurado no Dashboard apontando para `/api/billing/webhook`). Sem isso, checkout/portal devolvem 503.
+- E-mails (Fase B3): `RESEND_API_KEY` (Resend connector) + `EMAIL_FROM` (default `Synvet <ola@synvet.app.br>`). Sem chave → provider `mock` (loga, não envia). Override: `EMAIL_PROVIDER=mock|resend`. `APP_URL` define base dos CTAs.
 
 ## Stack
 
@@ -44,7 +45,7 @@ Vars:
 
 - Contrato API: `lib/api-spec/openapi.yaml`
 - Hooks/schemas gerados: `lib/api-client-react/src/generated`, `lib/api-zod/src/generated` (importar via `schemas.*`)
-- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**)
+- Schema do banco: `lib/db/src/schema/*.ts` (clinics, users, tutors, pets, consultations, anamneses, exams, vaccines, medical-records, copilot, leads, comms, **platform-admins**, **email-sends**)
 - Catálogo de planos: `lib/db/src/billing.ts` (server) + `artifacts/synvet/src/lib/plans.ts` (cliente, manter em sincronia)
 - Stripe (Fase B1): `artifacts/api-server/src/lib/stripe.ts` (client + helpers price↔plan), `routes/billing.ts` (checkout/portal — admin tenant), `routes/billing-webhook.ts` (raw body, montado no `app.ts` ANTES do `express.json`), schema `lib/db/src/schema/stripe-events.ts` (idempotência)
 - Rotas da API: `artifacts/api-server/src/routes/{health,auth,leads,me,tutors,pets,consultations,exams,dashboard,timeline,team,storage,ai,copilot,comms,admin,billing}.ts` (auth/leads/**admin** são públicos no roteador raiz, montados ANTES do `authMiddleware` tenant — admin tem `superAdminMiddleware` próprio; **billing** segue tenant authMiddleware com `requireRole("admin")`. Webhook é montado direto no `app`, fora do router)
@@ -60,6 +61,7 @@ Vars:
 - Layout: `artifacts/synvet/src/components/layout/{AppLayout,BottomNav}.tsx`
 - Hooks: `artifacts/synvet/src/hooks/{use-auth,use-permissions,use-mobile,use-toast}.tsx`
 - Comunicação: `artifacts/api-server/src/comms/{event-bus,templates,automations,scheduler,seed,index}.ts` + `providers/`
+- E-mails transacionais: `artifacts/api-server/src/lib/email/{index,templates,scheduler}.ts` (provider mock|resend, idempotência via `email_sends`, scheduler horário para trial-3d/trial-ended). Wired em `routes/auth.ts` (welcome) e `routes/billing-webhook.ts` (payment_succeeded/failed). Aba **Notificações** em Configurações controla `notifyTrialReminder` via `PATCH /me/notifications`.
 - Auth client: `artifacts/synvet/src/lib/supabase.ts`, `src/hooks/use-auth.tsx`
 - Storage client (signed upload + XHR progress): `artifacts/synvet/src/lib/storage.ts`
 
@@ -102,6 +104,7 @@ Vars:
 - `docs/architecture/leads-and-signup.md` — leads do site + signup público
 - `docs/architecture/billing.md` — trial automático + catálogo de planos (Fase A)
 - `docs/architecture/back-office.md` — `/admin/*`, role superadmin e `platform_admins`
+- `docs/architecture/emails.md` — e-mails transacionais (templates, idempotência, scheduler, opt-out)
 
 ## Gotchas críticos
 

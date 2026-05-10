@@ -6,11 +6,44 @@
 // através do mesmo request id. O logger global só é usado em paths que não têm
 // acesso ao request (ex.: módulo seed).
 import express, { type Express, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 import type { Logger } from "pino";
-import { db, clinicsTable, stripeEventsTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import { db, clinicsTable, usersTable, stripeEventsTable, PLANS } from "@workspace/db";
 import { getStripeClient, getPlanByPriceId, mapSubscriptionStatus } from "../lib/stripe";
+import { sendEmail } from "../lib/email";
+
+function appUrl(req: Request): string {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  const host = req.get("x-forwarded-host") ?? req.get("host") ?? "synvet.app.br";
+  const proto = req.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
+
+async function getClinicByCustomerId(customerId: string) {
+  const [clinic] = await db
+    .select()
+    .from(clinicsTable)
+    .where(eq(clinicsTable.stripeCustomerId, customerId));
+  return clinic ?? null;
+}
+
+async function getClinicAdminContact(clinicId: string) {
+  const [admin] = await db
+    .select({ email: usersTable.email, name: usersTable.name })
+    .from(usersTable)
+    .where(and(eq(usersTable.clinicId, clinicId), eq(usersTable.role, "admin")))
+    .limit(1);
+  return admin ?? null;
+}
+
+function formatBrlFromCents(amountCents: number, currency: string): string {
+  const amount = amountCents / 100;
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: currency?.toUpperCase() || "BRL",
+  }).format(amount);
+}
 
 async function syncSubscriptionToClinic(
   subscription: Stripe.Subscription,
@@ -80,7 +113,7 @@ async function syncSubscriptionToClinic(
   );
 }
 
-async function handleEvent(event: Stripe.Event, log: Logger): Promise<void> {
+async function handleEvent(event: Stripe.Event, log: Logger, req: Request): Promise<void> {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
@@ -103,6 +136,58 @@ async function handleEvent(event: Stripe.Event, log: Logger): Promise<void> {
       const stripe = await getStripeClient();
       const sub = await stripe.subscriptions.retrieve(subId);
       await syncSubscriptionToClinic(sub, log);
+
+      // E-mail transacional (recibo / aviso de falha). Idempotência via
+      // stripeEventId — Stripe pode reenviar o mesmo evento N vezes.
+      const customerId =
+        typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? null;
+      if (!customerId) return;
+      const clinic = await getClinicByCustomerId(customerId);
+      if (!clinic) return;
+      const admin = await getClinicAdminContact(clinic.id);
+      if (!admin?.email) return;
+
+      if (event.type === "invoice.payment_succeeded") {
+        const planName = PLANS[clinic.plan]?.name ?? clinic.plan;
+        const amountCents = invoice.amount_paid ?? invoice.amount_due ?? 0;
+        const currency = invoice.currency ?? "brl";
+        const periodEnd = (
+          sub as Stripe.Subscription & { current_period_end?: number }
+        ).current_period_end;
+        const nextChargeAt = periodEnd
+          ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(
+              new Date(periodEnd * 1000),
+            )
+          : null;
+        await sendEmail({
+          to: admin.email,
+          template: "payment_succeeded",
+          data: {
+            name: admin.name ?? "veterinário(a)",
+            clinicName: clinic.name,
+            planName,
+            amountBrl: formatBrlFromCents(amountCents, currency),
+            invoiceUrl: invoice.hosted_invoice_url ?? null,
+            nextChargeAt,
+          },
+          idempotencyKey: `payment-succeeded:${event.id}`,
+          clinicId: clinic.id,
+          log,
+        });
+      } else {
+        await sendEmail({
+          to: admin.email,
+          template: "payment_failed",
+          data: {
+            name: admin.name ?? "veterinário(a)",
+            clinicName: clinic.name,
+            portalUrl: `${appUrl(req)}/app/configuracoes?tab=assinatura`,
+          },
+          idempotencyKey: `payment-failed:${event.id}`,
+          clinicId: clinic.id,
+          log,
+        });
+      }
       return;
     }
     case "checkout.session.completed": {
@@ -170,7 +255,7 @@ export function mountBillingWebhook(app: Express): void {
       }
 
       try {
-        await handleEvent(event, log);
+        await handleEvent(event, log, req);
       } catch (err) {
         // Falha transitória → 500 faz o Stripe retentar. NÃO marcar como processado.
         log.error(

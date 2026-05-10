@@ -28,9 +28,43 @@ router.get("/me", async (req, res): Promise<void> => {
       role: user.role,
       billing: buildBillingStatus(clinic),
       isSuperAdmin: Boolean(superAdmin),
+      notifications: {
+        notifyTrialReminder: clinic.notifyTrialReminder,
+      },
     }),
   );
 });
+
+router.patch(
+  "/me/notifications",
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const user = requireAuth(req);
+    const parsed = schemas.UpdateNotificationPrefsBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const patch: { notifyTrialReminder?: boolean; updatedAt: Date } = { updatedAt: new Date() };
+    if (typeof parsed.data.notifyTrialReminder === "boolean") {
+      patch.notifyTrialReminder = parsed.data.notifyTrialReminder;
+    }
+    const [updated] = await db
+      .update(clinicsTable)
+      .set(patch)
+      .where(eq(clinicsTable.id, user.clinicId))
+      .returning({ notifyTrialReminder: clinicsTable.notifyTrialReminder });
+    if (!updated) {
+      res.status(404).json({ error: "Clinic not found" });
+      return;
+    }
+    res.json(
+      schemas.UpdateNotificationPrefsResponse.parse({
+        notifyTrialReminder: updated.notifyTrialReminder,
+      }),
+    );
+  },
+);
 
 router.get("/clinic", async (req, res): Promise<void> => {
   const user = requireAuth(req);

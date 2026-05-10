@@ -66,6 +66,11 @@ clínica nunca foi cobrada.
   source: BillingStatusSource;
 }
 
+export interface NotificationPrefs {
+  /** Lembretes de fim de trial (3 dias antes / no dia). */
+  notifyTrialReminder: boolean;
+}
+
 export interface MeResponse {
   userId: string;
   email: string;
@@ -74,6 +79,7 @@ export interface MeResponse {
   role: MeResponseRole;
   billing: BillingStatus;
   isSuperAdmin: boolean;
+  notifications: NotificationPrefs;
 }
 
 export type ClinicPlan = (typeof ClinicPlan)[keyof typeof ClinicPlan];
@@ -139,6 +145,10 @@ export interface UpdateClinicBody {
   cnpj?: string | null;
   phone?: string | null;
   address?: string | null;
+}
+
+export interface UpdateNotificationPrefsBody {
+  notifyTrialReminder?: boolean;
 }
 
 export interface DashboardSummary {

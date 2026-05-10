@@ -7,6 +7,7 @@
  */
 import type { BillingStatus } from "./billingStatus";
 import type { MeResponseRole } from "./meResponseRole";
+import type { NotificationPrefs } from "./notificationPrefs";
 
 export interface MeResponse {
   userId: string;
@@ -16,4 +17,5 @@ export interface MeResponse {
   role: MeResponseRole;
   billing: BillingStatus;
   isSuperAdmin: boolean;
+  notifications: NotificationPrefs;
 }

@@ -61,6 +61,23 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MeResponse" }
 
+  /me/notifications:
+    patch:
+      operationId: updateNotificationPrefs
+      tags: [clinic]
+      summary: Atualizar preferências de notificação por e-mail (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateNotificationPrefsBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPrefs" }
+
   /clinic:
     get:
       operationId: getClinic
@@ -1105,7 +1122,8 @@ components:
         role: { type: string, enum: [vet, admin, assistant] }
         billing: { $ref: "#/components/schemas/BillingStatus" }
         isSuperAdmin: { type: boolean }
-      required: [userId, email, clinicId, role, billing, isSuperAdmin]
+        notifications: { $ref: "#/components/schemas/NotificationPrefs" }
+      required: [userId, email, clinicId, role, billing, isSuperAdmin, notifications]
 
     BillingStatus:
       type: object
@@ -1164,6 +1182,19 @@ components:
         cnpj: { type: string, nullable: true }
         phone: { type: string, nullable: true }
         address: { type: string, nullable: true }
+
+    NotificationPrefs:
+      type: object
+      properties:
+        notifyTrialReminder:
+          type: boolean
+          description: Lembretes de fim de trial (3 dias antes / no dia).
+      required: [notifyTrialReminder]
+
+    UpdateNotificationPrefsBody:
+      type: object
+      properties:
+        notifyTrialReminder: { type: boolean }
 
     DashboardSummary:
       type: object

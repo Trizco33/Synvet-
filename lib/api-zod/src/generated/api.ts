@@ -42,6 +42,24 @@ export const GetMeResponse = zod.object({
       ),
   }),
   isSuperAdmin: zod.boolean(),
+  notifications: zod.object({
+    notifyTrialReminder: zod
+      .boolean()
+      .describe("Lembretes de fim de trial (3 dias antes \/ no dia)."),
+  }),
+});
+
+/**
+ * @summary Atualizar preferências de notificação por e-mail (admin)
+ */
+export const UpdateNotificationPrefsBody = zod.object({
+  notifyTrialReminder: zod.boolean().optional(),
+});
+
+export const UpdateNotificationPrefsResponse = zod.object({
+  notifyTrialReminder: zod
+    .boolean()
+    .describe("Lembretes de fim de trial (3 dias antes \/ no dia)."),
 });
 
 /**

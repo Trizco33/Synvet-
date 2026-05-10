@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from "../lib/supabase";
 import { trialEndsAtFromNow } from "../lib/billing";
 import { isStripeConfigured } from "../lib/stripe";
 import { ensureStripeCustomer } from "./billing";
+import { sendEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -88,6 +89,19 @@ router.post("/auth/signup", signupLimiter, async (req, res): Promise<void> => {
             );
           }
         }
+
+        // E-mail de boas-vindas — best-effort (nunca falha o signup).
+        // Idempotência: por authId garante 1 envio por usuário mesmo em retry.
+        const appUrl =
+          process.env.APP_URL?.replace(/\/$/, "") ?? `${req.protocol}://${req.get("host") ?? ""}`;
+        sendEmail({
+          to: email,
+          template: "welcome",
+          data: { name, clinicName, appUrl },
+          idempotencyKey: `welcome:${authId}`,
+          clinicId: created.id,
+          log: req.log,
+        }).catch((err) => req.log.warn({ err }, "signup: falha ao enviar welcome email"));
       }
     } catch (dbErr) {
       req.log.error({ err: dbErr, authId }, "signup db failure — rolling back supabase user");

@@ -3,6 +3,8 @@ import { logger } from "./lib/logger";
 import { ensureExamsBucket } from "./lib/exam-files";
 import { startCommsModule } from "./comms";
 import { seedPlatformAdmins } from "./lib/seed-platform-admins";
+import { startEmailScheduler } from "./lib/email/scheduler";
+import { emailProviderName } from "./lib/email";
 
 const EXAM_MAX_BYTES = 15 * 1024 * 1024; // 15 MB — alinhado ao limite client-side
 
@@ -11,6 +13,9 @@ ensureExamsBucket(EXAM_MAX_BYTES).catch((err) => {
 });
 
 startCommsModule();
+
+startEmailScheduler();
+logger.info({ provider: emailProviderName() }, "email service inicializado");
 
 seedPlatformAdmins().catch((err) => {
   logger.warn({ err }, "Falha ao seed de platform_admins (segue sem bloquear)");

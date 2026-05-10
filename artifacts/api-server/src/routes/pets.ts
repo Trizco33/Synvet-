@@ -34,6 +34,8 @@ router.get("/pets", async (req, res): Promise<void> => {
         ilike(petsTable.name, `%${q}%`),
         ilike(petsTable.breed, `%${q}%`),
         ilike(tutorsTable.name, `%${q}%`),
+        ilike(petsTable.externalId, `%${q}%`),
+        ilike(tutorsTable.externalId, `%${q}%`),
       )!,
     );
   }
@@ -53,6 +55,7 @@ router.get("/pets", async (req, res): Promise<void> => {
       isCritical: petsTable.isCritical,
       notes: petsTable.notes,
       photoUrl: petsTable.photoUrl,
+      externalId: petsTable.externalId,
       createdAt: petsTable.createdAt,
       updatedAt: petsTable.updatedAt,
       tutorName: tutorsTable.name,

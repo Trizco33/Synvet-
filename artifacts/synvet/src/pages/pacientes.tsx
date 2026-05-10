@@ -376,7 +376,7 @@ export default function Pacientes() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar pacientes..."
+            placeholder="Buscar por nome, raça, tutor ou ID antigo..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -426,6 +426,15 @@ export default function Pacientes() {
                         <p className="text-sm text-muted-foreground truncate">
                           {pet.species}{pet.breed ? ` • ${pet.breed}` : ""}
                         </p>
+                        {pet.externalId && (
+                          <p
+                            className="text-[11px] text-muted-foreground/80 font-mono truncate mt-0.5"
+                            title={`ID do sistema antigo: ${pet.externalId}`}
+                            data-testid={`text-pet-external-id-${pet.id}`}
+                          >
+                            ID antigo: {pet.externalId}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

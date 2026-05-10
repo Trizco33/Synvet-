@@ -21,6 +21,7 @@ router.get("/tutors", async (req, res): Promise<void> => {
           ilike(tutorsTable.name, `%${q}%`),
           ilike(tutorsTable.email, `%${q}%`),
           ilike(tutorsTable.phone, `%${q}%`),
+          ilike(tutorsTable.externalId, `%${q}%`),
         ),
       )
     : eq(tutorsTable.clinicId, user.clinicId);

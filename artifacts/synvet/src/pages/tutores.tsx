@@ -190,7 +190,7 @@ export default function Tutores() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar tutores..."
+            placeholder="Buscar por nome, contato ou ID antigo..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -238,6 +238,15 @@ export default function Tutores() {
                       <p className="text-xs text-muted-foreground">
                         Cadastrado em {format(parseISO(tutor.createdAt), "dd/MM/yyyy")}
                       </p>
+                      {tutor.externalId && (
+                        <p
+                          className="text-[11px] text-muted-foreground/80 font-mono truncate mt-0.5"
+                          title={`ID do sistema antigo: ${tutor.externalId}`}
+                          data-testid={`text-tutor-external-id-${tutor.id}`}
+                        >
+                          ID antigo: {tutor.externalId}
+                        </p>
+                      )}
                     </div>
                   </div>
                   

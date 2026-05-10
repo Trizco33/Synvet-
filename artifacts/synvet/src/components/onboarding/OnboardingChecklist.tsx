@@ -80,7 +80,7 @@ const STEPS: Record<StepId, StepMeta> = {
   choose_plan: {
     title: "Escolher plano",
     description: "Garanta seu acesso após o trial e desbloqueie todos os recursos.",
-    href: "/app/configuracoes",
+    href: "/app/configuracoes?tab=assinatura",
     icon: CreditCard,
   },
 };
@@ -118,6 +118,53 @@ export function OnboardingChecklist() {
   }, [state]);
 
   if (!isAdmin || isLoading || !state || !state.visible) return null;
+
+  if (state.allDone) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card
+          className="relative overflow-hidden border-green-500/30"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(91,140,255,0.08) 100%)",
+          }}
+          data-testid="onboarding-checklist-done"
+        >
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-md shadow-green-500/30 bg-green-500/20"
+              >
+                <Check className="h-5 w-5 text-green-500" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-xl">Tudo pronto</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sua clínica está configurada. Esta mensagem some sozinha na
+                  próxima visita.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={() => dismiss.mutate()}
+              disabled={dismiss.isPending}
+              aria-label="Fechar"
+              data-testid="onboarding-dismiss-done"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+        </Card>
+      </motion.div>
+    );
+  }
 
   return (
     <AnimatePresence>

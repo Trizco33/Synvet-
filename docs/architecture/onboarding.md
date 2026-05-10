@@ -11,8 +11,11 @@ Synvet, encurtando o time-to-value durante o trial de 14 dias.
   descrição e CTA que navega para a página correspondente.
 - Passos concluídos aparecem riscados, opacos e com check verde.
 - Botão "X" no canto superior dispensa permanentemente (preferência por usuário).
-- Quando todos os passos estão concluídos, o card some automaticamente
-  (`visible = false`) na próxima visita ao Dashboard.
+- Quando todos os passos estão concluídos, o card colapsa para o estado
+  "Tudo pronto" (verde, mensagem de sucesso) e some sozinho na próxima visita
+  ao Dashboard. Implementado via coluna `users.onboardingCompletedSeenAt`:
+  o servidor marca a coluna durante o GET quando `allDone` é detectado pela
+  primeira vez, e nas chamadas seguintes devolve `visible = false`.
 
 ## Passos detectados
 

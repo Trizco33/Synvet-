@@ -65,7 +65,10 @@ async function computeState(clinicId: string, authUserId: string) {
       .from(usersTable)
       .where(eq(usersTable.clinicId, clinicId)),
     db
-      .select({ onboardingDismissedAt: usersTable.onboardingDismissedAt })
+      .select({
+        onboardingDismissedAt: usersTable.onboardingDismissedAt,
+        onboardingCompletedSeenAt: usersTable.onboardingCompletedSeenAt,
+      })
       .from(usersTable)
       .where(eq(usersTable.id, authUserId)),
   ]);
@@ -86,13 +89,32 @@ async function computeState(clinicId: string, authUserId: string) {
 
   const allDone = steps.every((s) => s.done);
   const dismissedAt = me?.onboardingDismissedAt ?? null;
+  const completedSeenAt = me?.onboardingCompletedSeenAt ?? null;
+
+  // Visível quando: não dispensado E (ainda há passos abertos OU acabou de
+  // concluir e ainda não viu o estado "Tudo pronto"). O servidor marca
+  // completedSeenAt logo abaixo, então na próxima visita o card some sozinho.
+  const visible = !dismissedAt && (!allDone || !completedSeenAt);
 
   return {
     steps,
     allDone,
     dismissedAt: dismissedAt ? dismissedAt.toISOString() : null,
-    visible: !dismissedAt && !allDone,
+    visible,
   };
+}
+
+async function markCompletedSeenIfNeeded(authUserId: string, allDone: boolean) {
+  if (!allDone) return;
+  await db
+    .update(usersTable)
+    .set({ onboardingCompletedSeenAt: sql`now()`, updatedAt: sql`now()` })
+    .where(
+      and(
+        eq(usersTable.id, authUserId),
+        isNull(usersTable.onboardingCompletedSeenAt),
+      ),
+    );
 }
 
 router.get(
@@ -101,6 +123,9 @@ router.get(
   async (req, res): Promise<void> => {
     const user = requireAuth(req);
     const state = await computeState(user.clinicId, user.id);
+    // Marca "viu o estado concluído" — efeito: o card "Tudo pronto" aparece
+    // apenas uma vez; na próxima visita ao Dashboard, visible=false.
+    await markCompletedSeenIfNeeded(user.id, state.allDone);
     res.json(schemas.GetOnboardingStateResponse.parse(state));
   },
 );

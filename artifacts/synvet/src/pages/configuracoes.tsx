@@ -29,7 +29,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Building, MapPin, Phone, FileText, Users, Sparkles, UserCircle, Bell } from "lucide-react";
+import { Building, MapPin, Phone, FileText, Users, Sparkles, UserCircle, Bell, Upload, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -249,6 +250,29 @@ export default function Configuracoes() {
           </Form>
         </CardContent>
       </Card>
+
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-primary" />
+              Importar dados
+            </CardTitle>
+            <CardDescription>
+              Migre tutores, pacientes e agenda do seu sistema antigo via CSV.
+              Validação automática e dedupe por chave natural.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/app/configuracoes/importar">
+              <Button variant="outline" data-testid="link-importar">
+                Abrir assistente
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

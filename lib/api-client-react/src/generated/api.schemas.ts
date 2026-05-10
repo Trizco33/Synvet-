@@ -151,6 +151,60 @@ export interface UpdateNotificationPrefsBody {
   notifyTrialReminder?: boolean;
 }
 
+export type RunImportBodyMapping = { [key: string]: string };
+
+export type RunImportBodyRowsItem = { [key: string]: string };
+
+export interface RunImportBody {
+  /** @maxLength 200 */
+  fileName?: string | null;
+  /**
+   * @minLength 8
+   * @maxLength 128
+   */
+  fileHash: string;
+  mapping: RunImportBodyMapping;
+  /** @maxItems 5000 */
+  rows: RunImportBodyRowsItem[];
+}
+
+export type ImportRowResultOutcome =
+  (typeof ImportRowResultOutcome)[keyof typeof ImportRowResultOutcome];
+
+export const ImportRowResultOutcome = {
+  created: "created",
+  updated: "updated",
+  skipped: "skipped",
+  error: "error",
+} as const;
+
+export interface ImportRowResult {
+  /** Índice 1-based da linha no arquivo original */
+  row: number;
+  outcome: ImportRowResultOutcome;
+  message?: string | null;
+  id?: string | null;
+}
+
+export type ImportReportKind =
+  (typeof ImportReportKind)[keyof typeof ImportReportKind];
+
+export const ImportReportKind = {
+  tutors: "tutors",
+  pets: "pets",
+  appointments: "appointments",
+} as const;
+
+export interface ImportReport {
+  kind: ImportReportKind;
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  results: ImportRowResult[];
+}
+
 export type OnboardingStepId =
   (typeof OnboardingStepId)[keyof typeof OnboardingStepId];
 

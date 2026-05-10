@@ -36,6 +36,8 @@ tags:
     description: Back-office Synvet (apenas superadmins da plataforma)
   - name: billing
     description: Assinaturas Stripe (checkout + portal)
+  - name: import
+    description: Importação em massa via CSV (tutores, pets, agenda)
 paths:
   /healthz:
     get:
@@ -280,6 +282,49 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminMetrics" }
+
+  /import/template/{kind}:
+    parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          type: string
+          enum: [tutors, pets, appointments]
+    get:
+      operationId: getImportTemplate
+      tags: [import]
+      summary: Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
+      responses:
+        "200":
+          description: OK
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /import/{kind}:
+    parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          type: string
+          enum: [tutors, pets, appointments]
+    post:
+      operationId: runImport
+      tags: [import]
+      summary: Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunImportBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportReport" }
 
   /billing/checkout:
     post:
@@ -1219,6 +1264,45 @@ components:
       type: object
       properties:
         notifyTrialReminder: { type: boolean }
+
+    RunImportBody:
+      type: object
+      properties:
+        fileName: { type: string, nullable: true, maxLength: 200 }
+        fileHash: { type: string, minLength: 8, maxLength: 128 }
+        mapping:
+          type: object
+          additionalProperties: { type: string }
+        rows:
+          type: array
+          maxItems: 5000
+          items:
+            type: object
+            additionalProperties: { type: string }
+      required: [fileHash, mapping, rows]
+
+    ImportRowResult:
+      type: object
+      properties:
+        row: { type: integer, description: "Índice 1-based da linha no arquivo original" }
+        outcome: { type: string, enum: [created, updated, skipped, error] }
+        message: { type: string, nullable: true }
+        id: { type: string, format: uuid, nullable: true }
+      required: [row, outcome]
+
+    ImportReport:
+      type: object
+      properties:
+        kind: { type: string, enum: [tutors, pets, appointments] }
+        total: { type: integer }
+        created: { type: integer }
+        updated: { type: integer }
+        skipped: { type: integer }
+        errors: { type: integer }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/ImportRowResult" }
+      required: [kind, total, created, updated, skipped, errors, results]
 
     OnboardingStep:
       type: object

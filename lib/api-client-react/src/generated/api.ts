@@ -54,6 +54,7 @@ import type {
   Exam,
   ExamWithPet,
   HealthStatus,
+  ImportReport,
   ListCommsAutomationsResponse,
   ListCommsChannelsResponse,
   ListCommsMessagesParams,
@@ -72,6 +73,7 @@ import type {
   Pet,
   PetDetail,
   PetWithTutor,
+  RunImportBody,
   ScheduledConsultation,
   SignedDownloadBody,
   SignedDownloadResponse,
@@ -1421,6 +1423,184 @@ export function useGetAdminMetrics<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
+ */
+export const getGetImportTemplateUrl = (
+  kind: "tutors" | "pets" | "appointments",
+) => {
+  return `/api/import/template/${kind}`;
+};
+
+export const getImportTemplate = async (
+  kind: "tutors" | "pets" | "appointments",
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getGetImportTemplateUrl(kind), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImportTemplateQueryKey = (
+  kind: "tutors" | "pets" | "appointments",
+) => {
+  return [`/api/import/template/${kind}`] as const;
+};
+
+export const getGetImportTemplateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImportTemplate>>,
+  TError = ErrorType<unknown>,
+>(
+  kind: "tutors" | "pets" | "appointments",
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImportTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetImportTemplateQueryKey(kind);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImportTemplate>>
+  > = ({ signal }) => getImportTemplate(kind, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!kind,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImportTemplate>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImportTemplateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImportTemplate>>
+>;
+export type GetImportTemplateQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
+ */
+
+export function useGetImportTemplate<
+  TData = Awaited<ReturnType<typeof getImportTemplate>>,
+  TError = ErrorType<unknown>,
+>(
+  kind: "tutors" | "pets" | "appointments",
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImportTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImportTemplateQueryOptions(kind, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
+ */
+export const getRunImportUrl = (kind: "tutors" | "pets" | "appointments") => {
+  return `/api/import/${kind}`;
+};
+
+export const runImport = async (
+  kind: "tutors" | "pets" | "appointments",
+  runImportBody: RunImportBody,
+  options?: RequestInit,
+): Promise<ImportReport> => {
+  return customFetch<ImportReport>(getRunImportUrl(kind), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(runImportBody),
+  });
+};
+
+export const getRunImportMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runImport>>,
+    TError,
+    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runImport>>,
+  TError,
+  { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+  TContext
+> => {
+  const mutationKey = ["runImport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runImport>>,
+    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> }
+  > = (props) => {
+    const { kind, data } = props ?? {};
+
+    return runImport(kind, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runImport>>
+>;
+export type RunImportMutationBody = BodyType<RunImportBody>;
+export type RunImportMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
+ */
+export const useRunImport = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runImport>>,
+    TError,
+    { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof runImport>>,
+  TError,
+  { kind: "tutors" | "pets" | "appointments"; data: BodyType<RunImportBody> },
+  TContext
+> => {
+  return useMutation(getRunImportMutationOptions(options));
+};
 
 /**
  * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)

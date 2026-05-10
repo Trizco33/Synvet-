@@ -27,6 +27,7 @@ import Consultas from "@/pages/consultas";
 import ConsultationDetail from "@/pages/consultation-detail";
 import Exames from "@/pages/exames";
 import Configuracoes from "@/pages/configuracoes";
+import ConfiguracoesImportar from "@/pages/configuracoes-importar";
 import AssinaturaSucesso from "@/pages/assinatura-sucesso";
 import Comunicacao from "@/pages/comunicacao";
 import NotFound from "@/pages/not-found";
@@ -123,6 +124,7 @@ function Router() {
       <Route path="/app/exames">{() => <ProtectedRoute component={Exames} />}</Route>
       <Route path="/app/comunicacao">{() => <ProtectedRoute component={Comunicacao} />}</Route>
       <Route path="/app/configuracoes">{() => <ProtectedRoute component={Configuracoes} />}</Route>
+      <Route path="/app/configuracoes/importar">{() => <ProtectedRoute component={ConfiguracoesImportar} />}</Route>
       <Route path="/app/configuracoes/assinatura/sucesso">{() => <ProtectedRoute component={AssinaturaSucesso} />}</Route>
 
       <Route component={NotFound} />

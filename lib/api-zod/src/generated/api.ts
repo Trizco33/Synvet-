@@ -320,6 +320,56 @@ export const GetAdminMetricsResponse = zod.object({
 });
 
 /**
+ * @summary Baixa um CSV-modelo do tipo (cabeçalho + 1 linha de exemplo)
+ */
+export const GetImportTemplateParams = zod.object({
+  kind: zod.enum(["tutors", "pets", "appointments"]),
+});
+
+/**
+ * @summary Executa importação em massa (admin) — transação por chunk, idempotente por chave natural
+ */
+export const RunImportParams = zod.object({
+  kind: zod.enum(["tutors", "pets", "appointments"]),
+});
+
+export const runImportBodyFileNameMax = 200;
+
+export const runImportBodyFileHashMin = 8;
+export const runImportBodyFileHashMax = 128;
+
+export const runImportBodyRowsMax = 5000;
+
+export const RunImportBody = zod.object({
+  fileName: zod.string().max(runImportBodyFileNameMax).nullish(),
+  fileHash: zod
+    .string()
+    .min(runImportBodyFileHashMin)
+    .max(runImportBodyFileHashMax),
+  mapping: zod.record(zod.string(), zod.string()),
+  rows: zod
+    .array(zod.record(zod.string(), zod.string()))
+    .max(runImportBodyRowsMax),
+});
+
+export const RunImportResponse = zod.object({
+  kind: zod.enum(["tutors", "pets", "appointments"]),
+  total: zod.number(),
+  created: zod.number(),
+  updated: zod.number(),
+  skipped: zod.number(),
+  errors: zod.number(),
+  results: zod.array(
+    zod.object({
+      row: zod.number().describe("Índice 1-based da linha no arquivo original"),
+      outcome: zod.enum(["created", "updated", "skipped", "error"]),
+      message: zod.string().nullish(),
+      id: zod.string().uuid().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary Cria sessão de Stripe Checkout para upgrade de plano (admin)
  */
 export const CreateBillingCheckoutBody = zod.object({

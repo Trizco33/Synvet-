@@ -124,11 +124,12 @@ export function renderTemplate<T extends TemplateId>(
         ctaText: "Abrir o painel",
         ctaUrl: `${d.appUrl}/app`,
         footerNote: "Você está recebendo porque criou uma conta na Synvet",
+        unsubscribeUrl: unsubUrl(),
       });
       return {
         subject: `Bem-vindo(a) à Synvet, ${d.name}`,
         html,
-        text: `Bem-vindo(a), ${d.name}. A clínica ${d.clinicName} está com 14 dias de trial liberados.\n\nAbra o painel: ${d.appUrl}/app\n\n— Synvet`,
+        text: `Bem-vindo(a), ${d.name}. A clínica ${d.clinicName} está com 14 dias de trial liberados.\n\nAbra o painel: ${d.appUrl}/app\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     case "trial_ending_3d": {
@@ -148,7 +149,7 @@ export function renderTemplate<T extends TemplateId>(
       return {
         subject: `Seu trial Synvet termina em ${d.daysLeft} dias`,
         html,
-        text: `Olá, ${d.name}. O trial da clínica ${d.clinicName} termina em ${d.daysLeft} dias.\n\nEscolha um plano: ${d.upgradeUrl}\n\n— Synvet`,
+        text: `Olá, ${d.name}. O trial da clínica ${d.clinicName} termina em ${d.daysLeft} dias.\n\nEscolha um plano: ${d.upgradeUrl}\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     case "trial_ended": {
@@ -163,11 +164,12 @@ export function renderTemplate<T extends TemplateId>(
         ctaText: "Ativar assinatura",
         ctaUrl: d.upgradeUrl,
         footerNote: "Aviso sobre o status da sua conta",
+        unsubscribeUrl: unsubUrl(),
       });
       return {
         subject: "Seu trial Synvet terminou",
         html,
-        text: `Olá, ${d.name}. O trial da clínica ${d.clinicName} terminou.\n\nAtive uma assinatura para continuar: ${d.upgradeUrl}\n\n— Synvet`,
+        text: `Olá, ${d.name}. O trial da clínica ${d.clinicName} terminou.\n\nAtive uma assinatura para continuar: ${d.upgradeUrl}\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     case "payment_succeeded": {
@@ -188,11 +190,12 @@ export function renderTemplate<T extends TemplateId>(
           ${next}
           ${invoice}`,
         footerNote: "Recibo da sua assinatura — não é possível desativar",
+        unsubscribeUrl: unsubUrl(),
       });
       return {
         subject: `Pagamento confirmado — ${d.planName}`,
         html,
-        text: `Olá, ${d.name}. Pagamento da assinatura ${d.planName} (${d.amountBrl}) recebido.${d.nextChargeAt ? `\nPróxima cobrança: ${d.nextChargeAt}.` : ""}${d.invoiceUrl ? `\nFatura: ${d.invoiceUrl}` : ""}\n\n— Synvet`,
+        text: `Olá, ${d.name}. Pagamento da assinatura ${d.planName} (${d.amountBrl}) recebido.${d.nextChargeAt ? `\nPróxima cobrança: ${d.nextChargeAt}.` : ""}${d.invoiceUrl ? `\nFatura: ${d.invoiceUrl}` : ""}\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     case "payment_failed": {
@@ -207,11 +210,12 @@ export function renderTemplate<T extends TemplateId>(
         ctaText: "Atualizar pagamento",
         ctaUrl: d.portalUrl,
         footerNote: "Aviso crítico sobre sua assinatura",
+        unsubscribeUrl: unsubUrl(),
       });
       return {
         subject: "Falha na cobrança — atualize seu pagamento",
         html,
-        text: `Olá, ${d.name}. A cobrança da clínica ${d.clinicName} falhou. Atualize seu cartão para evitar suspensão: ${d.portalUrl}\n\n— Synvet`,
+        text: `Olá, ${d.name}. A cobrança da clínica ${d.clinicName} falhou. Atualize seu cartão para evitar suspensão: ${d.portalUrl}\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     case "team_invite": {
@@ -227,11 +231,12 @@ export function renderTemplate<T extends TemplateId>(
         ctaText: "Aceitar convite",
         ctaUrl: d.acceptUrl,
         footerNote: "Você está recebendo porque foi convidado(a) por um administrador",
+        unsubscribeUrl: unsubUrl(),
       });
       return {
         subject: `${d.inviterName} te convidou para a clínica ${d.clinicName}`,
         html,
-        text: `${d.inviterName} convidou você para a clínica ${d.clinicName} na Synvet.\n\nAceitar: ${d.acceptUrl}\n\n— Synvet`,
+        text: `${d.inviterName} convidou você para a clínica ${d.clinicName} na Synvet.\n\nAceitar: ${d.acceptUrl}\n\nGerenciar notificações: ${unsubUrl()}\n\n— Synvet`,
       };
     }
     default: {

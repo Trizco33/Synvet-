@@ -68,6 +68,7 @@ import type {
   MeResponse,
   MedicalRecord,
   NotificationPrefs,
+  OnboardingState,
   Pet,
   PetDetail,
   PetWithTutor,
@@ -328,6 +329,162 @@ export const useUpdateNotificationPrefs = <
   TContext
 > => {
   return useMutation(getUpdateNotificationPrefsMutationOptions(options));
+};
+
+/**
+ * @summary Estado do checklist de onboarding (admin)
+ */
+export const getGetOnboardingStateUrl = () => {
+  return `/api/onboarding/state`;
+};
+
+export const getOnboardingState = async (
+  options?: RequestInit,
+): Promise<OnboardingState> => {
+  return customFetch<OnboardingState>(getGetOnboardingStateUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOnboardingStateQueryKey = () => {
+  return [`/api/onboarding/state`] as const;
+};
+
+export const getGetOnboardingStateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOnboardingState>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOnboardingStateQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOnboardingState>>
+  > = ({ signal }) => getOnboardingState({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOnboardingState>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOnboardingStateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOnboardingState>>
+>;
+export type GetOnboardingStateQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Estado do checklist de onboarding (admin)
+ */
+
+export function useGetOnboardingState<
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOnboardingState>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOnboardingStateQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Dispensar permanentemente o checklist de onboarding
+ */
+export const getDismissOnboardingUrl = () => {
+  return `/api/onboarding/dismiss`;
+};
+
+export const dismissOnboarding = async (
+  options?: RequestInit,
+): Promise<OnboardingState> => {
+  return customFetch<OnboardingState>(getDismissOnboardingUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getDismissOnboardingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissOnboarding>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissOnboarding>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["dismissOnboarding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissOnboarding>>,
+    void
+  > = () => {
+    return dismissOnboarding(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissOnboardingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissOnboarding>>
+>;
+
+export type DismissOnboardingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Dispensar permanentemente o checklist de onboarding
+ */
+export const useDismissOnboarding = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissOnboarding>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissOnboarding>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getDismissOnboardingMutationOptions(options));
 };
 
 /**

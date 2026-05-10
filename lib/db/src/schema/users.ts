@@ -16,6 +16,7 @@ export const usersTable = pgTable(
     email: text("email").notNull(),
     name: text("name"),
     role: text("role", { enum: USER_ROLES }).notNull().default("vet"),
+    onboardingDismissedAt: timestamp("onboarding_dismissed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

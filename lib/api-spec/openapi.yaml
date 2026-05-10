@@ -78,6 +78,30 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/NotificationPrefs" }
 
+  /onboarding/state:
+    get:
+      operationId: getOnboardingState
+      tags: [clinic]
+      summary: Estado do checklist de onboarding (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OnboardingState" }
+
+  /onboarding/dismiss:
+    post:
+      operationId: dismissOnboarding
+      tags: [clinic]
+      summary: Dispensar permanentemente o checklist de onboarding
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OnboardingState" }
+
   /clinic:
     get:
       operationId: getClinic
@@ -1195,6 +1219,37 @@ components:
       type: object
       properties:
         notifyTrialReminder: { type: boolean }
+
+    OnboardingStep:
+      type: object
+      properties:
+        id:
+          type: string
+          enum:
+            [
+              clinic_profile,
+              first_patient,
+              first_consultation,
+              comms_template,
+              whatsapp_channel,
+              invite_team,
+              choose_plan,
+            ]
+        done: { type: boolean }
+      required: [id, done]
+
+    OnboardingState:
+      type: object
+      properties:
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/OnboardingStep" }
+        allDone: { type: boolean }
+        dismissedAt: { type: string, format: date-time, nullable: true }
+        visible:
+          type: boolean
+          description: Se o card deve ser exibido (admin, não dispensado, ainda há passo aberto).
+      required: [steps, allDone, dismissedAt, visible]
 
     DashboardSummary:
       type: object

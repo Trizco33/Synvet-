@@ -61,6 +61,7 @@ Vars:
 - Layout: `artifacts/synvet/src/components/layout/{AppLayout,BottomNav}.tsx`
 - Hooks: `artifacts/synvet/src/hooks/{use-auth,use-permissions,use-mobile,use-toast}.tsx`
 - Comunicação: `artifacts/api-server/src/comms/{event-bus,templates,automations,scheduler,seed,index}.ts` + `providers/`
+- Onboarding (Fase B4): `artifacts/api-server/src/routes/onboarding.ts` + `artifacts/synvet/src/components/onboarding/OnboardingChecklist.tsx` (admin-only, dispensável; coluna `users.onboardingDismissedAt`)
 - E-mails transacionais: `artifacts/api-server/src/lib/email/{index,templates,scheduler}.ts` (provider mock|resend, idempotência via `email_sends`, scheduler horário para trial-3d/trial-ended). Wired em `routes/auth.ts` (welcome) e `routes/billing-webhook.ts` (payment_succeeded/failed). Aba **Notificações** em Configurações controla `notifyTrialReminder` via `PATCH /me/notifications`.
 - Auth client: `artifacts/synvet/src/lib/supabase.ts`, `src/hooks/use-auth.tsx`
 - Storage client (signed upload + XHR progress): `artifacts/synvet/src/lib/storage.ts`
@@ -105,6 +106,7 @@ Vars:
 - `docs/architecture/billing.md` — trial automático + catálogo de planos (Fase A)
 - `docs/architecture/back-office.md` — `/admin/*`, role superadmin e `platform_admins`
 - `docs/architecture/emails.md` — e-mails transacionais (templates, idempotência, scheduler, opt-out)
+- `docs/architecture/onboarding.md` — checklist de onboarding in-app (Fase B4)
 
 ## Gotchas críticos
 

@@ -16,6 +16,7 @@ import copilotRouter from "./copilot";
 import commsRouter from "./comms";
 import adminRouter from "./admin";
 import billingRouter from "./billing";
+import onboardingRouter from "./onboarding";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -42,5 +43,6 @@ router.use(aiRouter);
 router.use(copilotRouter);
 router.use(commsRouter);
 router.use(billingRouter);
+router.use(onboardingRouter);
 
 export default router;

@@ -63,6 +63,60 @@ export const UpdateNotificationPrefsResponse = zod.object({
 });
 
 /**
+ * @summary Estado do checklist de onboarding (admin)
+ */
+export const GetOnboardingStateResponse = zod.object({
+  steps: zod.array(
+    zod.object({
+      id: zod.enum([
+        "clinic_profile",
+        "first_patient",
+        "first_consultation",
+        "comms_template",
+        "whatsapp_channel",
+        "invite_team",
+        "choose_plan",
+      ]),
+      done: zod.boolean(),
+    }),
+  ),
+  allDone: zod.boolean(),
+  dismissedAt: zod.coerce.date().nullable(),
+  visible: zod
+    .boolean()
+    .describe(
+      "Se o card deve ser exibido (admin, não dispensado, ainda há passo aberto).",
+    ),
+});
+
+/**
+ * @summary Dispensar permanentemente o checklist de onboarding
+ */
+export const DismissOnboardingResponse = zod.object({
+  steps: zod.array(
+    zod.object({
+      id: zod.enum([
+        "clinic_profile",
+        "first_patient",
+        "first_consultation",
+        "comms_template",
+        "whatsapp_channel",
+        "invite_team",
+        "choose_plan",
+      ]),
+      done: zod.boolean(),
+    }),
+  ),
+  allDone: zod.boolean(),
+  dismissedAt: zod.coerce.date().nullable(),
+  visible: zod
+    .boolean()
+    .describe(
+      "Se o card deve ser exibido (admin, não dispensado, ainda há passo aberto).",
+    ),
+});
+
+/**
  * @summary Dados da clínica do usuário
  */
 export const GetClinicResponse = zod.object({

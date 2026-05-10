@@ -151,6 +151,32 @@ export interface UpdateNotificationPrefsBody {
   notifyTrialReminder?: boolean;
 }
 
+export type OnboardingStepId =
+  (typeof OnboardingStepId)[keyof typeof OnboardingStepId];
+
+export const OnboardingStepId = {
+  clinic_profile: "clinic_profile",
+  first_patient: "first_patient",
+  first_consultation: "first_consultation",
+  comms_template: "comms_template",
+  whatsapp_channel: "whatsapp_channel",
+  invite_team: "invite_team",
+  choose_plan: "choose_plan",
+} as const;
+
+export interface OnboardingStep {
+  id: OnboardingStepId;
+  done: boolean;
+}
+
+export interface OnboardingState {
+  steps: OnboardingStep[];
+  allDone: boolean;
+  dismissedAt: string | null;
+  /** Se o card deve ser exibido (admin, não dispensado, ainda há passo aberto). */
+  visible: boolean;
+}
+
 export interface DashboardSummary {
   totalPatients: number;
   consultationsToday: number;

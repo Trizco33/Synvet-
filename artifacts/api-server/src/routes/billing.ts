@@ -17,8 +17,20 @@ function appOrigin(req: import("express").Request): string {
   return `${xfProto}://${xfHost}`;
 }
 
-/** Garante que a clínica tem um `stripeCustomerId` — cria se faltar. */
-async function ensureStripeCustomer(
+/**
+ * Garante que a clínica tem um `stripeCustomerId` — cria se faltar.
+ *
+ * Idempotência: a criação usa `idempotency_key = clinic:<id>` para que
+ * múltiplas chamadas concorrentes (signup + primeiro checkout, retry após
+ * timeout, etc.) NÃO gerem clientes duplicados no Stripe. O Stripe devolve
+ * o mesmo Customer para a mesma idempotency_key dentro de 24h.
+ *
+ * Esta é a fonte de verdade do contrato signup→customer: signup tenta
+ * best-effort criar o customer, mas se falhar (rede, connector), o primeiro
+ * checkout/portal cria de forma idempotente. Garante eventual consistência
+ * sem nunca duplicar.
+ */
+export async function ensureStripeCustomer(
   clinicId: string,
   email: string,
   name: string,
@@ -31,11 +43,14 @@ async function ensureStripeCustomer(
   if (clinic.stripeCustomerId) return clinic.stripeCustomerId;
 
   const stripe = await getStripeClient();
-  const customer = await stripe.customers.create({
-    email,
-    name: clinic.name,
-    metadata: { clinicId, ownerEmail: email, ownerName: name },
-  });
+  const customer = await stripe.customers.create(
+    {
+      email,
+      name: clinic.name,
+      metadata: { clinicId, ownerEmail: email, ownerName: name },
+    },
+    { idempotencyKey: `clinic-customer:${clinicId}` },
+  );
   await db
     .update(clinicsTable)
     .set({ stripeCustomerId: customer.id, updatedAt: new Date() })

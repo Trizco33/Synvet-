@@ -141,9 +141,14 @@ export function mountBillingWebhook(app: Express): void {
         return;
       }
 
+      // Crítico: getStripeClient() pode falhar por motivos transitórios
+      // (connector token expirado, network). Esses não são erros de
+      // assinatura — devem propagar como 500 para Stripe retentar, NÃO 400.
+      // Por isso só envolvemos constructEvent no try/catch de assinatura.
+      const stripe = await getStripeClient();
+
       let event: Stripe.Event;
       try {
-        const stripe = await getStripeClient();
         event = stripe.webhooks.constructEvent(req.body, sig, secret);
       } catch (err) {
         log.warn({ err }, "stripe webhook: assinatura inválida");

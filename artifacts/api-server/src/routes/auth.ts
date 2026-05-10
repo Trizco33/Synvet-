@@ -5,7 +5,8 @@ import { db, clinicsTable, usersTable } from "@workspace/db";
 import { schemas } from "@workspace/api-zod";
 import { getSupabaseAdmin } from "../lib/supabase";
 import { trialEndsAtFromNow } from "../lib/billing";
-import { getStripeClient, isStripeConfigured } from "../lib/stripe";
+import { isStripeConfigured } from "../lib/stripe";
+import { ensureStripeCustomer } from "./billing";
 
 const router: IRouter = Router();
 
@@ -74,24 +75,16 @@ router.post("/auth/signup", signupLimiter, async (req, res): Promise<void> => {
           return clinic;
         });
 
-        // Best-effort: cria Stripe Customer já no signup. Falha silenciosa —
-        // o checkout/portal cria lazy se faltar.
+        // Best-effort: cria Stripe Customer já no signup via ensureStripeCustomer
+        // (idempotência via idempotency_key). Se falhar (rede/connector),
+        // o primeiro checkout/portal recria sem duplicar — contrato eventual.
         if (await isStripeConfigured()) {
           try {
-            const stripe = await getStripeClient();
-            const customer = await stripe.customers.create({
-              email,
-              name: created.name,
-              metadata: { clinicId: created.id, ownerEmail: email, ownerName: name },
-            });
-            await db
-              .update(clinicsTable)
-              .set({ stripeCustomerId: customer.id, updatedAt: new Date() })
-              .where(eq(clinicsTable.id, created.id));
+            await ensureStripeCustomer(created.id, email, name);
           } catch (stripeErr) {
             req.log.warn(
               { err: stripeErr, clinicId: created.id },
-              "signup: falha ao criar Stripe customer (será criado no checkout)",
+              "signup: falha ao criar Stripe customer (recuperável no checkout)",
             );
           }
         }

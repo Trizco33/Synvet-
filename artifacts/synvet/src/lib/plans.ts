@@ -59,7 +59,15 @@ export const PLANS: Record<PlanId, PlanInfo> = {
   },
 };
 
-export const PLAN_ORDER: PlanId[] = ["essencial", "pro", "clinic_plus"];
+/**
+ * Planos pagáveis (não inclui trial). Fonte única para gating de UI e
+ * tipagem dos slugs aceitos pelo /billing/checkout. Manter alinhado com
+ * PLAN_PRICE_ENV em lib/db/src/billing.ts.
+ */
+export const PAYABLE_PLAN_IDS = ["essencial", "pro", "clinic_plus"] as const;
+export type PayablePlanId = (typeof PAYABLE_PLAN_IDS)[number];
+
+export const PLAN_ORDER: PayablePlanId[] = [...PAYABLE_PLAN_IDS];
 
 export function formatBrl(value: number): string {
   return new Intl.NumberFormat("pt-BR", {

@@ -185,8 +185,9 @@ Fluxo completo signup → trial → checkout → active → past_due → portal:
 7. **Erros.** Toast `sonner` com a mensagem do backend em qualquer falha
    de checkout/portal (ex.: 503 quando price não está configurado).
 
-Cancel URL volta para a aba Assinatura com `?checkout=cancelled` (futuro:
-toast informativo).
+Cancel URL volta para a aba Assinatura com `?checkout=cancelled`. O
+componente Configurações detecta o param e mostra toast informativo
+"Checkout cancelado…", limpando o param via `history.replaceState`.
 
 ## Próximos passos (Fase B3+)
 
@@ -195,4 +196,3 @@ toast informativo).
   sem `stripeSubscriptionId` ativo.
 - Aplicação real dos limites de plano (`isFeatureEnabled`) nas rotas
   de Copilot, Comunicação e AI assist, com 402/403 explicativo.
-- Toast informativo quando o usuário cancela o checkout (`?checkout=cancelled`).

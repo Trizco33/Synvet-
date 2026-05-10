@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, clinicsTable } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/auth";
-import { PLANS, type ClinicPlan } from "@workspace/db";
+import { PLANS, PLAN_PRICE_ENV, type ClinicPlan } from "@workspace/db";
 import {
   getStripeClient,
   getStripePriceId,
@@ -68,9 +68,10 @@ router.post(
       res.status(503).json({ error: "Stripe não configurado" });
       return;
     }
+    // Catálogo único: planos pagáveis = aqueles com env var de price em PLAN_PRICE_ENV.
+    const payablePlans = Object.keys(PLAN_PRICE_ENV) as ClinicPlan[];
     const plan = String(req.body?.plan ?? "").trim() as ClinicPlan;
-    const validPlans: ClinicPlan[] = ["essencial", "pro", "clinic_plus"];
-    if (!validPlans.includes(plan)) {
+    if (!payablePlans.includes(plan)) {
       res.status(400).json({ error: "Plano inválido" });
       return;
     }

@@ -10,10 +10,15 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useState } from "react";
-import { PLANS, PLAN_ORDER, STATUS_LABEL, formatBrl, type PlanId } from "@/lib/plans";
+import {
+  PLANS,
+  PLAN_ORDER,
+  STATUS_LABEL,
+  formatBrl,
+  type PlanId,
+  type PayablePlanId,
+} from "@/lib/plans";
 import { usePermissions } from "@/hooks/use-permissions";
-
-type CheckoutPlan = "essencial" | "pro" | "clinic_plus";
 
 const STATUS_BADGE: Record<string, string> = {
   trialing: "bg-primary/15 text-primary border-primary/30",
@@ -27,7 +32,7 @@ export function SubscriptionCard() {
   const { data: me, isLoading } = useGetMe();
   const { isAdmin } = usePermissions();
   const billing = me?.billing;
-  const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<PayablePlanId | null>(null);
   const [portalPending, setPortalPending] = useState(false);
 
   const checkout = useCreateBillingCheckout();
@@ -53,7 +58,7 @@ export function SubscriptionCard() {
     billing.status === "canceled";
   const days = billing.daysLeft ?? null;
 
-  const handleUpgrade = (planId: CheckoutPlan) => {
+  const handleUpgrade = (planId: PayablePlanId) => {
     setPendingPlan(planId);
     checkout.mutate(
       { data: { plan: planId } },
@@ -224,7 +229,7 @@ export function SubscriptionCard() {
             const isCurrent = billing.plan === id && isActive;
             const isHighlighted = id === "pro";
             const isPending = pendingPlan === id;
-            const planSlug = id as CheckoutPlan;
+            const planSlug = id;
             return (
               <Card
                 key={id}

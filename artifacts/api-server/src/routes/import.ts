@@ -29,13 +29,14 @@ const CHUNK_SIZE = 100;
 // =============================================================
 const TEMPLATES: Record<Kind, { headers: string[]; example: string[] }> = {
   tutors: {
-    headers: ["name", "email", "phone", "whatsapp", "address"],
+    headers: ["name", "email", "phone", "whatsapp", "address", "externalId"],
     example: [
       "Maria Silva",
       "maria@exemplo.com",
       "+55 11 99999-0001",
       "+55 11 99999-0001",
       "Rua das Flores, 123 — São Paulo/SP",
+      "TUT-00042",
     ],
   },
   pets: {
@@ -147,6 +148,7 @@ const TutorRowSchema = z
     phone: optStr,
     whatsapp: optStr,
     address: optStr,
+    externalId: optStr,
   })
   .refine(
     (d: { email: string | null; phone: string | null }) =>
@@ -195,20 +197,28 @@ async function planTutors(
   rows: Array<Record<string, string | null>>,
 ): Promise<Plan[]> {
   const existing = await db
-    .select({ id: tutorsTable.id, email: tutorsTable.email, phone: tutorsTable.phone })
+    .select({
+      id: tutorsTable.id,
+      email: tutorsTable.email,
+      phone: tutorsTable.phone,
+      externalId: tutorsTable.externalId,
+    })
     .from(tutorsTable)
     .where(eq(tutorsTable.clinicId, clinicId));
   const byEmail = new Map<string, string>();
   const byPhone = new Map<string, string>();
+  const byExternalId = new Map<string, string>();
   for (const t of existing) {
     const e = normEmail(t.email);
     if (e) byEmail.set(e, t.id);
     const p = normPhone(t.phone);
     if (p) byPhone.set(p, t.id);
+    if (t.externalId) byExternalId.set(t.externalId, t.id);
   }
 
   const inBatchEmails = new Set<string>();
   const inBatchPhones = new Set<string>();
+  const inBatchExternalIds = new Set<string>();
   const plans: Plan[] = [];
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
@@ -224,17 +234,36 @@ async function planTutors(
     const d = parsed.data;
     const email = normEmail(d.email);
     const phone = normPhone(d.phone);
-    const dupId = (email && byEmail.get(email)) || (phone && byPhone.get(phone)) || null;
+    // Dedupe prioritário por externalId; fallback por e-mail/telefone.
+    let dupId: string | null = null;
+    let dupReason: "externalId" | "email" | "phone" | null = null;
+    if (d.externalId && byExternalId.has(d.externalId)) {
+      dupId = byExternalId.get(d.externalId)!;
+      dupReason = "externalId";
+    } else if (email && byEmail.has(email)) {
+      dupId = byEmail.get(email)!;
+      dupReason = "email";
+    } else if (phone && byPhone.has(phone)) {
+      dupId = byPhone.get(phone)!;
+      dupReason = "phone";
+    }
     if (dupId) {
       plans.push({
         row: rowNum,
         outcome: "skipped",
-        message: "Tutor já existe (dedupe por e-mail/telefone)",
+        message:
+          dupReason === "externalId"
+            ? "Tutor já existe (dedupe por ID do sistema antigo)"
+            : "Tutor já existe (dedupe por e-mail/telefone)",
         id: dupId,
       });
       continue;
     }
-    if ((email && inBatchEmails.has(email)) || (phone && inBatchPhones.has(phone))) {
+    if (
+      (email && inBatchEmails.has(email)) ||
+      (phone && inBatchPhones.has(phone)) ||
+      (d.externalId && inBatchExternalIds.has(d.externalId))
+    ) {
       plans.push({
         row: rowNum,
         outcome: "skipped",
@@ -254,13 +283,15 @@ async function planTutors(
         phone: d.phone,
         whatsapp: d.whatsapp ?? d.phone,
         address: d.address,
+        externalId: d.externalId,
       },
     });
     // Reserva chave dentro do batch: linhas seguintes com mesmo
-    // email/phone serão marcadas como skipped (sem id, pois ainda não
-    // foi gravado).
+    // email/phone/externalId serão marcadas como skipped (sem id, pois
+    // ainda não foi gravado).
     if (email) inBatchEmails.add(email);
     if (phone) inBatchPhones.add(phone);
+    if (d.externalId) inBatchExternalIds.add(d.externalId);
   }
   return plans;
 }

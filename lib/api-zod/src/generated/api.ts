@@ -405,6 +405,7 @@ export const ListTutorsResponseItem = zod.object({
   phone: zod.string().nullish(),
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
+  externalId: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -434,6 +435,7 @@ export const GetTutorResponse = zod
     phone: zod.string().nullish(),
     whatsapp: zod.string().nullish(),
     address: zod.string().nullish(),
+    externalId: zod.string().nullish(),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   })
@@ -455,6 +457,7 @@ export const GetTutorResponse = zod
           isCritical: zod.boolean(),
           notes: zod.string().nullish(),
           photoUrl: zod.string().nullish(),
+          externalId: zod.string().nullish(),
           createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
         }),
@@ -481,6 +484,7 @@ export const UpdateTutorResponse = zod.object({
   phone: zod.string().nullish(),
   whatsapp: zod.string().nullish(),
   address: zod.string().nullish(),
+  externalId: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -514,6 +518,7 @@ export const ListPetsResponseItem = zod
     isCritical: zod.boolean(),
     notes: zod.string().nullish(),
     photoUrl: zod.string().nullish(),
+    externalId: zod.string().nullish(),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   })
@@ -567,6 +572,7 @@ export const GetPetResponse = zod
     isCritical: zod.boolean(),
     notes: zod.string().nullish(),
     photoUrl: zod.string().nullish(),
+    externalId: zod.string().nullish(),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   })
@@ -579,6 +585,7 @@ export const GetPetResponse = zod
         phone: zod.string().nullish(),
         whatsapp: zod.string().nullish(),
         address: zod.string().nullish(),
+        externalId: zod.string().nullish(),
         createdAt: zod.coerce.date(),
         updatedAt: zod.coerce.date(),
       }),
@@ -626,6 +633,7 @@ export const UpdatePetResponse = zod.object({
   isCritical: zod.boolean(),
   notes: zod.string().nullish(),
   photoUrl: zod.string().nullish(),
+  externalId: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -829,6 +837,7 @@ export const GetConsultationResponse = zod
         isCritical: zod.boolean(),
         notes: zod.string().nullish(),
         photoUrl: zod.string().nullish(),
+        externalId: zod.string().nullish(),
         createdAt: zod.coerce.date(),
         updatedAt: zod.coerce.date(),
       }),
@@ -839,6 +848,7 @@ export const GetConsultationResponse = zod
         phone: zod.string().nullish(),
         whatsapp: zod.string().nullish(),
         address: zod.string().nullish(),
+        externalId: zod.string().nullish(),
         createdAt: zod.coerce.date(),
         updatedAt: zod.coerce.date(),
       }),

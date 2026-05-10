@@ -400,6 +400,12 @@ export default function PetDetail() {
                   <span className="text-sm text-muted-foreground">Castrado</span>
                   <p className="font-medium">{petDetail.neutered ? "Sim" : "Não"}</p>
                 </div>
+                {petDetail.externalId && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">ID do sistema antigo</span>
+                    <p className="font-medium font-mono" data-testid="pet-external-id">{petDetail.externalId}</p>
+                  </div>
+                )}
               </div>
               
               {petDetail.allergies && (

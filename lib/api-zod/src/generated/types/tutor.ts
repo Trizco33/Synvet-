@@ -13,6 +13,7 @@ export interface Tutor {
   phone?: string | null;
   whatsapp?: string | null;
   address?: string | null;
+  externalId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

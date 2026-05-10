@@ -11,6 +11,7 @@ const TUTOR_FIELDS: ImportField[] = [
   { key: "phone", label: "Telefone", aliases: ["telefone", "fone", "celular"] },
   { key: "whatsapp", label: "WhatsApp", aliases: ["whats", "zap"] },
   { key: "address", label: "Endereço", aliases: ["endereco", "endereço"] },
+  { key: "externalId", label: "ID do sistema antigo", aliases: ["externalid", "idexterno", "codigo", "código"] },
 ];
 
 const PET_FIELDS: ImportField[] = [
@@ -77,6 +78,7 @@ export default function ConfiguracoesImportar() {
           <p>· Codificação UTF-8 (preferida) ou Windows-1252.</p>
           <p>· Limite de 5 MB e até 5.000 linhas por arquivo. Para volumes maiores, divida em partes.</p>
           <p>· Importe na ordem: <strong>Tutores → Pacientes → Agenda</strong> (pets dependem de tutores; agenda depende de pets).</p>
+          <p>· Para deduplicar registros migrados, preencha o <strong>ID do sistema antigo</strong>: ele tem prioridade sobre e-mail/telefone na hora de identificar duplicatas.</p>
         </AlertDescription>
       </Alert>
 

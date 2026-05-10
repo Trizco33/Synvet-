@@ -22,6 +22,7 @@ export interface Pet {
   isCritical: boolean;
   notes?: string | null;
   photoUrl?: string | null;
+  externalId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

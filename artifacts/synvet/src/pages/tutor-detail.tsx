@@ -340,6 +340,15 @@ export default function TutorDetail() {
                 <p className="text-sm text-muted-foreground">{tutor.address || "Não informado"}</p>
               </div>
             </div>
+            {tutor.externalId && (
+              <div className="flex items-start gap-3">
+                <Activity className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">ID do sistema antigo</p>
+                  <p className="text-sm text-muted-foreground font-mono" data-testid="tutor-external-id">{tutor.externalId}</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

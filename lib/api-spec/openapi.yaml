@@ -1470,6 +1470,7 @@ components:
         phone: { type: string, nullable: true }
         whatsapp: { type: string, nullable: true }
         address: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required: [id, name, createdAt, updatedAt]
@@ -1520,6 +1521,7 @@ components:
         isCritical: { type: boolean }
         notes: { type: string, nullable: true }
         photoUrl: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required: [id, tutorId, name, species, sex, neutered, isCritical, createdAt, updatedAt]

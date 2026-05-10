@@ -131,6 +131,28 @@ de `clinics.status`. `getPlanByPriceId` faz o reverso priceId → plan.
    Copiar o signing secret para `STRIPE_WEBHOOK_SECRET`.
 4. Restart do API server e testar `POST /api/billing/checkout` como admin.
 
+## Decisões intencionais (divergências da spec original)
+
+1. **Sem singleton do client Stripe.** `lib/stripe.ts` instancia novo
+   `Stripe(...)` em cada `getStripeClient()`. Isso é proposital: o blueprint
+   oficial do Stripe no Replit determina re-autenticação por request porque
+   o token do connector pode rotacionar silenciosamente. Para amortizar custo,
+   cacheamos só as **credenciais** por 5 min — não o client. Singleton aqui
+   resultaria em 401s intermitentes em produção.
+2. **Customer no signup é best-effort.** Se a chamada Stripe falhar no
+   signup (rede, connector indisponível), a clínica é criada mesmo assim.
+   `ensureStripeCustomer` no primeiro checkout/portal recupera de forma
+   idempotente (idempotency_key `clinic-customer:<clinicId>`), garantindo
+   que a clínica nunca fica sem customer e nunca duplica.
+3. **Origem dos URLs success/cancel/return vem de `x-forwarded-host`/
+   `x-forwarded-proto`.** Aceitável atrás do proxy Replit (que normaliza
+   esses headers). Em deploy a domínio próprio, considerar fixar via
+   variável `APP_URL` para evitar host-header edge cases.
+4. **Migração `stripe_events`.** Tabela criada via `pnpm --filter
+   @workspace/db run push`. Em deploy de produção, garantir que o push
+   rodou antes de habilitar o webhook (caso contrário o INSERT de
+   idempotência falha → handler retorna 500 → Stripe retenta).
+
 ## Próximos passos (Fase B2+)
 
 - E-mails transacionais (boas-vindas, "faltam 3 dias", "trial encerrou").

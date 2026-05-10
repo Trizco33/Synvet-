@@ -294,25 +294,51 @@ const MedicalRecordRowSchema = z.object({
   content: reqStr("Conteúdo do prontuário obrigatório"),
 });
 
+// Verifica se (y, m, d) é uma data de calendário real — rejeita 31/02,
+// 31/04, 29/02 em ano não bissexto, etc. JS `new Date("2026-02-31")`
+// silenciosamente rola para 03/03/2026, então precisamos do round-trip.
+function isRealCalendarDate(y: number, m: number, d: number): boolean {
+  if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
+function isValidTime(h: number, m: number, s: number): boolean {
+  return h >= 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s < 60;
+}
+
 function isValidDateOnly(v: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime());
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return false;
+  return isRealCalendarDate(Number(m[1]), Number(m[2]), Number(m[3]));
 }
 
 // Aceita YYYY-MM-DD ou DD/MM/AAAA (formato BR exportado pelo Excel).
 // Devolve sempre YYYY-MM-DD quando válido, ou null caso contrário.
+// Datas impossíveis (31/02, 31/04, 29/02 em ano não bissexto) são
+// rejeitadas — não silenciosamente roladas para o mês seguinte.
 function normalizeDateOnly(v: string): string | null {
   const s = v.trim();
   if (isValidDateOnly(s)) return s;
   const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
   if (br) {
-    const iso = `${br[3]}-${br[2]}-${br[1]}`;
-    if (isValidDateOnly(iso)) return iso;
+    const day = Number(br[1]);
+    const month = Number(br[2]);
+    const year = Number(br[3]);
+    if (isRealCalendarDate(year, month, day)) {
+      return `${br[3]}-${br[2]}-${br[1]}`;
+    }
   }
   return null;
 }
 
 // Aceita ISO 8601 (com hora/timezone), YYYY-MM-DD, ou
 // DD/MM/AAAA [HH:MM[:SS]] (formato BR). Devolve Date válido ou null.
+// Datas/horas impossíveis são rejeitadas (sem rollover silencioso do JS).
 function parseDateTimeFlexible(v: string): Date | null {
   const s = v.trim();
   // YYYY-MM-DD puro → meio-dia UTC para evitar shift de timezone.
@@ -320,12 +346,26 @@ function parseDateTimeFlexible(v: string): Date | null {
   // DD/MM/AAAA [HH:MM[:SS]]
   const br = /^(\d{2})\/(\d{2})\/(\d{4})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
   if (br) {
-    const iso =
-      br[4]
-        ? `${br[3]}-${br[2]}-${br[1]}T${br[4]}:${br[5]}:${br[6] ?? "00"}`
-        : `${br[3]}-${br[2]}-${br[1]}T12:00:00Z`;
-    const d = new Date(iso);
-    if (!Number.isNaN(d.getTime())) return d;
+    const day = Number(br[1]);
+    const month = Number(br[2]);
+    const year = Number(br[3]);
+    const hour = br[4] ? Number(br[4]) : 12;
+    const min = br[5] ? Number(br[5]) : 0;
+    const sec = br[6] ? Number(br[6]) : 0;
+    if (
+      !isRealCalendarDate(year, month, day) ||
+      !isValidTime(hour, min, sec)
+    ) {
+      return null;
+    }
+    // Sem hora informada → meio-dia UTC; com hora → assume horário local
+    // do servidor (consistente com o comportamento prévio do new Date()
+    // sobre strings sem timezone).
+    if (br[4]) {
+      const d = new Date(year, month - 1, day, hour, min, sec);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
   }
   // Fallback: tenta o parser nativo (cobre ISO 8601 com offset).
   const d = new Date(s);

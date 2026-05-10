@@ -185,8 +185,8 @@ const STATUS_VALUES = new Set(["scheduled", "in_progress", "completed", "cancell
 // Planejamento (pass 1) — valida + resolve refs SEM gravar.
 // =============================================================
 type Plan =
-  | { row: number; outcome: "created"; insert: Record<string, unknown>; refKey?: string }
-  | { row: number; outcome: "skipped"; message: string; id: string }
+  | { row: number; outcome: "created"; insert: Record<string, unknown> }
+  | { row: number; outcome: "skipped"; message: string; id: string | null }
   | { row: number; outcome: "error"; message: string };
 
 async function planTutors(
@@ -207,6 +207,8 @@ async function planTutors(
     if (p) byPhone.set(p, t.id);
   }
 
+  const inBatchEmails = new Set<string>();
+  const inBatchPhones = new Set<string>();
   const plans: Plan[] = [];
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
@@ -232,6 +234,15 @@ async function planTutors(
       });
       continue;
     }
+    if ((email && inBatchEmails.has(email)) || (phone && inBatchPhones.has(phone))) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Linha duplicada dentro do mesmo arquivo",
+        id: null,
+      });
+      continue;
+    }
     plans.push({
       row: rowNum,
       outcome: "created",
@@ -244,12 +255,12 @@ async function planTutors(
         whatsapp: d.whatsapp ?? d.phone,
         address: d.address,
       },
-      refKey: email ?? phone ?? `row-${rowNum}`,
     });
-    // Reserva chave dentro do batch (linhas seguintes com mesmo email/phone
-    // viram skipped).
-    if (email) byEmail.set(email, "__pending__");
-    if (phone) byPhone.set(phone, "__pending__");
+    // Reserva chave dentro do batch: linhas seguintes com mesmo
+    // email/phone serão marcadas como skipped (sem id, pois ainda não
+    // foi gravado).
+    if (email) inBatchEmails.add(email);
+    if (phone) inBatchPhones.add(phone);
   }
   return plans;
 }
@@ -289,6 +300,8 @@ async function planPets(
     if (p.externalId) petByExternalId.set(p.externalId, p.id);
   }
 
+  const inBatchKeys = new Set<string>();
+  const inBatchExternalIds = new Set<string>();
   const plans: Plan[] = [];
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
@@ -337,6 +350,18 @@ async function planPets(
       });
       continue;
     }
+    if (
+      inBatchKeys.has(dupKey) ||
+      (d.externalId && inBatchExternalIds.has(d.externalId))
+    ) {
+      plans.push({
+        row: rowNum,
+        outcome: "skipped",
+        message: "Linha duplicada dentro do mesmo arquivo",
+        id: null,
+      });
+      continue;
+    }
     let sex: "male" | "female" | "unknown" = "unknown";
     if (d.sex && SEX_VALUES.has(d.sex.toLowerCase())) {
       sex = d.sex.toLowerCase() as typeof sex;
@@ -362,10 +387,9 @@ async function planPets(
         notes: d.notes,
         externalId: d.externalId,
       },
-      refKey: d.externalId ?? dupKey,
     });
-    petByKey.set(dupKey, "__pending__");
-    if (d.externalId) petByExternalId.set(d.externalId, "__pending__");
+    inBatchKeys.add(dupKey);
+    if (d.externalId) inBatchExternalIds.add(d.externalId);
   }
   return plans;
 }
@@ -483,7 +507,12 @@ type RowResult = {
 async function executePlans(kind: Kind, plans: Plan[]): Promise<RowResult[]> {
   const results: RowResult[] = plans.map((p) =>
     p.outcome === "skipped"
-      ? { row: p.row, outcome: "skipped", message: p.message, id: p.id }
+      ? {
+          row: p.row,
+          outcome: "skipped",
+          message: p.message,
+          ...(p.id ? { id: p.id } : {}),
+        }
       : p.outcome === "error"
         ? { row: p.row, outcome: "error", message: p.message }
         : { row: p.row, outcome: "created" },
@@ -494,21 +523,35 @@ async function executePlans(kind: Kind, plans: Plan[]): Promise<RowResult[]> {
   );
   if (toCreate.length === 0) return results;
 
-  const table =
-    kind === "tutors" ? tutorsTable : kind === "pets" ? petsTable : consultationsTable;
+  const writeBackIds = (ids: Array<{ id: string }>, slice: typeof toCreate) => {
+    for (let j = 0; j < slice.length; j++) {
+      const planRow = slice[j]!.row;
+      const idx = results.findIndex((r) => r.row === planRow);
+      if (idx >= 0) results[idx]!.id = ids[j]?.id;
+    }
+  };
 
   await db.transaction(async (tx) => {
     for (let i = 0; i < toCreate.length; i += CHUNK_SIZE) {
       const slice = toCreate.slice(i, i + CHUNK_SIZE);
-      const inserted = await tx
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert(table as any)
-        .values(slice.map((p) => p.insert))
-        .returning({ id: (table as { id: typeof tutorsTable.id }).id });
-      for (let j = 0; j < slice.length; j++) {
-        const planRow = slice[j]!.row;
-        const idx = results.findIndex((r) => r.row === planRow);
-        if (idx >= 0) results[idx]!.id = inserted[j]?.id;
+      if (kind === "tutors") {
+        const inserted = await tx
+          .insert(tutorsTable)
+          .values(slice.map((p) => p.insert as typeof tutorsTable.$inferInsert))
+          .returning({ id: tutorsTable.id });
+        writeBackIds(inserted, slice);
+      } else if (kind === "pets") {
+        const inserted = await tx
+          .insert(petsTable)
+          .values(slice.map((p) => p.insert as typeof petsTable.$inferInsert))
+          .returning({ id: petsTable.id });
+        writeBackIds(inserted, slice);
+      } else {
+        const inserted = await tx
+          .insert(consultationsTable)
+          .values(slice.map((p) => p.insert as typeof consultationsTable.$inferInsert))
+          .returning({ id: consultationsTable.id });
+        writeBackIds(inserted, slice);
       }
     }
   });
@@ -627,7 +670,12 @@ router.post(
     if (errorPlans.length > 0) {
       results = plans.map((p) =>
         p.outcome === "skipped"
-          ? { row: p.row, outcome: "skipped", message: p.message, id: p.id }
+          ? {
+              row: p.row,
+              outcome: "skipped",
+              message: p.message,
+              ...(p.id ? { id: p.id } : {}),
+            }
           : p.outcome === "error"
             ? { row: p.row, outcome: "error", message: p.message }
             : { row: p.row, outcome: "error", message: "Não gravado: outras linhas estão inválidas" },

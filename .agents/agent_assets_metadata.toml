@@ -1,8 +1,0 @@
-uploads = []
-outputs = []
-
-[[generated]]
-id = "NFIuZK5jgBxcK9W_nQHc2"
-uri = "file://attached_assets/generated_images/generated_image.png"
-type = "image"
-title = "generated_image"

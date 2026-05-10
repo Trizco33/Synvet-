@@ -1220,6 +1220,10 @@ export type ListPetsParams = {
 export type ListConsultationsParams = {
   from?: string;
   to?: string;
+  /**
+   * Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.
+   */
+  q?: string;
 };
 
 export type ListExamsParams = {

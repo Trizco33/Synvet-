@@ -13,6 +13,13 @@ import { commsBus } from "../comms";
 
 const router: IRouter = Router();
 
+function normalizeForSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 router.get("/consultations", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   const params = schemas.ListConsultationsQueryParams.safeParse(req.query);
@@ -51,7 +58,26 @@ router.get("/consultations", async (req, res): Promise<void> => {
     .innerJoin(tutorsTable, eq(petsTable.tutorId, tutorsTable.id))
     .where(and(...filters))
     .orderBy(asc(consultationsTable.scheduledAt));
-  res.json(schemas.ListConsultationsResponse.parse(rows));
+
+  const q = params.data.q?.trim();
+  const filtered = q
+    ? (() => {
+        const needle = normalizeForSearch(q);
+        return rows.filter((r) => {
+          const haystack = [
+            r.petName,
+            r.tutorName,
+            r.petExternalId,
+            r.tutorExternalId,
+          ]
+            .filter(Boolean)
+            .map((s) => normalizeForSearch(String(s)))
+            .join(" \u0001 ");
+          return haystack.includes(needle);
+        });
+      })()
+    : rows;
+  res.json(schemas.ListConsultationsResponse.parse(filtered));
 });
 
 router.post("/consultations", requireRole("admin", "vet"), async (req, res): Promise<void> => {

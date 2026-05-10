@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Plus, CalendarDays, Clock, User } from "lucide-react";
+import { Plus, CalendarDays, Clock, User, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,8 +54,18 @@ const newConsultationSchema = z.object({
 
 export default function Consultas() {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const queryClient = useQueryClient();
-  const { data: consultations, isLoading } = useListConsultations({});
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
+
+  const { data: consultations, isLoading } = useListConsultations(
+    debouncedSearch ? { q: debouncedSearch } : {},
+  );
   const { data: pets } = useListPets({});
   const createConsultation = useCreateConsultation();
 
@@ -220,6 +230,29 @@ export default function Consultas() {
         </Dialog>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Buscar por paciente, tutor ou ID antigo..."
+          className="pl-9 pr-9"
+          data-testid="input-search-consultations"
+        />
+        {searchInput && (
+          <button
+            type="button"
+            onClick={() => setSearchInput("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-md"
+            aria-label="Limpar busca"
+            data-testid="button-clear-search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4].map((i) => (
@@ -293,7 +326,11 @@ export default function Consultas() {
             <CalendarDays className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-lg font-medium mb-1">Nenhuma consulta encontrada</h3>
-          <p className="text-muted-foreground mb-4 max-w-sm">Sua agenda está vazia no momento.</p>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            {debouncedSearch
+              ? `Nenhum resultado para "${debouncedSearch}".`
+              : "Sua agenda está vazia no momento."}
+          </p>
         </div>
       )}
     </div>

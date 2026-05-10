@@ -662,6 +662,10 @@ paths:
         - in: query
           name: to
           schema: { type: string, format: date }
+        - in: query
+          name: q
+          description: Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.
+          schema: { type: string }
       responses:
         "200":
           description: OK

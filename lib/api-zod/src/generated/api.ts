@@ -883,6 +883,12 @@ export const CreateMedicalRecordBody = zod.object({
 export const ListConsultationsQueryParams = zod.object({
   from: zod.date().optional(),
   to: zod.date().optional(),
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Busca por nome do paciente, nome do tutor ou ID antigo (paciente ou tutor). Case-insensitive e tolerante a acentos.",
+    ),
 });
 
 export const ListConsultationsResponseItem = zod

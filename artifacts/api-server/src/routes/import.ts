@@ -1374,6 +1374,10 @@ router.get(
   async (req, res): Promise<void> => {
     const user = requireAuth(req);
     const logId = String(req.params.logId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(logId)) {
+      res.status(400).json({ error: "logId inválido" });
+      return;
+    }
     const rows = await db
       .select({
         id: importLogsTable.id,

@@ -35,6 +35,11 @@ export const GetMeResponse = zod.object({
     trialEndsAt: zod.coerce.date().nullable(),
     currentPeriodEnd: zod.coerce.date().nullable(),
     daysLeft: zod.number().nullable(),
+    source: zod
+      .enum(["stripe", "trial"])
+      .describe(
+        'Origem da verdade: \"stripe\" quando a clínica tem assinatura ativa\n(status\/período sincronizados pelo webhook); \"trial\" enquanto a\nclínica nunca foi cobrada.\n',
+      ),
   }),
   isSuperAdmin: zod.boolean(),
 });

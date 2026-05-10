@@ -1115,7 +1115,14 @@ components:
         trialEndsAt: { type: string, format: date-time, nullable: true }
         currentPeriodEnd: { type: string, format: date-time, nullable: true }
         daysLeft: { type: integer, nullable: true }
-      required: [plan, status, trialEndsAt, currentPeriodEnd, daysLeft]
+        source:
+          type: string
+          enum: [stripe, trial]
+          description: |
+            Origem da verdade: "stripe" quando a clínica tem assinatura ativa
+            (status/período sincronizados pelo webhook); "trial" enquanto a
+            clínica nunca foi cobrada.
+      required: [plan, status, trialEndsAt, currentPeriodEnd, daysLeft, source]
 
     Clinic:
       type: object

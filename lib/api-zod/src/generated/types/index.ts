@@ -25,6 +25,7 @@ export * from "./billingCheckoutBody";
 export * from "./billingRedirectResponse";
 export * from "./billingStatus";
 export * from "./billingStatusPlan";
+export * from "./billingStatusSource";
 export * from "./billingStatusStatus";
 export * from "./clinic";
 export * from "./clinicPlan";

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BillingStatusPlan } from "./billingStatusPlan";
+import type { BillingStatusSource } from "./billingStatusSource";
 import type { BillingStatusStatus } from "./billingStatusStatus";
 
 export interface BillingStatus {
@@ -14,4 +15,9 @@ export interface BillingStatus {
   trialEndsAt: Date | null;
   currentPeriodEnd: Date | null;
   daysLeft: number | null;
+  /** Origem da verdade: "stripe" quando a clínica tem assinatura ativa
+(status/período sincronizados pelo webhook); "trial" enquanto a
+clínica nunca foi cobrada.
+ */
+  source: BillingStatusSource;
 }

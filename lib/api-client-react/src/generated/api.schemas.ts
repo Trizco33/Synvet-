@@ -39,12 +39,31 @@ export const BillingStatusStatus = {
   suspended: "suspended",
 } as const;
 
+/**
+ * Origem da verdade: "stripe" quando a clínica tem assinatura ativa
+(status/período sincronizados pelo webhook); "trial" enquanto a
+clínica nunca foi cobrada.
+
+ */
+export type BillingStatusSource =
+  (typeof BillingStatusSource)[keyof typeof BillingStatusSource];
+
+export const BillingStatusSource = {
+  stripe: "stripe",
+  trial: "trial",
+} as const;
+
 export interface BillingStatus {
   plan: BillingStatusPlan;
   status: BillingStatusStatus;
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   daysLeft: number | null;
+  /** Origem da verdade: "stripe" quando a clínica tem assinatura ativa
+(status/período sincronizados pelo webhook); "trial" enquanto a
+clínica nunca foi cobrada.
+ */
+  source: BillingStatusSource;
 }
 
 export interface MeResponse {

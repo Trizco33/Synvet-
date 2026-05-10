@@ -1,15 +1,20 @@
 // Webhook Stripe — montado direto no app com express.raw() ANTES do express.json().
 // Não usa authMiddleware. Idempotência por stripe_events.id.
+//
+// Logging: usamos `req.log` (pino-http child logger com requestId) em todo o
+// fluxo do handler para permitir correlacionar todos os logs de um único webhook
+// através do mesmo request id. O logger global só é usado em paths que não têm
+// acesso ao request (ex.: módulo seed).
 import express, { type Express, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
+import type { Logger } from "pino";
 import { db, clinicsTable, stripeEventsTable } from "@workspace/db";
-// eq é usado também no pré-check de idempotência abaixo.
-import { logger } from "../lib/logger";
 import { getStripeClient, getPlanByPriceId, mapSubscriptionStatus } from "../lib/stripe";
 
 async function syncSubscriptionToClinic(
   subscription: Stripe.Subscription,
+  log: Logger,
 ): Promise<void> {
   const customerId =
     typeof subscription.customer === "string"
@@ -21,7 +26,7 @@ async function syncSubscriptionToClinic(
     .from(clinicsTable)
     .where(eq(clinicsTable.stripeCustomerId, customerId));
   if (!clinic) {
-    logger.warn(
+    log.warn(
       { customerId, subscriptionId: subscription.id },
       "stripe webhook: clínica não encontrada para customer",
     );
@@ -30,7 +35,7 @@ async function syncSubscriptionToClinic(
 
   const mapped = mapSubscriptionStatus(subscription.status);
   if (!mapped) {
-    logger.info(
+    log.info(
       { status: subscription.status, subscriptionId: subscription.id },
       "stripe webhook: status sem mapeamento — ignorando",
     );
@@ -64,7 +69,7 @@ async function syncSubscriptionToClinic(
     })
     .where(eq(clinicsTable.id, clinic.id));
 
-  logger.info(
+  log.info(
     {
       clinicId: clinic.id,
       subscriptionId: subscription.id,
@@ -75,13 +80,13 @@ async function syncSubscriptionToClinic(
   );
 }
 
-async function handleEvent(event: Stripe.Event): Promise<void> {
+async function handleEvent(event: Stripe.Event, log: Logger): Promise<void> {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
     case "customer.subscription.trial_will_end": {
-      await syncSubscriptionToClinic(event.data.object as Stripe.Subscription);
+      await syncSubscriptionToClinic(event.data.object as Stripe.Subscription, log);
       return;
     }
     case "invoice.payment_succeeded":
@@ -97,7 +102,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       // Falha aqui DEVE propagar (500 → Stripe retenta) — não engolir.
       const stripe = await getStripeClient();
       const sub = await stripe.subscriptions.retrieve(subId);
-      await syncSubscriptionToClinic(sub);
+      await syncSubscriptionToClinic(sub, log);
       return;
     }
     case "checkout.session.completed": {
@@ -110,11 +115,11 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       if (!subId) return;
       const stripe = await getStripeClient();
       const sub = await stripe.subscriptions.retrieve(subId);
-      await syncSubscriptionToClinic(sub);
+      await syncSubscriptionToClinic(sub, log);
       return;
     }
     default:
-      logger.debug({ type: event.type }, "stripe webhook: evento ignorado");
+      log.debug({ type: event.type }, "stripe webhook: evento ignorado");
   }
 }
 
@@ -123,9 +128,10 @@ export function mountBillingWebhook(app: Express): void {
     "/api/billing/webhook",
     express.raw({ type: "application/json" }),
     async (req: Request, res: Response): Promise<void> => {
+      const log = req.log as Logger;
       const secret = process.env.STRIPE_WEBHOOK_SECRET;
       if (!secret) {
-        logger.error("STRIPE_WEBHOOK_SECRET não configurado");
+        log.error("STRIPE_WEBHOOK_SECRET não configurado");
         res.status(503).send("webhook secret missing");
         return;
       }
@@ -140,7 +146,7 @@ export function mountBillingWebhook(app: Express): void {
         const stripe = await getStripeClient();
         event = stripe.webhooks.constructEvent(req.body, sig, secret);
       } catch (err) {
-        logger.warn({ err }, "stripe webhook: assinatura inválida");
+        log.warn({ err }, "stripe webhook: assinatura inválida");
         res.status(400).send("invalid signature");
         return;
       }
@@ -153,16 +159,16 @@ export function mountBillingWebhook(app: Express): void {
         .from(stripeEventsTable)
         .where(eq(stripeEventsTable.id, event.id));
       if (existing) {
-        logger.debug({ id: event.id, type: event.type }, "stripe webhook: duplicado");
+        log.debug({ id: event.id, type: event.type }, "stripe webhook: duplicado");
         res.json({ received: true, duplicate: true });
         return;
       }
 
       try {
-        await handleEvent(event);
+        await handleEvent(event, log);
       } catch (err) {
         // Falha transitória → 500 faz o Stripe retentar. NÃO marcar como processado.
-        logger.error(
+        log.error(
           { err, id: event.id, type: event.type },
           "stripe webhook: handler falhou — retornando 500 para retry",
         );

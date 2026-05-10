@@ -38,6 +38,11 @@ import { WorkflowFlow } from "@/components/site/workflow-flow";
 import { StickyFeatures } from "@/components/site/sticky-features";
 import { SocialProof } from "@/components/site/social-proof";
 import { AIInsights } from "@/components/site/ai-insights";
+import { ScrollProgress } from "@/components/site/scroll-progress";
+import { Aurora } from "@/components/site/aurora";
+import { TiltCard } from "@/components/site/tilt-card";
+import { MagneticButton } from "@/components/site/magnetic-button";
+import { CountUp } from "@/components/site/count-up";
 import { Button } from "@/components/ui/button";
 
 const fadeUp = {
@@ -90,6 +95,7 @@ function SectionTitle({
 function Hero() {
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden">
+      <Aurora intensity={0.42} />
       <PulseGlow className="-top-40 -left-40" size={700} color="#7A5CFF" intensity={0.22} />
       <PulseGlow className="-top-32 right-0" size={600} color="#5B8CFF" intensity={0.16} />
       <GridFloor opacity={0.05} />
@@ -129,24 +135,28 @@ function Hero() {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/signup">
-              <Button
-                size="lg"
-                className="h-12 px-7 text-base bg-gradient-to-r from-[#7A5CFF] to-[#5B8CFF] text-white hover:opacity-95 shadow-[0_0_40px_-8px_rgba(122,92,255,0.7)]"
-                data-testid="hero-cta"
-              >
-                Começar trial grátis <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </a>
-            <a href="#solicitar-acesso">
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-12 px-7 text-base border-white/15 text-white/90 hover:bg-white/5 hover:text-white"
-              >
-                Falar com vendas
-              </Button>
-            </a>
+            <MagneticButton strength={0.22}>
+              <a href="/signup">
+                <Button
+                  size="lg"
+                  className="h-12 px-7 text-base bg-gradient-to-r from-[#7A5CFF] to-[#5B8CFF] text-white hover:opacity-95 shadow-[0_0_40px_-8px_rgba(122,92,255,0.7)] transition-all hover:shadow-[0_0_60px_-6px_rgba(122,92,255,0.85)]"
+                  data-testid="hero-cta"
+                >
+                  Começar trial grátis <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </a>
+            </MagneticButton>
+            <MagneticButton strength={0.18}>
+              <a href="#solicitar-acesso">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-12 px-7 text-base border-white/15 text-white/90 hover:bg-white/5 hover:text-white"
+                >
+                  Falar com vendas
+                </Button>
+              </a>
+            </MagneticButton>
           </div>
 
           <div className="mt-8 flex items-center justify-center gap-6 text-xs text-white/40">
@@ -164,9 +174,11 @@ function Hero() {
           className="relative mt-16 md:mt-20"
         >
           <div className="absolute -inset-4 bg-gradient-to-r from-[#7A5CFF]/30 to-[#5B8CFF]/30 blur-3xl opacity-40 rounded-[3rem]" />
-          <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] backdrop-blur-sm overflow-hidden shadow-2xl">
-            <DashboardMock />
-          </div>
+          <TiltCard className="relative rounded-2xl" max={5} scale={1}>
+            <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] backdrop-blur-sm overflow-hidden shadow-2xl">
+              <DashboardMock />
+            </div>
+          </TiltCard>
         </motion.div>
       </div>
     </section>
@@ -179,6 +191,11 @@ function DashboardMock() {
     { time: "09:00", pet: "Thor", tutor: "Carlos R.", type: "Vacinação" },
     { time: "09:45", pet: "Mia", tutor: "Júlia P.", type: "Consulta" },
     { time: "10:30", pet: "Bento", tutor: "Pedro L.", type: "Castração" },
+  ];
+  const kpis = [
+    { l: "Consultas hoje", v: 12, d: "+3 vs ontem" },
+    { l: "Pacientes ativos", v: 284, d: "8 novos" },
+    { l: "Exames pendentes", v: 5, d: "Aguardando laudo" },
   ];
   return (
     <div className="grid grid-cols-12 gap-px bg-white/5">
@@ -206,33 +223,48 @@ function DashboardMock() {
       </aside>
       <main className="col-span-12 md:col-span-9 bg-[#080a11] p-6">
         <div className="grid grid-cols-3 gap-3 mb-5">
-          {[
-            { l: "Consultas hoje", v: "12", d: "+3 vs ontem" },
-            { l: "Pacientes ativos", v: "284", d: "8 novos" },
-            { l: "Exames pendentes", v: "5", d: "Aguardando laudo" },
-          ].map((k) => (
-            <div key={k.l} className="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+          {kpis.map((k, idx) => (
+            <motion.div
+              key={k.l}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 + idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-xl bg-white/[0.03] border border-white/5 p-4"
+            >
               <div className="text-[11px] text-white/40 uppercase tracking-wide">{k.l}</div>
-              <div className="text-2xl font-semibold text-white mt-1">{k.v}</div>
+              <div className="text-2xl font-semibold text-white mt-1">
+                <CountUp value={k.v} duration={1.4} />
+              </div>
               <div className="text-[11px] text-white/40 mt-1">{k.d}</div>
-            </div>
+            </motion.div>
           ))}
         </div>
         <div className="rounded-xl bg-white/[0.03] border border-white/5">
           <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-            <div className="text-sm font-medium text-white">Agenda do dia</div>
+            <div className="text-sm font-medium text-white flex items-center gap-2">
+              Agenda do dia
+              <HeartbeatDot color="#34d399" size={6} />
+            </div>
             <div className="text-xs text-white/40">14 de maio</div>
           </div>
           <div className="divide-y divide-white/5">
-            {items.map((it) => (
-              <div key={it.time} className="px-4 py-2.5 flex items-center gap-4 text-sm">
+            {items.map((it, idx) => (
+              <motion.div
+                key={it.time}
+                initial={{ opacity: 0, x: -8 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: 0.55 + idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                className="px-4 py-2.5 flex items-center gap-4 text-sm hover:bg-white/[0.02] transition-colors"
+              >
                 <span className="text-white/40 w-12">{it.time}</span>
                 <span className="text-white font-medium flex-1">{it.pet}</span>
                 <span className="text-white/50 hidden sm:inline">{it.tutor}</span>
                 <span className="text-[10px] uppercase tracking-wide text-[#B6A6FF] bg-[#7A5CFF]/10 border border-[#7A5CFF]/20 px-2 py-0.5 rounded-full">
                   {it.type}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -634,6 +666,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#06070d] text-white relative overflow-x-hidden">
       <SmoothScroll />
+      <ScrollProgress />
       <SiteNav />
       <main>
         <Hero />

@@ -1,14 +1,25 @@
 import { motion } from "framer-motion";
 import { Quote, Star } from "lucide-react";
 import { ShineCard } from "./shine-card";
+import { CountUp } from "./count-up";
+import { LogoMarquee } from "./logo-marquee";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const METRICS = [
-  { v: "92%", l: "menos tempo em prontuário" },
-  { v: "3,4×", l: "mais consultas confirmadas" },
-  { v: "<200ms", l: "resposta média de timeline" },
-  { v: "99.9%", l: "uptime mensal" },
+interface Metric {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  label: string;
+  static?: string;
+}
+
+const METRICS: Metric[] = [
+  { value: 92, suffix: "%", label: "menos tempo em prontuário" },
+  { value: 3.4, suffix: "×", decimals: 1, label: "mais consultas confirmadas" },
+  { value: 200, prefix: "<", suffix: "ms", label: "resposta média de timeline" },
+  { value: 99.9, suffix: "%", decimals: 1, label: "uptime mensal" },
 ];
 
 const TESTIMONIALS = [
@@ -51,31 +62,33 @@ export function SocialProof() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
           {METRICS.map((m, i) => (
             <motion.div
-              key={m.l}
+              key={m.label}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
               className="bg-[#0a0c14] p-6 md:p-8 text-center"
             >
-              <div className="text-3xl md:text-4xl font-semibold bg-gradient-to-br from-white to-[#B6A6FF] bg-clip-text text-transparent">
-                {m.v}
+              <div className="text-3xl md:text-4xl font-semibold bg-gradient-to-br from-white to-[#B6A6FF] bg-clip-text text-transparent tabular-nums">
+                <CountUp
+                  value={m.value}
+                  prefix={m.prefix}
+                  suffix={m.suffix}
+                  decimals={m.decimals ?? 0}
+                  duration={1.8}
+                />
               </div>
-              <div className="mt-2 text-xs md:text-sm text-white/55">{m.l}</div>
+              <div className="mt-2 text-xs md:text-sm text-white/55">{m.label}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Logos */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-70">
-          {LOGOS.map((l) => (
-            <span
-              key={l}
-              className="text-sm md:text-base font-medium tracking-tight text-white/45 hover:text-white/70 transition-colors"
-            >
-              {l}
-            </span>
-          ))}
+        <div className="mt-12">
+          <div className="text-center text-[11px] uppercase tracking-[0.2em] text-white/30 mb-6">
+            Clínicas e redes que confiam na Synvet
+          </div>
+          <LogoMarquee items={LOGOS} speed={42} />
         </div>
 
         {/* Testimonials */}

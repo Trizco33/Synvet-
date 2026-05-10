@@ -10,6 +10,7 @@ import {
   Repeat,
   type LucideIcon,
 } from "lucide-react";
+import { FlowPulse } from "./flow-pulse";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -79,6 +80,8 @@ export function WorkflowFlow() {
               transition={{ duration: reduce ? 0 : 2.4, ease: EASE }}
             />
           </svg>
+
+          <FlowPulse className="hidden lg:block left-0 right-0 top-[42px]" duration={5.4} />
 
           <ol className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
             {STEPS.map((s, idx) => (

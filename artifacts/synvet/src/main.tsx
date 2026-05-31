@@ -3,13 +3,15 @@ import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
 import { supabase } from "./lib/supabase";
+import { apiOrigin } from "./lib/api-base";
 
 // Em produção fora do Replit (ex.: Vercel), VITE_API_URL aponta para o backend Railway.
 // Ex.: VITE_API_URL=https://synvet-api.up.railway.app
+// Os hooks gerados já chamam `/api/...`, então o baseUrl é só a ORIGEM (sem /api).
 // Sem a variável, usa URL relativa (funciona no Replit onde o proxy unifica tudo).
-const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-if (apiUrl) {
-  setBaseUrl(apiUrl.replace(/\/+$/, ""));
+const origin = apiOrigin();
+if (origin) {
+  setBaseUrl(origin);
 }
 
 declare const __BUILD_VERSION__: string;

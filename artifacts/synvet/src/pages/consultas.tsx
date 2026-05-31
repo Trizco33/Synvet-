@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   addMonths,
   addWeeks,
@@ -103,17 +103,61 @@ function toDateTimeParam(d: Date): string {
   return d.toISOString();
 }
 
+const PERIOD_VALUES = new Set<PeriodFilter>([
+  "all",
+  "today",
+  "week",
+  "month",
+  "custom",
+]);
+const STATUS_VALUES = new Set<StatusFilter>([
+  "all",
+  "scheduled",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+
+function parsePeriod(value: string | null): PeriodFilter {
+  return value && PERIOD_VALUES.has(value as PeriodFilter)
+    ? (value as PeriodFilter)
+    : "all";
+}
+
+function parseStatus(value: string | null): StatusFilter {
+  return value && STATUS_VALUES.has(value as StatusFilter)
+    ? (value as StatusFilter)
+    : "all";
+}
+
 export default function Consultas() {
+  const [location, setLocation] = useLocation();
+  const search = useSearch();
+  const initialParams = useMemo(() => new URLSearchParams(search), []);
+
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [period, setPeriod] = useState<PeriodFilter>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [customFrom, setCustomFrom] = useState<string>("");
-  const [customTo, setCustomTo] = useState<string>("");
+  const [searchInput, setSearchInput] = useState(
+    () => initialParams.get("q") ?? "",
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => initialParams.get("q") ?? "",
+  );
+  const [period, setPeriod] = useState<PeriodFilter>(() =>
+    parsePeriod(initialParams.get("period")),
+  );
+  const [status, setStatus] = useState<StatusFilter>(() =>
+    parseStatus(initialParams.get("status")),
+  );
+  const [customFrom, setCustomFrom] = useState<string>(
+    () => initialParams.get("from") ?? "",
+  );
+  const [customTo, setCustomTo] = useState<string>(
+    () => initialParams.get("to") ?? "",
+  );
   const queryClient = useQueryClient();
+  const isFirstSync = useRef(true);
 
   useEffect(() => {
     const handle = setTimeout(
@@ -122,6 +166,32 @@ export default function Consultas() {
     );
     return () => clearTimeout(handle);
   }, [searchInput]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("q", debouncedSearch);
+    if (period !== "all") params.set("period", period);
+    if (status !== "all") params.set("status", status);
+    if (period === "custom") {
+      if (customFrom) params.set("from", customFrom);
+      if (customTo) params.set("to", customTo);
+    }
+    const next = params.toString();
+    const current = search.replace(/^\?/, "");
+    if (next === current) return;
+    const replace = isFirstSync.current;
+    isFirstSync.current = false;
+    setLocation(next ? `${location}?${next}` : location, { replace });
+  }, [
+    debouncedSearch,
+    period,
+    status,
+    customFrom,
+    customTo,
+    search,
+    location,
+    setLocation,
+  ]);
 
   const { from, to } = useMemo(() => {
     if (viewMode === "week") {

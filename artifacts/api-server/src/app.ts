@@ -26,7 +26,25 @@ app.use(
     },
   }),
 );
-app.use(cors());
+// CORS: em produção, aceita apenas origens explicitamente listadas em ALLOWED_ORIGINS.
+// Ex.: ALLOWED_ORIGINS=https://synvet.app.br,https://www.synvet.app.br,https://synvet.vercel.app
+// Em desenvolvimento sem a variável, libera tudo (comportamento anterior).
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
+
+app.use(
+  cors({
+    origin: allowedOrigins.length
+      ? (origin, cb) => {
+          // Requisições sem Origin (ex.: curl, mobile nativo) são permitidas.
+          if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+          cb(new Error(`CORS: origin '${origin}' not allowed`));
+        }
+      : true,
+    credentials: true,
+  }),
+);
 
 // IMPORTANTE: webhook Stripe precisa do raw body para validar assinatura.
 // Deve ser montado ANTES do express.json() global.

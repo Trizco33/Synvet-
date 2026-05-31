@@ -2,7 +2,11 @@ FROM node:24-slim AS base
 RUN npm install -g pnpm@10.26.1
 WORKDIR /app
 
+# Manifests e configs de raiz
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY tsconfig.base.json tsconfig.json ./
+
+# Package.json de cada lib/artifact necessário
 COPY lib/api-spec/package.json ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY lib/api-zod/package.json ./lib/api-zod/
@@ -11,6 +15,7 @@ COPY artifacts/api-server/package.json ./artifacts/api-server/
 
 RUN pnpm install --frozen-lockfile
 
+# Código fonte completo das libs
 COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 

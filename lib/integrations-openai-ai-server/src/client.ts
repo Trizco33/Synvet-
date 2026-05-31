@@ -1,18 +1,41 @@
 import OpenAI from "openai";
 
-if (!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL) {
+let cached: OpenAI | null = null;
+
+function resolveConfig(): { apiKey: string; baseURL?: string } {
+  // Replit AI Integrations proxy (só funciona dentro do Replit)
+  const proxyBase = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  const proxyKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  if (proxyBase && proxyKey) {
+    return { apiKey: proxyKey, baseURL: proxyBase };
+  }
+
+  // OpenAI padrão (produção: Railway, etc.)
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (apiKey) {
+    const baseURL = process.env.OPENAI_BASE_URL;
+    return baseURL ? { apiKey, baseURL } : { apiKey };
+  }
+
   throw new Error(
-    "AI_INTEGRATIONS_OPENAI_BASE_URL must be set. Did you forget to provision the OpenAI AI integration?",
+    "OpenAI não configurado. Defina OPENAI_API_KEY (produção) ou provisione a integração OpenAI do Replit (AI_INTEGRATIONS_OPENAI_*).",
   );
 }
 
-if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
-  throw new Error(
-    "AI_INTEGRATIONS_OPENAI_API_KEY must be set. Did you forget to provision the OpenAI AI integration?",
-  );
+function getClient(): OpenAI {
+  if (!cached) {
+    const config = resolveConfig();
+    cached = new OpenAI(config);
+  }
+  return cached;
 }
 
-export const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+// Proxy lazy: o cliente só é instanciado no primeiro uso, não no import.
+// Assim o servidor sobe mesmo sem IA configurada; só falha ao chamar a IA.
+export const openai = new Proxy({} as OpenAI, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client as object, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+}) as OpenAI;

@@ -5,7 +5,7 @@ import { COPILOT_PROMPT_VERSION, buildContextSystemMessage } from "./prompts";
 import type { CopilotPetContext } from "./contextBuilder";
 import { renderContextForPrompt } from "./contextBuilder";
 
-const COPILOT_MODEL = "gpt-5-mini";
+const COPILOT_MODEL = process.env["OPENAI_MODEL"] ?? "gpt-5-mini";
 const MAX_HISTORY = 12;
 const MAX_USER_MSG_CHARS = 2000;
 

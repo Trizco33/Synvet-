@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/sofia/"
+title = "Sofia"
+version = "1.0.0"
+id = "artifacts/sofia"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/sofia/" ]
+localPort = 18991
+
+[services.development]
+run = "pnpm --filter @workspace/sofia run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sofia", "run", "build" ]
+publicDir = "artifacts/sofia/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18991"
+BASE_PATH = "/sofia/"

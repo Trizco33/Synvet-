@@ -99,13 +99,20 @@ export default function Login() {
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
-    const { error } = await signInWithPassword(values.email, values.password);
-    setIsLoading(false);
-    if (error) {
-      toast.error("Erro ao entrar", { description: error });
-    } else {
-      toast.success("Login realizado com sucesso");
-      setLocation("/app");
+    try {
+      const { error } = await signInWithPassword(values.email, values.password);
+      if (error) {
+        toast.error("Erro ao entrar", { description: error });
+      } else {
+        toast.success("Login realizado com sucesso");
+        setLocation("/app");
+      }
+    } catch (err) {
+      toast.error("Erro ao entrar", {
+        description: err instanceof Error ? err.message : "Falha inesperada. Tente novamente.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

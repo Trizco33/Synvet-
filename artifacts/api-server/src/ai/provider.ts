@@ -18,7 +18,7 @@ export interface AIProvider {
   }>;
 }
 
-const DEFAULT_MODEL = "gpt-5-mini";
+const DEFAULT_MODEL = process.env["OPENAI_MODEL"] ?? "gpt-5-mini";
 
 const PRICING_USD_PER_1K: Record<string, { in: number; out: number }> = {
   "gpt-5-mini": { in: 0.00025, out: 0.002 },

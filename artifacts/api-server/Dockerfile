@@ -1,5 +1,5 @@
 FROM node:24-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1
 WORKDIR /app
 
 # Copiar manifests para instalar dependências
@@ -24,9 +24,8 @@ RUN pnpm run typecheck:libs
 RUN pnpm --filter @workspace/api-server run build
 
 FROM node:24-alpine AS runner
+RUN npm install -g pnpm@10.26.1
 WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY lib/api-spec/package.json ./lib/api-spec/

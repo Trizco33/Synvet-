@@ -36,6 +36,7 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  onSlotClick?: (date: Date) => void;
 }
 
 export function CalendarWeekView({
@@ -44,6 +45,7 @@ export function CalendarWeekView({
   onPrev,
   onNext,
   onToday,
+  onSlotClick,
 }: Props) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -90,17 +92,28 @@ export function CalendarWeekView({
               .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
             const today = isToday(day);
 
+            const slotDate = new Date(
+              day.getFullYear(),
+              day.getMonth(),
+              day.getDate(),
+              9,
+              0,
+            );
+
             return (
               <div
                 key={day.toString()}
                 className="flex flex-col min-w-[120px] md:min-w-0"
               >
-                <div
-                  className={`text-center py-2 px-1 rounded-t-lg border border-b-0 ${
+                <button
+                  type="button"
+                  onClick={() => onSlotClick?.(slotDate)}
+                  className={`w-full text-center py-2 px-1 rounded-t-lg border border-b-0 transition-opacity hover:opacity-80 ${
                     today
                       ? "bg-primary/15 border-primary/30"
                       : "bg-secondary/30 border-border/30"
                   }`}
+                  title={`Agendar em ${format(day, "dd/MM/yyyy")}`}
                 >
                   <p
                     className={`text-[10px] font-semibold uppercase tracking-wider ${
@@ -116,9 +129,16 @@ export function CalendarWeekView({
                   >
                     {format(day, "d")}
                   </p>
-                </div>
+                </button>
 
-                <div className="flex-1 min-h-[180px] border border-border/30 rounded-b-lg p-1.5 space-y-1.5 bg-card/20">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSlotClick?.(slotDate)}
+                  onKeyDown={(e) => e.key === "Enter" && onSlotClick?.(slotDate)}
+                  className="flex-1 min-h-[180px] border border-border/30 rounded-b-lg p-1.5 space-y-1.5 bg-card/20 cursor-pointer hover:bg-secondary/10 transition-colors"
+                  title={`Agendar em ${format(day, "dd/MM/yyyy")}`}
+                >
                   {dayConsultations.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <span className="text-[10px] text-muted-foreground/30">
@@ -127,18 +147,23 @@ export function CalendarWeekView({
                     </div>
                   ) : (
                     dayConsultations.map((c) => (
-                      <Link key={c.id} href={`/consultas/${c.id}`}>
-                        <div
-                          className={`rounded text-[11px] px-1.5 py-1 cursor-pointer hover:opacity-75 transition-opacity ${
-                            STATUS_EVENT[c.status] ?? STATUS_EVENT.scheduled
-                          }`}
-                        >
-                          <p className="font-semibold leading-tight">
-                            {format(parseISO(c.scheduledAt), "HH:mm")}
-                          </p>
-                          <p className="truncate leading-tight">{c.petName}</p>
-                        </div>
-                      </Link>
+                      <div
+                        key={c.id}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link href={`/consultas/${c.id}`}>
+                          <div
+                            className={`rounded text-[11px] px-1.5 py-1 cursor-pointer hover:opacity-75 transition-opacity ${
+                              STATUS_EVENT[c.status] ?? STATUS_EVENT.scheduled
+                            }`}
+                          >
+                            <p className="font-semibold leading-tight">
+                              {format(parseISO(c.scheduledAt), "HH:mm")}
+                            </p>
+                            <p className="truncate leading-tight">{c.petName}</p>
+                          </div>
+                        </Link>
+                      </div>
                     ))
                   )}
                 </div>

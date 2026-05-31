@@ -199,6 +199,16 @@ export default function Consultas() {
   };
   const handleToday = () => setCurrentDate(new Date());
 
+  const handleSlotClick = (date: Date) => {
+    form.reset({
+      petId: "",
+      scheduledAt: format(date, "yyyy-MM-dd'T'HH:mm"),
+      status: "scheduled",
+      reason: "",
+    });
+    setIsOpen(true);
+  };
+
   const form = useForm<z.infer<typeof newConsultationSchema>>({
     resolver: zodResolver(newConsultationSchema),
     defaultValues: {
@@ -576,6 +586,7 @@ export default function Consultas() {
           onPrev={handlePrev}
           onNext={handleNext}
           onToday={handleToday}
+          onSlotClick={handleSlotClick}
         />
       )}
 
@@ -586,6 +597,7 @@ export default function Consultas() {
           onPrev={handlePrev}
           onNext={handleNext}
           onToday={handleToday}
+          onSlotClick={handleSlotClick}
         />
       )}
 

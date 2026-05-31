@@ -39,6 +39,7 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  onSlotClick?: (date: Date) => void;
 }
 
 export function CalendarMonthView({
@@ -47,6 +48,7 @@ export function CalendarMonthView({
   onPrev,
   onNext,
   onToday,
+  onSlotClick,
 }: Props) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -104,10 +106,23 @@ export function CalendarMonthView({
           const visible = dayConsultations.slice(0, MAX_VISIBLE);
           const overflow = dayConsultations.length - MAX_VISIBLE;
 
+          const slotDate = new Date(
+            day.getFullYear(),
+            day.getMonth(),
+            day.getDate(),
+            9,
+            0,
+          );
+
           return (
             <div
               key={day.toString()}
-              className={`min-h-[72px] sm:min-h-[88px] p-1 bg-card/20 ${
+              role="button"
+              tabIndex={0}
+              onClick={() => onSlotClick?.(slotDate)}
+              onKeyDown={(e) => e.key === "Enter" && onSlotClick?.(slotDate)}
+              title={`Agendar em ${format(day, "dd/MM/yyyy")}`}
+              className={`min-h-[72px] sm:min-h-[88px] p-1 bg-card/20 cursor-pointer hover:bg-secondary/20 transition-colors ${
                 !isCurrentMonth ? "opacity-25" : ""
               }`}
             >
@@ -123,19 +138,21 @@ export function CalendarMonthView({
 
               <div className="space-y-0.5">
                 {visible.map((c) => (
-                  <Link key={c.id} href={`/consultas/${c.id}`}>
-                    <div
-                      className={`text-[10px] leading-tight truncate rounded px-1 py-0.5 cursor-pointer hover:opacity-75 transition-opacity ${
-                        STATUS_EVENT_BG[c.status] ??
-                        STATUS_EVENT_BG.scheduled
-                      }`}
-                    >
-                      <span className="font-semibold">
-                        {format(parseISO(c.scheduledAt), "HH:mm")}
-                      </span>
-                      <span className="hidden sm:inline"> {c.petName}</span>
-                    </div>
-                  </Link>
+                  <div key={c.id} onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/consultas/${c.id}`}>
+                      <div
+                        className={`text-[10px] leading-tight truncate rounded px-1 py-0.5 cursor-pointer hover:opacity-75 transition-opacity ${
+                          STATUS_EVENT_BG[c.status] ??
+                          STATUS_EVENT_BG.scheduled
+                        }`}
+                      >
+                        <span className="font-semibold">
+                          {format(parseISO(c.scheduledAt), "HH:mm")}
+                        </span>
+                        <span className="hidden sm:inline"> {c.petName}</span>
+                      </div>
+                    </Link>
+                  </div>
                 ))}
                 {overflow > 0 && (
                   <p className="text-[9px] text-muted-foreground/70 px-1">

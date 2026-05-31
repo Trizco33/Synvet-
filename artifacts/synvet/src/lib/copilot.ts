@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
+import { apiBase } from "./api-base";
 
-const BASE = `${import.meta.env.BASE_URL}api`.replace(/\/+/g, "/");
+const BASE = apiBase();
 
 export interface CopilotContextSummary {
   pet: {

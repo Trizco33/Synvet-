@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner";
 import { runImport } from "@workspace/api-client-react";
 import type { ImportReport } from "@workspace/api-client-react";
+import { apiBase } from "@/lib/api-base";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
@@ -221,7 +222,7 @@ export function ImportWizard({ kind, fields, helperText }: Props) {
   };
 
   const downloadTemplate = () => {
-    const url = `/api/import/template/${kind}`;
+    const url = `${apiBase()}/import/template/${kind}`;
     const a = document.createElement("a");
     a.href = url;
     a.download = `synvet-template-${kind}.csv`;

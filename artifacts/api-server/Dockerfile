@@ -6,11 +6,12 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY tsconfig.base.json tsconfig.json ./
 
-# Package.json de cada lib/artifact necessário
+# Package.json de todas as libs (tsc --build compila todas via tsconfig raiz)
 COPY lib/api-spec/package.json ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY lib/api-zod/package.json ./lib/api-zod/
 COPY lib/db/package.json ./lib/db/
+COPY lib/integrations-openai-ai-server/package.json ./lib/integrations-openai-ai-server/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 
 RUN pnpm install --frozen-lockfile
@@ -31,10 +32,12 @@ COPY lib/api-spec/package.json ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY lib/api-zod/package.json ./lib/api-zod/
 COPY lib/db/package.json ./lib/db/
+COPY lib/integrations-openai-ai-server/package.json ./lib/integrations-openai-ai-server/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 
 RUN pnpm install --frozen-lockfile --prod
 
+COPY --from=base /app/lib ./lib
 COPY --from=base /app/artifacts/api-server/dist ./artifacts/api-server/dist
 
 ENV NODE_ENV=production

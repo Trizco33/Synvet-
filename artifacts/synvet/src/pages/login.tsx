@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,6 +49,29 @@ const recoverSchema = z.object({
 
 type Tab = "login" | "signup";
 
+/**
+ * Sincroniza valores preenchidos por gerenciadores de senha / autofill que
+ * alteram o DOM sem disparar eventos React (comum no Chrome Android e em
+ * gerenciadores de senha). Sem isso, o react-hook-form fica com o estado vazio
+ * e o submit é bloqueado silenciosamente — o usuário clica e "nada acontece".
+ */
+function syncAutofilledValues(
+  root: HTMLFormElement | null,
+  form: { getValues: (name: never) => unknown; setValue: (name: never, value: never, opts?: never) => void },
+  names: readonly string[],
+) {
+  if (!root) return;
+  for (const name of names) {
+    const el = root.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
+    if (el && el.value !== (form.getValues(name as never) as string)) {
+      form.setValue(name as never, el.value as never, {
+        shouldValidate: false,
+        shouldDirty: true,
+      } as never);
+    }
+  }
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { signInWithPassword, resetPassword, configured } = useAuth();
@@ -56,6 +79,8 @@ export default function Login() {
   const [recoverOpen, setRecoverOpen] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
   const [tab, setTab] = useState<Tab>("login");
+  const loginFormRef = useRef<HTMLFormElement>(null);
+  const signUpFormRef = useRef<HTMLFormElement>(null);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -187,7 +212,14 @@ export default function Login() {
 
           {tab === "login" && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                ref={loginFormRef}
+                onSubmit={(e) => {
+                  syncAutofilledValues(loginFormRef.current, form, ["email", "password"]);
+                  void form.handleSubmit(onSubmit)(e);
+                }}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="email"
@@ -195,7 +227,13 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>E-mail</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu@email.com" {...field} data-testid="input-email" />
+                        <Input
+                          type="email"
+                          autoComplete="username"
+                          placeholder="seu@email.com"
+                          {...field}
+                          data-testid="input-email"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -218,7 +256,13 @@ export default function Login() {
                         </button>
                       </div>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
+                        <Input
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          {...field}
+                          data-testid="input-password"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -238,7 +282,20 @@ export default function Login() {
 
           {tab === "signup" && (
             <Form {...signUpForm}>
-              <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+              <form
+                ref={signUpFormRef}
+                onSubmit={(e) => {
+                  syncAutofilledValues(signUpFormRef.current, signUpForm, [
+                    "name",
+                    "clinicName",
+                    "email",
+                    "password",
+                    "passwordConfirm",
+                  ]);
+                  void signUpForm.handleSubmit(onSignUp)(e);
+                }}
+                className="space-y-4"
+              >
                 <FormField
                   control={signUpForm.control}
                   name="name"
@@ -246,7 +303,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Seu nome completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Dr. João Silva" {...field} />
+                        <Input autoComplete="name" placeholder="Dr. João Silva" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -259,7 +316,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Nome da clínica</FormLabel>
                       <FormControl>
-                        <Input placeholder="Clínica Veterinária Exemplo" {...field} />
+                        <Input autoComplete="organization" placeholder="Clínica Veterinária Exemplo" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -272,7 +329,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>E-mail</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
+                        <Input type="email" autoComplete="email" placeholder="seu@email.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -285,7 +342,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" autoComplete="new-password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -298,7 +355,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Confirmar senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" autoComplete="new-password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -338,6 +395,8 @@ export default function Login() {
                     <FormLabel>E-mail</FormLabel>
                     <FormControl>
                       <Input
+                        type="email"
+                        autoComplete="email"
                         placeholder="seu@email.com"
                         {...field}
                         data-testid="input-recover-email"

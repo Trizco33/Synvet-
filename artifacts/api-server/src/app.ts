@@ -32,13 +32,27 @@ app.use(
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
   : [];
+// Sufixos de origem permitidos (CSV) — útil para domínios de preview do Vercel,
+// que mudam a cada deploy. Ex.: ALLOWED_ORIGIN_SUFFIXES=-minha-team.vercel.app
+// cobre tanto produção quanto previews da mesma conta/projeto.
+const allowedOriginSuffixes = process.env.ALLOWED_ORIGIN_SUFFIXES
+  ? process.env.ALLOWED_ORIGIN_SUFFIXES.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
+
+const corsConfigured = allowedOrigins.length > 0 || allowedOriginSuffixes.length > 0;
 
 app.use(
   cors({
-    origin: allowedOrigins.length
+    origin: corsConfigured
       ? (origin, cb) => {
           // Requisições sem Origin (ex.: curl, mobile nativo) são permitidas.
-          if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+          if (
+            !origin ||
+            allowedOrigins.includes(origin) ||
+            allowedOriginSuffixes.some((suffix) => origin.endsWith(suffix))
+          ) {
+            return cb(null, true);
+          }
           cb(new Error(`CORS: origin '${origin}' not allowed`));
         }
       : true,
